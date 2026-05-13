@@ -1,10 +1,30 @@
 "use client";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import styles from './admin.module.css';
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { role } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (role !== 'admin') {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [mounted, role, router, pathname]);
+
+  if (!mounted || role !== 'admin') {
+    return null;
+  }
 
   return (
     <div className={styles.adminLayout}>

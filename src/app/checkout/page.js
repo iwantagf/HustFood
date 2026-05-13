@@ -2,12 +2,15 @@
 import styles from './page.module.css';
 import Header from '@/components/Header';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function CheckoutPage() {
   const { cart, totalItems, totalPrice, isMounted } = useCart();
+  const { role } = useAuth();
   const router = useRouter();
+  const [ready, setReady] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -20,7 +23,17 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
-  if (!isMounted) return null;
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (ready && role !== 'customer') {
+      router.replace(`/login?next=/checkout`);
+    }
+  }, [ready, role, router]);
+
+  if (!isMounted || !ready || role !== 'customer') return null;
 
   if (cart.length === 0) {
     router.push('/cart');

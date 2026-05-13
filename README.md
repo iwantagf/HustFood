@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HustFood
 
-## Getting Started
+Ứng dụng bán đồ ăn nhanh xây dựng bằng Next.js với cấu trúc `app/` hiện đại.
 
-First, run the development server:
+## Các chức năng hiện tại
+
+- Đặt món online với giỏ hàng và thanh toán.
+- Trang sản phẩm chính hiển thị thực đơn từ `src/data/products.json`.
+- Giỏ hàng lưu trong `localStorage` cho khách hàng.
+- Trang `checkout` chỉ mở cho vai trò `customer`.
+- Trang `seller` dành cho vai trò `seller`, gồm:
+  - Dashboard seller.
+  - Theo dõi đơn hàng và cập nhật trạng thái.
+  - Báo cáo doanh thu cơ bản.
+- Trang `admin` dành cho vai trò `admin`, gồm:
+  - Dashboard tổng quan đơn hàng.
+  - Quản lý đơn hàng.
+  - Quản lý thực đơn (thêm/xóa món).
+- API nội bộ với các route:
+  - `/api/orders`
+  - `/api/products`
+  - `/api/upload`
+- Hệ thống phân quyền đơn giản theo vai trò:
+  - `customer`, `seller`, `admin`.
+  - Người dùng chọn vai trò tại `/login`.
+
+## Khởi động dự án
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở trình duyệt tại: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Cấu trúc chính
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app/page.js` - trang chủ.
+- `src/app/seller/page.js` - trang seller.
+- `src/app/admin/page.js` - trang admin dashboard.
+- `src/app/admin/menu/page.js` - quản lý thực đơn.
+- `src/app/admin/orders/page.js` - quản lý đơn hàng.
+- `src/app/checkout/page.js` - trang thanh toán.
+- `src/app/login/page.js` - trang chọn vai trò.
+- `src/context/AuthContext.js` - quản lý quyền truy cập.
+- `src/context/CartContext.js` - quản lý giỏ hàng.
 
-## Learn More
+## Hướng dẫn đóng góp
 
-To learn more about Next.js, take a look at the following resources:
+Nếu bạn muốn đóng góp:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Tạo branch mới từ `main` hoặc branch chính hiện tại:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+git checkout main
+git pull
+```
 
-## Deploy on Vercel
+2. Chọn tên branch phù hợp:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `features/ten-tinh-nang` cho phát triển tính năng mới.
+- `hotfix/ten-sua-chua` cho sửa lỗi khẩn cấp.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ví dụ:
+
+```bash
+git checkout -b features/seller-dashboard
+```
+
+hoặc:
+
+```bash
+git checkout -b hotfix/fix-checkout-bug
+```
+
+3. Thực hiện thay đổi và commit rõ ràng:
+
+```bash
+git add .
+git commit -m "feat: thêm tính năng ..."    # với feature
+# hoặc
+git commit -m "fix: sửa lỗi ..."              # với hotfix
+```
+
+4. Đẩy branch lên remote:
+
+```bash
+git push origin features/ten-tinh-nang
+```
+
+hoặc:
+
+```bash
+git push origin hotfix/ten-sua-chua
+```
+
+5. Tạo Pull Request mô tả rõ mục đích, thay đổi chính và cách test.
+
+6. Với hotfix, ưu tiên:
+
+- tạo branch từ `main`
+- sửa nhanh, review nhanh
+- merge về `main` sau khi kiểm tra
+
+## Ghi chú
+
+- Dự án hiện dùng Next.js `16.x`, React `19.x`.
+- Các dữ liệu mẫu được lưu trong `src/data/`.
+- Trang admin và seller hiện đang dùng xác thực client-side đơn giản, phù hợp với demo nội bộ.
