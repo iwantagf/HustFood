@@ -1,0 +1,74 @@
+[
+  {
+    "id": "#HF9129",
+    "customer": {
+      "name": "Tâm Tạ",
+      "phone": "2000000",
+      "address": "Kim Giang",
+      "notes": "",
+      "paymentMethod": "cod"
+    },
+    "items": [
+      {
+        "id": 1,
+        "name": "Burger Bò Phô Mai Khổng Lồ",
+        "desc": "Bò nhập khẩu 100%, phô mai cheddar tan chảy, rau củ tươi ngon.",
+        "price": "65.000đ",
+        "image": "/images/burger.png",
+        "quantity": 3
+      }
+    ],
+    "totalItems": 3,
+    "totalPrice": 195000,
+    "status": "completed",
+    "createdAt": "2026-05-17T17:36:46.028Z"
+  },
+  {
+    "id": "#HF6786",
+    "customer": {
+      "name": "Hiếu",
+      "phone": "Hello",
+      "address": "djasdjj",
+      "notes": "djsakdasdka",
+      "paymentMethod": "cod"
+    },
+    "items": [
+      {
+        "id": 2,
+        "name": "Gà Rán Giòn Cay (6 Miếng)",
+        "desc": "Gà tẩm bột chiên giòn rụm với vị cay nồng đặc trưng.",
+        "price": "125.000đ",
+        "image": "/images/chicken.png",
+        "quantity": 4
+      }
+    ],
+    "totalItems": 4,
+    "totalPrice": 500000,
+    "status": "completed",
+    "createdAt": "2026-05-17T17:37:12.086Z"
+  },
+  {
+    "id": "#HF2812",
+    "customer": {
+      "name": "Tâm Tạ",
+      "phone": "0976120227",
+      "address": "Cẩm Giàng ",
+      "notes": "",
+      "paymentMethod": "momo"
+    },
+    "items": [
+      {
+        "id": 3,
+        "name": "Combo Hust Tiết Kiệm",
+        "desc": "1 Burger + 2 Gà rán + 1 Khoai tây chiên + 1 Nước ngọt lớn.",
+        "price": "189.000đ",
+        "image": "/images/burger.png",
+        "quantity": 1
+      }
+    ],
+    "totalItems": 1,
+    "totalPrice": 189000,
+    "status": "completed",
+    "createdAt": "2026-05-17T17:54:30.911Z"
+  }
+]

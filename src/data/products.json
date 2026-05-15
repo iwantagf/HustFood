@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "name": "Burger Bò Phô Mai Khổng Lồ",
+    "desc": "Bò nhập khẩu 100%, phô mai cheddar tan chảy, rau củ tươi ngon.",
+    "price": "65.000đ",
+    "image": "/images/burger.png"
+  },
+  {
+    "id": 2,
+    "name": "Gà Rán Giòn Cay (6 Miếng)",
+    "desc": "Gà tẩm bột chiên giòn rụm với vị cay nồng đặc trưng.",
+    "price": "125.000đ",
+    "image": "/images/chicken.png"
+  },
+  {
+    "id": 3,
+    "name": "Combo Hust Tiết Kiệm",
+    "desc": "1 Burger + 2 Gà rán + 1 Khoai tây chiên + 1 Nước ngọt lớn.",
+    "price": "189.000đ",
+    "image": "/images/burger.png"
+  },
+  {
+    "id": 4,
+    "name": "Đùi Gà Sốt Chua Ngọt",
+    "desc": "Đùi gà chiên giòn áo sốt chua ngọt chuẩn vị Hàn Quốc.",
+    "price": "89.000đ",
+    "image": "/images/chicken.png"
+  }
+]
