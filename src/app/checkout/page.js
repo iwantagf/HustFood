@@ -11,7 +11,7 @@ export default function CheckoutPage() {
   const { role } = useAuth();
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -19,7 +19,7 @@ export default function CheckoutPage() {
     notes: '',
     paymentMethod: 'cod'
   });
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
@@ -59,13 +59,13 @@ export default function CheckoutPage() {
         totalItems,
         totalPrice
       };
-      
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
       });
-      
+
       if (res.ok) {
         router.push('/success');
       } else {
@@ -98,7 +98,7 @@ export default function CheckoutPage() {
       <Header />
       <div className={`container ${styles.checkoutContainer}`}>
         <h1 className={styles.checkoutTitle}>Thanh Toán</h1>
-        
+
         {/* Modal QR Code */}
         {showQR && (
           <div className={styles.modalOverlay}>
@@ -106,7 +106,7 @@ export default function CheckoutPage() {
               <h3>Thanh toán qua {formData.paymentMethod === 'momo' ? 'MoMo' : 'Ngân hàng'}</h3>
               <p>Quét mã QR dưới đây để thanh toán số tiền: <strong>{totalPrice.toLocaleString('vi-VN')}đ</strong></p>
               <div className={styles.qrPlaceholder}>
-                <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{color: 'var(--primary)'}}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+                <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
                 <div style={{ marginTop: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>Đang chờ thanh toán...</div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'center' }}>
@@ -118,7 +118,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className={styles.checkoutLayout}>
           <div className={styles.formSection}>
             <h2 className={styles.sectionTitle}>Thông tin giao hàng</h2>
@@ -155,10 +155,10 @@ export default function CheckoutPage() {
               </label>
             </div>
           </div>
-          
+
           <div className={styles.orderSummary}>
             <h2 className={styles.sectionTitle}>Đơn hàng của bạn</h2>
-            
+
             {cart.map(item => (
               <div key={item.id} className={styles.summaryItem}>
                 <span className={styles.summaryItemQty}>{item.quantity}x</span>
@@ -166,9 +166,9 @@ export default function CheckoutPage() {
                 <span>{item.price}</span>
               </div>
             ))}
-            
+
             <div className={styles.divider}></div>
-            
+
             <div className={styles.summaryItem}>
               <span className={styles.summaryItemName}>Tạm tính</span>
               <span>{totalPrice.toLocaleString('vi-VN')}đ</span>
@@ -177,14 +177,14 @@ export default function CheckoutPage() {
               <span className={styles.summaryItemName}>Phí giao hàng</span>
               <span>Miễn phí</span>
             </div>
-            
+
             <div className={styles.divider}></div>
-            
+
             <div className={styles.summaryTotal}>
               <span>Tổng cộng</span>
               <span>{totalPrice.toLocaleString('vi-VN')}đ</span>
             </div>
-            
+
             <button type="submit" disabled={isProcessing} className={`btn btn-primary ${styles.submitBtn}`}>
               {isProcessing ? 'Đang xử lý...' : 'Xác Nhận Đặt Hàng'}
             </button>

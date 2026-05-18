@@ -2,17 +2,17 @@ import styles from "./page.module.css";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
-import fs from 'fs';
-import path from 'path';
+
 
 export default async function Home() {
-  const dataFilePath = path.join(process.cwd(), 'src', 'data', 'products.json');
   let products = [];
   try {
-    const data = fs.readFileSync(dataFilePath, 'utf8');
-    products = JSON.parse(data);
+    const { prisma } = await import('@/lib/prisma');
+    products = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
   } catch (e) {
-    products = [];
+    console.error("Error fetching products:", e);
   }
 
   return (

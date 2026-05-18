@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  desc      String   @db.Text
+  price     String
+  image     String
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  customer    Json     // Store customer info (name, phone, address, etc.)
+  items       Json     // Store array of items {id, name, price, quantity, etc.}
+  totalItems  Int
+  totalPrice  Int
+  status      String   @default("pending") // pending, processing, completed
+  createdAt   DateTime @default(now())
+}
+
+model Proposal {
+  id        String   @id @default(cuid())
+  name      String
+  desc      String   @db.Text
+  price     String
+  image     String
+  status    String   @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

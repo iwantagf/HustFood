@@ -24,11 +24,48 @@
   - `customer`, `seller`, `admin`.
   - Người dùng chọn vai trò tại `/login`.
 
-## Khởi động dự án
+## Khởi động dự án (Dành cho người dùng phổ thông)
 
+Yêu cầu hệ thống:
+- Node.js (Khuyên dùng bản LTS)
+- MySQL Server
+
+Các bước triển khai:
+
+1. Tải mã nguồn về máy:
+```bash
+git clone <URL_CUA_REPO>
+cd HustFood
+```
+
+2. Cài đặt các thư viện yêu cầu:
 ```bash
 npm install
+```
+
+3. Cấu hình biến môi trường:
+Tạo file cấu hình để kết nối với cơ sở dữ liệu MySQL của bạn.
+```bash
+cp .env.example .env
+```
+(Lưu ý: Bạn hãy mở file `.env` vừa tạo và sửa lại dòng `DATABASE_URL` sao cho khớp với tên đăng nhập, mật khẩu và tên database của bạn trên MySQL).
+
+4. Khởi tạo Database với Prisma:
+Chạy lệnh sau để tự động tạo các bảng dữ liệu cần thiết vào MySQL:
+```bash
+npx prisma db push
+```
+
+5. Khởi động Server:
+Chạy ở chế độ phát triển (Development):
+```bash
 npm run dev
+```
+
+Hoặc build và chạy ở chế độ thực tế (Production):
+```bash
+npm run build
+npm start
 ```
 
 Mở trình duyệt tại: `http://localhost:3000`
@@ -105,5 +142,5 @@ git push origin hotfix/ten-sua-chua
 ## Ghi chú
 
 - Dự án hiện dùng Next.js `16.x`, React `19.x`.
-- Các dữ liệu mẫu được lưu trong `src/data/`.
+- Các dữ liệu mẫu được lưu trong `src/data/` (và sử dụng Prisma với MySQL cho dữ liệu thật).
 - Trang admin và seller hiện đang dùng xác thực client-side đơn giản, phù hợp với demo nội bộ.
