@@ -1,10 +1,18 @@
 "use client";
 import styles from '@/app/page.module.css';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+
+const roleLabels = {
+  customer: 'Khách hàng',
+  seller: 'Seller',
+  admin: 'Quản trị viên'
+};
 
 export default function Header() {
   const { totalItems, isMounted } = useCart();
+  const { role, logout } = useAuth();
   
   return (
     <header className={styles.header}>
@@ -12,8 +20,20 @@ export default function Header() {
         <div className={styles.logo}><Link href="/">HustFood.</Link></div>
         <nav className={styles.nav}>
           <Link href="/" className={styles.navLink}>Trang Chủ</Link>
+          {role === 'seller' && <Link href="/seller" className={styles.navLink}>Seller</Link>}
+          {role === 'admin' && <Link href="/admin" className={styles.navLink}>Admin</Link>}
           <a href="/#menu" className={styles.navLink}>Thực Đơn</a>
         </nav>
+        <div className={styles.headerActions}>
+          {role ? (
+            <>
+              <span className={styles.roleBadge}>{roleLabels[role] || role}</span>
+              <button type="button" className={styles.logoutBtn} onClick={logout}>Đăng xuất</button>
+            </>
+          ) : (
+            <Link href="/login" className={styles.navLink}>Đăng nhập</Link>
+          )}
+        </div>
         <Link href="/cart" className={styles.cartBtn}>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1"></circle>
