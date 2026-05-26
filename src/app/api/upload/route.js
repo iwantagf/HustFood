@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import path from "path";
 import { writeFile } from "fs/promises";
+import { requireRole } from '@/lib/auth/session';
 
 export async function POST(req) {
+  const auth = await requireRole(req, ['seller', 'admin']);
+  if (auth.response) return auth.response;
+
   const data = await req.formData();
   const file = data.get("file");
 

@@ -1,7 +1,11 @@
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/auth/session';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['seller', 'admin']);
+    if (auth.response) return auth.response;
+
     const proposals = await prisma.proposal.findMany({
       orderBy: { createdAt: 'desc' }
     });
@@ -16,6 +20,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const auth = await requireRole(request, ['seller']);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     
     const newProposal = await prisma.proposal.create({
@@ -39,6 +46,9 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    const auth = await requireRole(request, ['admin']);
+    if (auth.response) return auth.response;
+
     const { id, status } = await request.json();
     
     const proposal = await prisma.proposal.findUnique({ where: { id } });

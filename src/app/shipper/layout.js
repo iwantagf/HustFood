@@ -6,16 +6,17 @@ import { useAuth } from '@/context/AuthContext';
 export default function ShipperLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
 
   useEffect(() => {
     // Màn hình Người giao hàng được tách khỏi các luồng vai trò khác.
+    if (isLoading) return;
     if (role !== 'shipper') {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [pathname, role, router]);
+  }, [isLoading, pathname, role, router]);
 
-  if (role !== 'shipper') {
+  if (isLoading || role !== 'shipper') {
     return null;
   }
 

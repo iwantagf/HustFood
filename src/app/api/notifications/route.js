@@ -1,7 +1,11 @@
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/auth/session';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['seller']);
+    if (auth.response) return auth.response;
+
     const notifications = await prisma.notification.findMany({
       orderBy: { createdAt: 'desc' }
     });
@@ -16,6 +20,9 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
+    const auth = await requireRole(request, ['seller']);
+    if (auth.response) return auth.response;
+
     const { id } = await request.json();
     
     if (id === 'all') {

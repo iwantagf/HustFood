@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createPasswordHash } from '@/lib/auth/password';
-import { isGmailAddress, normalizeIdentifier, sanitizeUser, selfRegisterRoles } from '@/lib/auth/users';
+import { isGmailAddress, normalizeIdentifier, selfRegisterRoles } from '@/lib/auth/users';
+import { sessionJson } from '@/lib/auth/session';
 
 export async function POST(request) {
   try {
@@ -29,6 +30,7 @@ export async function POST(request) {
         email,
         displayName: displayName || email.split('@')[0],
         role,
+        status: 'active',
         provider: 'credentials',
         providerAccountId: email,
         passwordHash,
@@ -36,10 +38,7 @@ export async function POST(request) {
       }
     });
 
-    return new Response(JSON.stringify({ user: sanitizeUser(user) }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return sessionJson(user, { status: 201 });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Không tạo được tài khoản' }), { status: 500 });
   }

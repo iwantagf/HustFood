@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
-import { normalizeIdentifier, sanitizeUser } from '@/lib/auth/users';
+import { normalizeIdentifier } from '@/lib/auth/users';
 import { verifyPassword } from '@/lib/auth/password';
+import { sessionJson } from '@/lib/auth/session';
 
 export async function POST(request) {
   try {
@@ -26,10 +27,11 @@ export async function POST(request) {
       return new Response(JSON.stringify({ error: 'Sai username/email hoặc mật khẩu' }), { status: 401 });
     }
 
-    return new Response(JSON.stringify({ user: sanitizeUser(user) }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    if (user.status === 'blocked') {
+      return new Response(JSON.stringify({ error: 'Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ HustFood.' }), { status: 403 });
+    }
+
+    return sessionJson(user, { status: 200 });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Không đăng nhập được' }), { status: 500 });
   }

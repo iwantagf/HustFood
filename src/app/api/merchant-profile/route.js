@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/auth/session';
 
 const DEFAULT_OWNER_ROLE = 'seller';
 const DEFAULT_PROFILE = {
@@ -43,8 +44,11 @@ function normalizeProfilePayload(body) {
   };
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['seller', 'admin']);
+    if (auth.response) return auth.response;
+
     // Demo hiện tại có một vai trò Người bán nhưng chưa có shop theo từng user,
     // nên hồ sơ được lưu dạng singleton theo ownerRole.
     const profile = await prisma.merchantProfile.upsert({
@@ -64,6 +68,9 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
+    const auth = await requireRole(request, ['seller']);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const { data, error } = normalizeProfilePayload(body);
 

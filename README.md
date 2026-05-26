@@ -17,7 +17,8 @@ HustFood là ứng dụng đặt và giao đồ ăn trực tuyến được xây
 - React `19.x`.
 - Prisma `5.x`.
 - MySQL datasource.
-- Client-side route guard theo role cho demo.
+- Cookie httpOnly/JWT demo cho session đăng nhập.
+- Guard theo role cho UI và API thao tác dữ liệu.
 
 ### 1.3 Biến môi trường
 

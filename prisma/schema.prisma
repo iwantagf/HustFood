@@ -22,6 +22,7 @@ model User {
   username          String?  @unique
   displayName       String
   role              String   @default("customer") // customer, seller, shipper, admin
+  status            String   @default("active") // active, blocked
   provider          String   @default("credentials") // credentials, google, facebook, instagram
   providerAccountId String
   passwordHash      String?

@@ -54,6 +54,7 @@ async function main() {
     update: {
       displayName: 'huyhoangdao',
       role: 'admin',
+      status: 'active',
       provider: 'credentials',
       passwordHash,
       passwordSalt
@@ -62,6 +63,7 @@ async function main() {
       username: 'huyhoangdao',
       displayName: 'huyhoangdao',
       role: 'admin',
+      status: 'active',
       provider: 'credentials',
       providerAccountId: 'huyhoangdao',
       passwordHash,
