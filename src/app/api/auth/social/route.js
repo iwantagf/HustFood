@@ -8,11 +8,11 @@ export async function POST(request) {
     const email = normalizeIdentifier(body.email);
 
     if (!socialProviders.includes(provider)) {
-      return new Response(JSON.stringify({ error: 'Unsupported social provider' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Nhà cung cấp social không được hỗ trợ' }), { status: 400 });
     }
 
     if (!isGmailAddress(email)) {
-      return new Response(JSON.stringify({ error: 'Enter a Gmail address to simulate social login' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Nhập Gmail để mô phỏng đăng nhập social' }), { status: 400 });
     }
 
     const existingByEmail = await prisma.user.findUnique({ where: { email } });
@@ -48,6 +48,6 @@ export async function POST(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to login with social provider' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Không đăng nhập được bằng social provider' }), { status: 500 });
   }
 }

@@ -25,7 +25,7 @@ export default function SuccessPage() {
         </div>
         <h1 className={styles.successTitle}>Đặt Hàng Thành Công!</h1>
         <p className={styles.successDesc}>
-          Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng của bạn đã được tiếp nhận và đang được bếp chuẩn bị. Nguoi giao hang sẽ liên hệ với bạn trong thời gian sớm nhất. Chúc bạn có một bữa ăn ngon miệng!
+          Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng của bạn đã được tiếp nhận và đang được bếp chuẩn bị. Người giao hàng sẽ liên hệ với bạn trong thời gian sớm nhất. Chúc bạn có một bữa ăn ngon miệng!
         </p>
         <Link href="/" className={`btn btn-primary ${styles.homeBtn}`}>
           Quay Về Trang Chủ

@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import styles from './admin.module.css';
 
@@ -9,27 +9,21 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { role } = useAuth();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     if (role !== 'admin') {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [mounted, role, router, pathname]);
+  }, [role, router, pathname]);
 
-  if (!mounted || role !== 'admin') {
+  if (role !== 'admin') {
     return null;
   }
 
   return (
     <div className={styles.adminLayout}>
       <aside className={styles.sidebar}>
-        <div className={styles.logo}>HustFood Quan tri vien</div>
+        <div className={styles.logo}>HustFood Quản trị viên</div>
         <nav className={styles.nav}>
           <Link href="/admin" className={pathname === '/admin' ? styles.activeLink : styles.navLink}>
             Dashboard
@@ -49,7 +43,7 @@ export default function AdminLayout({ children }) {
       <main className={styles.mainContent}>
         <header className={styles.topbar}>
           <div className={styles.adminProfile}>
-            <span>Quan tri vien</span>
+            <span>Quản trị viên</span>
             <div className={styles.avatar}>A</div>
           </div>
         </header>

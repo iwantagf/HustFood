@@ -11,16 +11,16 @@ export async function POST(request) {
     const role = selfRegisterRoles.includes(body.role) ? body.role : 'customer';
 
     if (!isGmailAddress(email)) {
-      return new Response(JSON.stringify({ error: 'Only Gmail addresses can self-register in this demo' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Demo này chỉ cho phép tự tạo tài khoản bằng Gmail' }), { status: 400 });
     }
 
     if (password.length < 1) {
-      return new Response(JSON.stringify({ error: 'Password is required' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Mật khẩu là bắt buộc' }), { status: 400 });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return new Response(JSON.stringify({ error: 'This Gmail account already exists' }), { status: 409 });
+      return new Response(JSON.stringify({ error: 'Tài khoản Gmail này đã tồn tại' }), { status: 409 });
     }
 
     const { passwordHash, passwordSalt } = createPasswordHash(password);
@@ -41,6 +41,6 @@ export async function POST(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to register account' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Không tạo được tài khoản' }), { status: 500 });
   }
 }

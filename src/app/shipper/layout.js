@@ -9,7 +9,7 @@ export default function ShipperLayout({ children }) {
   const { role } = useAuth();
 
   useEffect(() => {
-    // Nguoi giao hang screens are isolated from other role flows.
+    // Màn hình Người giao hàng được tách khỏi các luồng vai trò khác.
     if (role !== 'shipper') {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }

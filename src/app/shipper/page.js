@@ -14,7 +14,7 @@ export default function ShipperPage() {
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <div>
-          <h1 className={styles.pageTitle} style={{ marginBottom: '0.5rem' }}>Nguoi giao hang Dashboard</h1>
+          <h1 className={styles.pageTitle} style={{ marginBottom: '0.5rem' }}>Người giao hàng Dashboard</h1>
           <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>
             Khu vực dành cho người giao hàng theo RBAC trong SRS. Module điều phối đơn sẽ gắn vào màn hình này ở update riêng.
           </p>

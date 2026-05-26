@@ -2,16 +2,16 @@
 
 HustFood là ứng dụng đặt và giao đồ ăn trực tuyến được xây dựng bằng Next.js App Router, React và Prisma/MySQL. Dự án mô phỏng các luồng chính trong SRS: khách hàng đặt món, người bán xử lý đơn, người giao hàng nhận giao, quản trị viên quản lý nền tảng.
 
-## 1. System Requirements
+## 1. Yêu cầu hệ thống
 
-### 1.1 Runtime
+### 1.1 Môi trường chạy
 
 - Node.js LTS, khuyến nghị Node.js 20+.
 - npm, đi kèm Node.js.
 - MySQL Server hoặc managed MySQL như Aiven.
 - Git.
 
-### 1.2 Project Stack
+### 1.2 Công nghệ sử dụng
 
 - Next.js `16.x`.
 - React `19.x`.
@@ -19,7 +19,7 @@ HustFood là ứng dụng đặt và giao đồ ăn trực tuyến được xây
 - MySQL datasource.
 - Client-side route guard theo role cho demo.
 
-### 1.3 Environment Variables
+### 1.3 Biến môi trường
 
 Tạo file `.env` từ file mẫu:
 
@@ -39,9 +39,9 @@ Ghi chú:
 - Với Aiven hoặc managed MySQL, thường cần giữ `ssl-mode=REQUIRED`.
 - Nếu đổi schema Prisma, cần chạy lại `npx prisma db push`.
 
-## 2. Quick Start
+## 2. Khởi động nhanh
 
-### 2.1 Install Dependencies
+### 2.1 Cài đặt dependencies
 
 ```bash
 npm install
@@ -53,7 +53,7 @@ npm install
 npx prisma generate
 ```
 
-### 2.3 Initialize Database
+### 2.3 Khởi tạo database
 
 ```bash
 npx prisma db push
@@ -69,9 +69,9 @@ Tài khoản test quản trị viên:
 
 - Username: `huyhoangdao`
 - Password: `1`
-- Role: `Quan tri vien`
+- Role: `Quản trị viên`
 
-### 2.4 Run Development Server
+### 2.4 Chạy development server
 
 ```bash
 npm run dev
@@ -83,16 +83,16 @@ Mở trình duyệt tại:
 http://localhost:3000
 ```
 
-### 2.5 Production Build
+### 2.5 Build production
 
 ```bash
 npm run build
 npm start
 ```
 
-## 3. Test Environment
+## 3. Môi trường kiểm thử
 
-### 3.1 Local Test Setup
+### 3.1 Thiết lập test local
 
 Môi trường test tối thiểu:
 
@@ -101,20 +101,20 @@ Môi trường test tối thiểu:
 - Đã chạy `npm run seed` nếu cần tài khoản admin test.
 - Dev server chạy bằng `npm run dev`.
 
-### 3.2 Test Accounts
+### 3.2 Tài khoản test
 
-- `Quan tri vien`: `huyhoangdao` / `1`.
+- `Quản trị viên`: `huyhoangdao` / `1`.
 - Người dùng thường có thể tạo tài khoản tại `/login` bằng Gmail.
 - Social login hiện là mô phỏng qua Google/Facebook/Instagram, chưa phải OAuth thật.
 
-### 3.3 Main Manual Test Paths
+### 3.3 Luồng test thủ công chính
 
-- `Khach hang`: `/` -> thêm món -> `/cart` -> `/checkout` -> `/success`.
-- `Nguoi ban`: `/login` -> đăng nhập/tạo tài khoản role `Nguoi ban` -> `/seller`.
-- `Nguoi giao hang`: `/login` -> đăng nhập/tạo tài khoản role `Nguoi giao hang` -> `/shipper`.
-- `Quan tri vien`: `/login` -> `huyhoangdao` / `1` -> `/admin`.
+- `Khách hàng`: `/` -> thêm món -> `/cart` -> `/checkout` -> `/success`.
+- `Người bán`: `/login` -> đăng nhập/tạo tài khoản role `Người bán` -> `/seller`.
+- `Người giao hàng`: `/login` -> đăng nhập/tạo tài khoản role `Người giao hàng` -> `/shipper`.
+- `Quản trị viên`: `/login` -> `huyhoangdao` / `1` -> `/admin`.
 
-## 4. Available Scripts
+## 4. Các script có sẵn
 
 ```bash
 npm run dev
@@ -146,7 +146,7 @@ npm run seed
 
 Seed sản phẩm mẫu và tài khoản admin test.
 
-## 5. Debug Commands
+## 5. Lệnh debug
 
 ### 5.1 Prisma
 
@@ -214,7 +214,7 @@ Kiểm tra whitespace trước khi commit:
 git diff --check
 ```
 
-### 5.4 API Smoke Test
+### 5.4 Smoke test API
 
 Khi dev server đang chạy tại `http://localhost:3000`, có thể thử nhanh:
 
@@ -240,7 +240,7 @@ curl -X POST http://localhost:3000/api/auth/register \
   -d '{"email":"tester@gmail.com","password":"1","displayName":"Tester","role":"customer"}'
 ```
 
-## 6. Repository Structure
+## 6. Cấu trúc repository
 
 ```text
 .
@@ -271,7 +271,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 └── README.md
 ```
 
-### 6.1 Important Files
+### 6.1 Các file quan trọng
 
 - `prisma/schema.prisma`: Prisma models and MySQL datasource.
 - `prisma/seed.js`: seed products and test admin account.
@@ -283,9 +283,9 @@ curl -X POST http://localhost:3000/api/auth/register \
 - `src/components/Header.js`: navigation and role-aware links.
 - `docs/SRS_TODO.md`: implementation checklist mapped to SRS.
 
-## 7. Main Pages
+## 7. Các trang chính
 
-### 7.1 Public and Customer
+### 7.1 Trang public và Khách hàng
 
 - `/`: home page and product menu.
 - `/cart`: shopping cart.
@@ -293,21 +293,21 @@ curl -X POST http://localhost:3000/api/auth/register \
 - `/success`: order success page.
 - `/login`: credential login, Gmail registration, demo social login.
 
-### 7.2 Nguoi ban
+### 7.2 Người bán
 
 - `/seller`: seller dashboard, merchant profile, order status update, product proposal, revenue summary.
 
-### 7.3 Nguoi giao hang
+### 7.3 Người giao hàng
 
 - `/shipper`: protected shipper dashboard placeholder for delivery workflow.
 
-### 7.4 Quan tri vien
+### 7.4 Quản trị viên
 
 - `/admin`: admin dashboard.
 - `/admin/orders`: order management.
 - `/admin/menu`: menu management.
 
-## 8. API Routes
+## 8. API routes
 
 ### 8.1 Auth APIs
 
@@ -382,8 +382,8 @@ Body:
 ```json
 {
   "name": "Burger",
-  "desc": "Mo ta mon an",
-  "price": "65.000d",
+  "desc": "Mô tả món ăn",
+  "price": "65.000đ",
   "image": "/images/burger.png"
 }
 ```
@@ -415,9 +415,9 @@ Body:
 ```json
 {
   "customer": {
-    "name": "Nguyen Van A",
+    "name": "Nguyễn Văn A",
     "phone": "0987654321",
-    "address": "Ha Noi",
+    "address": "Hà Nội",
     "notes": "",
     "paymentMethod": "cod"
   },
@@ -458,8 +458,8 @@ Body:
 
 ```json
 {
-  "shopName": "HustFood Nguoi ban",
-  "address": "So 1 Dai Co Viet, Hai Ba Trung, Ha Noi",
+  "shopName": "HustFood Người bán",
+  "address": "Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội",
   "mapLocation": "21.0059,105.8431",
   "openTime": "08:00",
   "closeTime": "22:00",
@@ -526,7 +526,7 @@ Body:
 
 Upload file ảnh. Kiểm tra implementation cụ thể tại `src/app/api/upload/route.js`.
 
-## 9. Database Models
+## 9. Database models
 
 ### 9.1 `User`
 
@@ -558,9 +558,9 @@ Lưu đề xuất món mới từ người bán.
 
 Lưu thông báo nội bộ cho dashboard.
 
-## 10. Current Feature Status
+## 10. Trạng thái tính năng hiện tại
 
-### 10.1 Done or Partially Done
+### 10.1 Đã làm hoặc đã làm một phần
 
 - RBAC demo với 4 role.
 - Credential login, Gmail registration, demo social login.
@@ -571,7 +571,7 @@ Lưu thông báo nội bộ cho dashboard.
 - Admin dashboard, order/menu/proposal management.
 - Prisma schema for current demo models.
 
-### 10.2 Not Yet Done
+### 10.2 Chưa làm
 
 Chi tiết theo SRS nằm trong:
 
@@ -590,9 +590,9 @@ Các phần lớn còn thiếu:
 - JWT/cookie auth thay cho `localStorage`.
 - Realtime WebSocket/SSE.
 
-## 11. Contribution Guide
+## 11. Hướng dẫn đóng góp
 
-### 11.1 Branch Naming
+### 11.1 Quy tắc đặt tên branch
 
 Tạo branch từ `main` hoặc branch đang được nhóm thống nhất:
 
@@ -608,7 +608,7 @@ Gợi ý:
 - `hotfix/ten-loi` cho sửa lỗi khẩn cấp.
 - `docs/noi-dung` cho tài liệu.
 
-### 11.2 Before Commit
+### 11.2 Trước khi commit
 
 Chạy các lệnh tối thiểu:
 
@@ -630,7 +630,7 @@ git commit -m "fix: guard seller order update"
 git commit -m "docs: update api guide"
 ```
 
-### 11.4 Pull Request Checklist
+### 11.4 Checklist Pull Request
 
 Trong PR nên ghi:
 
@@ -641,7 +641,7 @@ Trong PR nên ghi:
 - Screenshot nếu thay đổi GUI.
 - Rủi ro hoặc phần chưa hoàn thiện.
 
-## 12. Known Issues
+## 12. Vấn đề đã biết
 
 - `npm run lint` toàn repo có thể fail do một số lỗi legacy ở page cũ với rule `react-hooks/set-state-in-effect`.
 - Auth hiện vẫn lưu session demo ở `localStorage`; SRS yêu cầu JWT/cookie và RBAC server-side.

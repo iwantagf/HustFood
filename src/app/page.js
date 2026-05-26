@@ -52,7 +52,7 @@ export default async function Home() {
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-            {products.length === 0 && <p style={{textAlign: 'center', width: '100%'}}>Thực đơn đang trống, vui lòng chờ Quan tri vien cập nhật!</p>}
+            {products.length === 0 && <p style={{textAlign: 'center', width: '100%'}}>Thực đơn đang trống, vui lòng chờ Quản trị viên cập nhật!</p>}
           </div>
         </div>
       </section>

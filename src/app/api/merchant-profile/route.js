@@ -3,8 +3,8 @@ import { prisma } from '@/lib/prisma';
 const DEFAULT_OWNER_ROLE = 'seller';
 const DEFAULT_PROFILE = {
   ownerRole: DEFAULT_OWNER_ROLE,
-  shopName: 'HustFood Nguoi ban',
-  address: 'So 1 Dai Co Viet, Hai Ba Trung, Ha Noi',
+  shopName: 'HustFood Người bán',
+  address: 'Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội',
   mapLocation: '21.0059,105.8431',
   openTime: '08:00',
   closeTime: '22:00',
@@ -18,14 +18,14 @@ function normalizeProfilePayload(body) {
   const missingField = requiredFields.find((field) => !String(body[field] || '').trim());
 
   if (missingField) {
-    return { error: `Missing required field: ${missingField}` };
+    return { error: `Thiếu trường bắt buộc: ${missingField}` };
   }
 
   const normalizedPhone = String(body.phone).replace(/\s+/g, '');
   const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
 
   if (!phoneRegex.test(normalizedPhone)) {
-    return { error: 'Invalid Vietnamese phone number' };
+    return { error: 'Số điện thoại Việt Nam không hợp lệ' };
   }
 
   return {
@@ -45,8 +45,8 @@ function normalizeProfilePayload(body) {
 
 export async function GET() {
   try {
-    // The current demo auth has one Nguoi ban role but no user-owned shops yet,
-    // so the profile is stored as a singleton keyed by ownerRole.
+    // Demo hiện tại có một vai trò Người bán nhưng chưa có shop theo từng user,
+    // nên hồ sơ được lưu dạng singleton theo ownerRole.
     const profile = await prisma.merchantProfile.upsert({
       where: { ownerRole: DEFAULT_OWNER_ROLE },
       update: {},
@@ -58,7 +58,7 @@ export async function GET() {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch merchant profile' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Không tải được hồ sơ cửa hàng' }), { status: 500 });
   }
 }
 
@@ -82,6 +82,6 @@ export async function PUT(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to update merchant profile' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Không cập nhật được hồ sơ cửa hàng' }), { status: 500 });
   }
 }

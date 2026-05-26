@@ -8,10 +8,10 @@ const AuthContext = createContext();
 export const roles = ['customer', 'seller', 'shipper', 'admin'];
 
 export const roleLabels = {
-  customer: 'Khach hang',
-  seller: 'Nguoi ban',
-  shipper: 'Nguoi giao hang',
-  admin: 'Quan tri vien'
+  customer: 'Khách hàng',
+  seller: 'Người bán',
+  shipper: 'Người giao hàng',
+  admin: 'Quản trị viên'
 };
 
 export const roleRedirects = {
