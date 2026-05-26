@@ -1,56 +1,52 @@
-import fs from 'fs';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
-const dataFilePath = path.join(process.cwd(), 'src', 'data', 'products.json');
-
-function getProducts() {
+export async function GET() {
   try {
-    const data = fs.readFileSync(dataFilePath, 'utf8');
-    return JSON.parse(data);
+    const products = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return new Response(JSON.stringify(products), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    return [];
+    return new Response(JSON.stringify({ error: 'Failed to fetch products' }), { status: 500 });
   }
 }
 
-function saveProducts(products) {
-  fs.writeFileSync(dataFilePath, JSON.stringify(products, null, 2));
-}
-
-export async function GET() {
-  const products = getProducts();
-  return new Response(JSON.stringify(products), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}
-
 export async function POST(request) {
-  const body = await request.json();
-  const products = getProducts();
-  
-  const newProduct = {
-    id: Date.now(),
-    ...body
-  };
-  
-  products.push(newProduct);
-  saveProducts(products);
-  
-  return new Response(JSON.stringify(newProduct), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  try {
+    const body = await request.json();
+    const newProduct = await prisma.product.create({
+      data: {
+        name: body.name,
+        desc: body.desc,
+        price: body.price,
+        image: body.image || '/images/burger.png'
+      }
+    });
+    
+    return new Response(JSON.stringify(newProduct), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to create product' }), { status: 500 });
+  }
 }
 
 export async function DELETE(request) {
-  const { id } = await request.json();
-  let products = getProducts();
-  
-  products = products.filter(p => p.id !== id);
-  saveProducts(products);
-  
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  try {
+    const { id } = await request.json();
+    await prisma.product.delete({
+      where: { id }
+    });
+    
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to delete product' }), { status: 500 });
+  }
 }

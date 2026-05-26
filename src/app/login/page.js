@@ -17,19 +17,25 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      setNext(params.get('next') || '/');
+      setNext(params.get('next')); // We'll handle default inside the effect below
     }
   }, []);
 
+  const getRoleRedirect = (currentRole) => {
+    if (currentRole === 'seller') return '/seller';
+    if (currentRole === 'admin') return '/admin';
+    return '/'; // customer or null
+  };
+
   useEffect(() => {
     if (role) {
-      router.replace(next);
+      router.replace(next || getRoleRedirect(role));
     }
   }, [role, next, router]);
 
   const handleLogin = (selectedRole) => {
     login(selectedRole);
-    router.replace(next);
+    router.replace(next || getRoleRedirect(selectedRole));
   };
 
   return (

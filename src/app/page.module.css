@@ -16,6 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 2rem;
 }
 
 .logo {
@@ -27,8 +28,39 @@
 
 .nav {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.roleBadge {
+  background-color: var(--surface);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.logoutBtn:hover {
+  color: #ef4444;
 }
 
 .navLink {

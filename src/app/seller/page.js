@@ -1,21 +1,28 @@
 "use client";
 import { useState, useEffect } from 'react';
 import styles from '../admin/admin.module.css';
+import Link from 'next/link';
 
 export default function SellerPage() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [proposal, setProposal] = useState({ name: '', desc: '', price: '', image: '' });
+  const [isProposing, setIsProposing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes, notificationsRes] = await Promise.all([
         fetch('/api/orders'),
-        fetch('/api/products')
+        fetch('/api/products'),
+        fetch('/api/notifications')
       ]);
-      const [ordersData, productsData] = await Promise.all([ordersRes.json(), productsRes.json()]);
+      const [ordersData, productsData, notifData] = await Promise.all([ordersRes.json(), productsRes.json(), notificationsRes.json()]);
       setOrders(ordersData);
       setProducts(productsData);
+      setNotifications(notifData);
     } catch (error) {
       console.error('Không tải được dữ liệu seller:', error);
     } finally {
@@ -39,6 +46,21 @@ export default function SellerPage() {
       setOrders((prev) => prev.map((order) => order.id === id ? { ...order, status: nextStatus } : order));
     } catch (error) {
       console.error('Không cập nhật được trạng thái đơn:', error);
+    }
+  };
+
+  const handleDeleteOrder = async (id) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
+    try {
+      await fetch('/api/orders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      setOrders(prev => prev.filter(o => o.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('Có lỗi xảy ra khi xóa đơn hàng.');
     }
   };
 
@@ -73,9 +95,82 @@ export default function SellerPage() {
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 4);
 
+  const handlePropose = async (e) => {
+    e.preventDefault();
+    setIsProposing(true);
+    try {
+      await fetch('/api/proposals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proposal)
+      });
+      alert('Đã gửi đề xuất món mới! Đang chờ Admin duyệt.');
+      setProposal({ name: '', desc: '', price: '', image: '' });
+    } catch (err) {
+      alert('Có lỗi xảy ra khi gửi đề xuất.');
+    } finally {
+      setIsProposing(false);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    await fetch('/api/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   return (
-    <>
-      <h1 className={styles.pageTitle}>Seller Dashboard</h1>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Seller Dashboard</h1>
+          <Link href="/" style={{ textDecoration: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', color: '#333', fontWeight: '500', fontSize: '0.9rem', border: '1px solid #ddd' }}>
+            ← Quay lại trang chủ
+          </Link>
+        </div>
+        
+        <div style={{ position: 'relative' }}>
+          <button 
+            type="button" 
+            onClick={() => setShowNotifications(!showNotifications)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', fontSize: '1.5rem' }}
+          >
+            🔔
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          
+          {showNotifications && (
+            <div style={{ position: 'absolute', top: '40px', right: '0', width: '320px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', padding: '1rem', zIndex: 100 }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>Thông Báo</h3>
+              {notifications.length === 0 ? (
+                <p style={{ color: '#888', textAlign: 'center', margin: '2rem 0' }}>Không có thông báo nào.</p>
+              ) : (
+                <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {notifications.slice().reverse().map(notif => (
+                    <div 
+                      key={notif.id} 
+                      style={{ padding: '0.75rem', background: notif.read ? '#f9f9f9' : '#eff6ff', borderRadius: '8px', cursor: notif.read ? 'default' : 'pointer' }}
+                      onClick={() => !notif.read && markAsRead(notif.id)}
+                    >
+                      <p style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: notif.read ? '#555' : '#000', fontWeight: notif.read ? 'normal' : '600' }}>{notif.message}</p>
+                      <span style={{ fontSize: '0.75rem', color: '#999' }}>{new Date(notif.createdAt).toLocaleString('vi-VN')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
         Trang dành cho người bán: cập nhật trạng thái đơn và theo dõi doanh thu.
       </p>
@@ -150,7 +245,10 @@ export default function SellerPage() {
                         </button>
                       )}
                       {order.status === 'completed' && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
+                          <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Xóa</button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -189,8 +287,33 @@ export default function SellerPage() {
               </div>
             </div>
           </div>
+          
+          <div style={{ marginTop: '2rem', background: '#fff', padding: '1.5rem', borderRadius: '16px', border: '1px solid #eee' }}>
+            <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>Đề Xuất Món Mới</h2>
+            <form onSubmit={handlePropose} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>Tên món</label>
+                <input required type="text" value={proposal.name} onChange={e => setProposal({...proposal, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>Mô tả</label>
+                <textarea required value={proposal.desc} onChange={e => setProposal({...proposal, desc: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>Giá (VD: 65.000đ)</label>
+                <input required type="text" value={proposal.price} onChange={e => setProposal({...proposal, price: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>URL Hình ảnh (Tùy chọn)</label>
+                <input type="text" value={proposal.image} onChange={e => setProposal({...proposal, image: e.target.value})} placeholder="/images/burger.png" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              </div>
+              <button type="submit" disabled={isProposing} style={{ padding: '0.75rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isProposing ? 'not-allowed' : 'pointer', opacity: isProposing ? 0.7 : 1 }}>
+                {isProposing ? 'Đang gửi...' : 'Gửi Đề Xuất'}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
