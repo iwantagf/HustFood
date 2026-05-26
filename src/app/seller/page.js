@@ -7,22 +7,40 @@ export default function SellerPage() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [merchantProfile, setMerchantProfile] = useState({
+    shopName: '',
+    address: '',
+    mapLocation: '',
+    openTime: '08:00',
+    closeTime: '22:00',
+    phone: '',
+    image: '',
+    status: 'active'
+  });
   const [showNotifications, setShowNotifications] = useState(false);
   const [proposal, setProposal] = useState({ name: '', desc: '', price: '', image: '' });
   const [isProposing, setIsProposing] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, notificationsRes] = await Promise.all([
+      const [ordersRes, productsRes, notificationsRes, profileRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/products'),
-        fetch('/api/notifications')
+        fetch('/api/notifications'),
+        fetch('/api/merchant-profile')
       ]);
-      const [ordersData, productsData, notifData] = await Promise.all([ordersRes.json(), productsRes.json(), notificationsRes.json()]);
+      const [ordersData, productsData, notifData, profileData] = await Promise.all([
+        ordersRes.json(),
+        productsRes.json(),
+        notificationsRes.json(),
+        profileRes.json()
+      ]);
       setOrders(ordersData);
       setProducts(productsData);
       setNotifications(notifData);
+      setMerchantProfile(profileData);
     } catch (error) {
       console.error('Không tải được dữ liệu seller:', error);
     } finally {
@@ -31,9 +49,12 @@ export default function SellerPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const initialFetch = setTimeout(fetchData, 0);
     const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
   }, []);
 
   const updateStatus = async (id, nextStatus) => {
@@ -113,6 +134,38 @@ export default function SellerPage() {
     }
   };
 
+  const handleProfileChange = (field, value) => {
+    setMerchantProfile(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+
+    try {
+      const res = await fetch('/api/merchant-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merchantProfile)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không lưu được hồ sơ cửa hàng.');
+        return;
+      }
+
+      setMerchantProfile(data);
+      alert('Đã lưu hồ sơ cửa hàng.');
+    } catch (error) {
+      console.error('Không lưu được hồ sơ cửa hàng:', error);
+      alert('Có lỗi xảy ra khi lưu hồ sơ cửa hàng.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const markAsRead = async (id) => {
     await fetch('/api/notifications', {
       method: 'PUT',
@@ -174,6 +227,63 @@ export default function SellerPage() {
       <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
         Trang dành cho người bán: cập nhật trạng thái đơn và theo dõi doanh thu.
       </p>
+
+      <div className={styles.tableContainer} style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div>
+            <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: '0.35rem' }}>Hồ sơ cửa hàng</h2>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+              Thiết lập thông tin gian hàng để khách hàng có thể xem địa chỉ, giờ mở cửa và liên hệ.
+            </p>
+          </div>
+          <span className={`${styles.statusBadge} ${merchantProfile.status === 'active' ? styles.statusCompleted : styles.statusPending}`}>
+            {merchantProfile.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}
+          </span>
+        </div>
+
+        <form onSubmit={handleSaveProfile} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Tên quán</label>
+            <input required type="text" value={merchantProfile.shopName || ''} onChange={e => handleProfileChange('shopName', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Số điện thoại</label>
+            <input required type="tel" value={merchantProfile.phone || ''} onChange={e => handleProfileChange('phone', e.target.value)} placeholder="0987654321" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Giờ mở cửa</label>
+            <input required type="time" value={merchantProfile.openTime || '08:00'} onChange={e => handleProfileChange('openTime', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Giờ đóng cửa</label>
+            <input required type="time" value={merchantProfile.closeTime || '22:00'} onChange={e => handleProfileChange('closeTime', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Địa chỉ</label>
+            <input required type="text" value={merchantProfile.address || ''} onChange={e => handleProfileChange('address', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Tọa độ bản đồ</label>
+            <input type="text" value={merchantProfile.mapLocation || ''} onChange={e => handleProfileChange('mapLocation', e.target.value)} placeholder="21.0059,105.8431" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>URL ảnh đại diện</label>
+            <input type="text" value={merchantProfile.image || ''} onChange={e => handleProfileChange('image', e.target.value)} placeholder="/images/burger.png" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Trạng thái</label>
+            <select value={merchantProfile.status || 'active'} onChange={e => handleProfileChange('status', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
+              <option value="active">Đang hoạt động</option>
+              <option value="paused">Tạm dừng nhận đơn</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'end' }}>
+            <button type="submit" disabled={isSavingProfile} className={styles.actionBtn} style={{ width: '100%', padding: '0.75rem', opacity: isSavingProfile ? 0.7 : 1 }}>
+              {isSavingProfile ? 'Đang lưu...' : 'Lưu hồ sơ'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>

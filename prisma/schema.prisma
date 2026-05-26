@@ -16,6 +16,21 @@ model Product {
   createdAt DateTime @default(now())
 }
 
+model MerchantProfile {
+  id          String   @id @default(cuid())
+  ownerRole   String   @unique @default("seller")
+  shopName    String
+  address     String
+  mapLocation String?
+  openTime    String
+  closeTime   String
+  phone       String
+  image       String
+  status      String   @default("active") // active, paused, pending_review
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Order {
   id          String   @id @default(cuid())
   customer    Json     // Store customer info (name, phone, address, etc.)

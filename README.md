@@ -10,6 +10,7 @@
 - Trang `checkout` chỉ mở cho vai trò `customer`.
 - Trang `seller` dành cho vai trò `seller`/Merchant, gồm:
   - Dashboard Merchant.
+  - Khởi tạo và cập nhật hồ sơ cửa hàng.
   - Theo dõi đơn hàng và cập nhật trạng thái.
   - Báo cáo doanh thu cơ bản.
 - Trang `shipper` dành cho vai trò `shipper`, gồm:
@@ -22,6 +23,7 @@
 - API nội bộ với các route:
   - `/api/orders`
   - `/api/products`
+  - `/api/merchant-profile`
   - `/api/upload`
 - Hệ thống phân quyền đơn giản theo vai trò:
   - `customer`, `seller`, `shipper`, `admin`.
@@ -83,6 +85,7 @@ Mở trình duyệt tại: `http://localhost:3000`
 - `src/app/admin/orders/page.js` - quản lý đơn hàng.
 - `src/app/checkout/page.js` - trang thanh toán.
 - `src/app/login/page.js` - trang chọn vai trò.
+- `src/app/api/merchant-profile/route.js` - API hồ sơ cửa hàng Merchant.
 - `src/context/AuthContext.js` - quản lý quyền truy cập.
 - `src/context/CartContext.js` - quản lý giỏ hàng.
 
