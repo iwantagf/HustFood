@@ -175,15 +175,14 @@
 
 - [x] Có role `Người giao hàng`.
 - [x] Có route guard `/shipper`.
-- [x] Có dashboard placeholder cho `Người giao hàng`.
-- [x] Có khung luồng giao hàng dự kiến.
+- [x] Có dashboard đơn hàng cho `Người giao hàng`.
+- [x] Hiển thị đơn chờ nhận từ các đơn đã sẵn sàng giao.
+- [x] Có nút nhận đơn và gắn shipper vào đơn.
+- [x] Cập nhật trạng thái `Đã lấy hàng`, `Đang giao`, `Hoàn thành`.
 
 #### 3.8.2 Chưa làm
 
-- [ ] P0: Hiển thị đơn cho giao gần khu vực.
-- [ ] P0: Nút nhận đơn.
-- [ ] P0: Cập nhật trạng thái `Đã lấy hàng`, `Đang giao`, `Hoàn thành`.
-- [ ] P1: Lưu shipper được gắn vào đơn.
+- [ ] P1: Lọc đơn gần khu vực theo địa chỉ/GPS thật.
 - [ ] P1: Ghi nhận COD và doanh thu chuyến đi cho `Người giao hàng`.
 - [ ] P1: Báo cáo sự cố khách không nghe máy.
 - [ ] P2: GPS/live location mobile-friendly.
@@ -299,13 +298,13 @@
 
 - [x] Route `/shipper`.
 - [x] Guard role `shipper`.
-- [x] Dashboard placeholder.
+- [x] Dashboard danh sách đơn chờ nhận.
+- [x] Nút nhận đơn.
+- [x] Nút cập nhật trạng thái giao hàng.
 
 #### 4.3.2 Chưa làm
 
-- [ ] P0: Danh sách đơn có thể nhận.
-- [ ] P0: Màn hình chi tiết lộ trình.
-- [ ] P0: Nút cập nhật trạng thái giao hàng.
+- [ ] P1: Màn hình chi tiết lộ trình.
 - [ ] P1: UI COD/đối soát.
 - [ ] P1: UI báo cáo sự cố.
 
@@ -336,6 +335,7 @@
 - [x] `MerchantProfile`.
 - [x] `Product`.
 - [x] `Order`.
+- [x] Trường gắn shipper vào `Order`.
 - [x] `Proposal`.
 - [x] `Notification`.
 - [x] API auth: login/register/social.
@@ -353,7 +353,6 @@
 - [ ] P0: `Review`.
 - [ ] P0: Thêm trường payment/delivery vào `Order`.
 - [ ] P1: `Shop`/`MerchantProfile` liên kết với `User`.
-- [ ] P1: `ShipperAssignment` hoặc trường `shipperId` trong `Order`.
 - [ ] P1: `Transaction`/`Payment`.
 - [ ] P1: `MenuCategory`.
 - [ ] P1: `MenuOption`/`Topping`.
@@ -402,10 +401,9 @@
 
 1. Push schema DB và seed admin test khi kết nối Aiven đúng.
 2. Voucher + phí giao hàng + payment fields trong `Order`.
-3. Shipper workflow: nhận đơn, đã lấy hàng, đang giao, hoàn thành.
-4. Order tracking cho `Khách hàng`.
-5. Review + sentiment mock.
-6. API authorization theo role.
+3. Order tracking cho `Khách hàng`.
+4. Review + sentiment mock.
+5. API authorization theo role.
 
 ### 7.2 P1 sau khi demo P0 ổn định
 

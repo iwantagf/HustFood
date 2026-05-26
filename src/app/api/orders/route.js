@@ -2,6 +2,78 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { getDemoStore, isDemoMode } from '@/lib/demo/store';
 
+const SELLER_STATUSES = ['pending', 'ready_for_pickup', 'rejected'];
+const SHIPPER_STATUSES = ['picked_up', 'delivering', 'completed'];
+const LEGACY_SHIPPER_READY_STATUSES = ['processing'];
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+function buildOrderUpdate({ order, status, action, user }) {
+  const update = {};
+  const now = new Date();
+
+  if (action === 'accept') {
+    if (!['ready_for_pickup', ...LEGACY_SHIPPER_READY_STATUSES].includes(order.status)) {
+      return { error: 'Đơn hàng chưa sẵn sàng để nhận giao' };
+    }
+
+    if (order.shipperId && order.shipperId !== user.id) {
+      return { error: 'Đơn hàng đã được người giao hàng khác nhận' };
+    }
+
+    update.status = 'picked_up';
+    update.shipperId = user.id;
+    update.shipperName = user.displayName || user.username || 'Người giao hàng';
+    update.acceptedAt = now;
+    update.pickedUpAt = now;
+    return { update };
+  }
+
+  if (!status) {
+    return { error: 'Thiếu trạng thái đơn hàng' };
+  }
+
+  if (user.role === 'seller' || user.role === 'admin') {
+    if (!SELLER_STATUSES.includes(status) && !(user.role === 'admin' && status === 'completed')) {
+      return { error: 'Trạng thái này không thuộc luồng xử lý của người bán' };
+    }
+
+    update.status = status;
+    return { update };
+  }
+
+  if (user.role === 'shipper') {
+    if (!SHIPPER_STATUSES.includes(status)) {
+      return { error: 'Trạng thái này không thuộc luồng giao hàng' };
+    }
+
+    if (order.shipperId && order.shipperId !== user.id) {
+      return { error: 'Bạn không được phân công đơn hàng này' };
+    }
+
+    update.status = status;
+    update.shipperId = order.shipperId || user.id;
+    update.shipperName = order.shipperName || user.displayName || user.username || 'Người giao hàng';
+
+    if (status === 'picked_up' && !order.pickedUpAt) {
+      update.pickedUpAt = now;
+    }
+
+    if (status === 'completed') {
+      update.deliveredAt = now;
+    }
+
+    return { update };
+  }
+
+  return { error: 'Tài khoản không có quyền cập nhật đơn hàng' };
+}
+
 export async function GET(request) {
   try {
     const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
@@ -9,21 +81,15 @@ export async function GET(request) {
 
     if (isDemoMode()) {
       const store = getDemoStore();
-      return new Response(JSON.stringify(store.orders), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return json(store.orders);
     }
 
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' }
     });
-    return new Response(JSON.stringify(orders), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json(orders);
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch orders' }), { status: 500 });
+    return json({ error: 'Failed to fetch orders' }, 500);
   }
 }
 
@@ -43,14 +109,16 @@ export async function POST(request) {
         totalItems: body.totalItems,
         totalPrice: body.totalPrice,
         status: 'pending',
+        shipperId: null,
+        shipperName: null,
+        acceptedAt: null,
+        pickedUpAt: null,
+        deliveredAt: null,
         createdAt: new Date().toISOString()
       };
       store.orders.unshift(newOrder);
 
-      return new Response(JSON.stringify(newOrder), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return json(newOrder, 201);
     }
     
     const newOrder = await prisma.order.create({
@@ -64,12 +132,9 @@ export async function POST(request) {
       }
     });
     
-    return new Response(JSON.stringify(newOrder), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json(newOrder, 201);
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to create order' }), { status: 500 });
+    return json({ error: 'Failed to create order' }, 500);
   }
 }
 
@@ -78,33 +143,40 @@ export async function PUT(request) {
     const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
     if (auth.response) return auth.response;
 
-    const { id, status } = await request.json();
+    const { id, status, action } = await request.json();
+
+    if (!id) {
+      return json({ error: 'Thiếu mã đơn hàng' }, 400);
+    }
 
     if (isDemoMode()) {
       const store = getDemoStore();
       const order = store.orders.find((item) => item.id === id);
       if (!order) {
-        return new Response(JSON.stringify({ error: 'Order not found' }), { status: 404 });
+        return json({ error: 'Order not found' }, 404);
       }
-      order.status = status;
 
-      return new Response(JSON.stringify(order), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const result = buildOrderUpdate({ order, status, action, user: auth.user });
+      if (result.error) return json({ error: result.error }, 400);
+
+      Object.assign(order, result.update);
+      return json(order);
     }
+
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return json({ error: 'Order not found' }, 404);
+
+    const result = buildOrderUpdate({ order, status, action, user: auth.user });
+    if (result.error) return json({ error: result.error }, 400);
     
     const updatedOrder = await prisma.order.update({
       where: { id },
-      data: { status }
+      data: result.update
     });
     
-    return new Response(JSON.stringify(updatedOrder), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json(updatedOrder);
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Order not found or failed to update' }), { status: 404 });
+    return json({ error: 'Order not found or failed to update' }, 404);
   }
 }
 
@@ -119,21 +191,15 @@ export async function DELETE(request) {
       const store = getDemoStore();
       store.orders = store.orders.filter((order) => order.id !== id);
 
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return json({ success: true });
     }
     
     await prisma.order.delete({
       where: { id }
     });
     
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json({ success: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to delete order' }), { status: 500 });
+    return json({ error: 'Failed to delete order' }, 500);
   }
 }

@@ -89,8 +89,12 @@ export default function SellerPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ xác nhận</span>;
-      case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
+      case 'ready_for_pickup': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
+      case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
+      case 'picked_up': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã lấy hàng</span>;
+      case 'delivering': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
       case 'completed': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Hoàn thành</span>;
+      case 'rejected': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Từ chối</span>;
       default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
@@ -100,7 +104,7 @@ export default function SellerPage() {
     .reduce((acc, order) => acc + (order.totalPrice || 0), 0);
 
   const pendingCount = orders.filter(order => order.status === 'pending').length;
-  const processingCount = orders.filter(order => order.status === 'processing').length;
+  const processingCount = orders.filter(order => ['ready_for_pickup', 'processing', 'picked_up', 'delivering'].includes(order.status)).length;
   const completedCount = orders.filter(order => order.status === 'completed').length;
 
   const productSales = orders.reduce((acc, order) => {
@@ -385,14 +389,17 @@ export default function SellerPage() {
                     <td>{getStatusBadge(order.status)}</td>
                     <td>
                       {order.status === 'pending' && (
-                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'processing')}>
-                          Xác nhận
+                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>
+                          Sẵn sàng giao
                         </button>
                       )}
-                      {order.status === 'processing' && (
-                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'completed')}>
-                          Hoàn thành
-                        </button>
+                      {['ready_for_pickup', 'processing'].includes(order.status) && (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Đang chờ shipper</span>
+                      )}
+                      {['picked_up', 'delivering'].includes(order.status) && (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                          {order.shipperName ? `Shipper: ${order.shipperName}` : 'Shipper đang xử lý'}
+                        </span>
                       )}
                       {order.status === 'completed' && (
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

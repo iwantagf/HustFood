@@ -52,13 +52,18 @@ model MerchantProfile {
 }
 
 model Order {
-  id          String   @id @default(cuid())
-  customer    Json     // Store customer info (name, phone, address, etc.)
-  items       Json     // Store array of items {id, name, price, quantity, etc.}
+  id          String    @id @default(cuid())
+  customer    Json      // Store customer info (name, phone, address, etc.)
+  items       Json      // Store array of items {id, name, price, quantity, etc.}
   totalItems  Int
   totalPrice  Int
-  status      String   @default("pending") // pending, processing, completed
-  createdAt   DateTime @default(now())
+  status      String    @default("pending") // pending, ready_for_pickup, picked_up, delivering, completed
+  shipperId   String?
+  shipperName String?
+  acceptedAt  DateTime?
+  pickedUpAt  DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime  @default(now())
 }
 
 model Proposal {
