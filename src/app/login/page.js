@@ -11,7 +11,7 @@ const socialProviders = [
 ];
 
 export default function LoginPage() {
-  const { role, login } = useAuth();
+  const { role, isLoading, login } = useAuth();
   const router = useRouter();
   const next = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('next') || '/'
@@ -29,10 +29,10 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (role) {
+    if (!isLoading && role) {
       router.replace(next || roleRedirects[role] || '/');
     }
-  }, [role, next, router]);
+  }, [isLoading, role, next, router]);
 
   const completeLogin = (user) => {
     const isAcceptedUser = login(user);

@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const AuthContext = createContext();
 
 // RBAC catalog shared by login, navigation, and protected layouts.
-// Keep role ids stable because they are persisted in localStorage.
 export const roles = ['customer', 'seller', 'shipper', 'admin'];
 
 export const roleLabels = {
@@ -21,33 +20,34 @@ export const roleRedirects = {
   admin: '/admin'
 };
 
-function getStoredUser() {
-  if (typeof window === 'undefined') return null;
-
-  const storedUser = localStorage.getItem('hustfood_user');
-  if (!storedUser) return null;
-
-  try {
-    const user = JSON.parse(storedUser);
-    return user?.role && roles.includes(user.role) ? user : null;
-  } catch (error) {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(getStoredUser);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const role = user?.role && roles.includes(user.role) ? user.role : null;
 
   useEffect(() => {
-    if (user?.role && roles.includes(user.role)) {
-      localStorage.setItem('hustfood_user', JSON.stringify(user));
-      localStorage.setItem('hustfood_role', user.role);
-    } else {
-      localStorage.removeItem('hustfood_user');
-      localStorage.removeItem('hustfood_role');
+    let isCurrent = true;
+
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (isCurrent && res.ok && data.user?.role && roles.includes(data.user.role)) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        if (isCurrent) setUser(null);
+      } finally {
+        if (isCurrent) setIsLoading(false);
+      }
     }
-  }, [user]);
+
+    loadSession();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const login = (authenticatedUser) => {
     if (authenticatedUser?.role && roles.includes(authenticatedUser.role)) {
@@ -57,12 +57,17 @@ export function AuthProvider({ children }) {
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/session', { method: 'DELETE' });
+    } catch (error) {
+      // The client state is cleared even if the network request fails.
+    }
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, login, logout }}>
+    <AuthContext.Provider value={{ user, role, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

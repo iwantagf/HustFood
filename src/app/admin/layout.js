@@ -8,15 +8,16 @@ import styles from './admin.module.css';
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
 
   useEffect(() => {
+    if (isLoading) return;
     if (role !== 'admin') {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [role, router, pathname]);
+  }, [isLoading, role, router, pathname]);
 
-  if (role !== 'admin') {
+  if (isLoading || role !== 'admin') {
     return null;
   }
 

@@ -57,9 +57,9 @@
 #### 3.1.2 Chưa làm
 
 - [ ] P0: Chạy `npx prisma db push` và `npm run seed` trên DB thật khi host Aiven resolve được.
-- [ ] P1: Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
-- [ ] P1: Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
-- [ ] P1: Bảo vệ API theo role, không chỉ bảo vệ UI.
+- [x] P1: Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
+- [x] P1: Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
+- [x] P1: Bảo vệ API theo role, không chỉ bảo vệ UI.
 - [ ] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
@@ -414,4 +414,3 @@
 3. Realtime bằng WebSocket/SSE.
 4. Dashboard biểu đồ và lọc thời gian.
 5. OAuth thật và JWT/cookie.
-

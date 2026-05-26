@@ -1,7 +1,11 @@
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/auth/session';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
+    if (auth.response) return auth.response;
+
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' }
     });
@@ -16,6 +20,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const auth = await requireRole(request, ['customer']);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     
     const newOrder = await prisma.order.create({
@@ -40,6 +47,9 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
+    if (auth.response) return auth.response;
+
     const { id, status } = await request.json();
     
     const updatedOrder = await prisma.order.update({
@@ -58,6 +68,9 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   try {
+    const auth = await requireRole(request, ['seller', 'admin']);
+    if (auth.response) return auth.response;
+
     const { id } = await request.json();
     
     await prisma.order.delete({

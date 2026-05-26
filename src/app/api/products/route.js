@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/auth/session';
 
 export async function GET() {
   try {
@@ -16,6 +17,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const auth = await requireRole(request, ['admin']);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const newProduct = await prisma.product.create({
       data: {
@@ -37,6 +41,9 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
+    const auth = await requireRole(request, ['admin']);
+    if (auth.response) return auth.response;
+
     const { id } = await request.json();
     await prisma.product.delete({
       where: { id }
