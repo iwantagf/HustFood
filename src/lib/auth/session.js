@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sanitizeUser } from '@/lib/auth/users';
+import { isDemoMode } from '@/lib/demo/store';
 
 export const SESSION_COOKIE = 'hustfood_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
@@ -24,7 +25,12 @@ export function createSessionToken(user) {
   const header = base64UrlEncode({ alg: 'HS256', typ: 'JWT' });
   const payload = base64UrlEncode({
     sub: user.id,
+    email: user.email || null,
+    username: user.username || null,
+    displayName: user.displayName,
     role: user.role,
+    status: user.status || 'active',
+    provider: user.provider || 'credentials',
     iat: now,
     exp: now + SESSION_MAX_AGE
   });
@@ -95,6 +101,20 @@ export async function getCurrentUserFromRequest(request) {
   const session = verifySessionToken(token);
 
   if (!session) return null;
+
+  if (isDemoMode()) {
+    if (session.status === 'blocked') return null;
+
+    return {
+      id: session.sub,
+      email: session.email,
+      username: session.username,
+      displayName: session.displayName,
+      role: session.role,
+      status: session.status || 'active',
+      provider: session.provider || 'demo'
+    };
+  }
 
   const user = await prisma.user.findUnique({ where: { id: session.sub } });
   if (!user || user.status === 'blocked') return null;

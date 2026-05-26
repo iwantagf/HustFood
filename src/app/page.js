@@ -2,31 +2,38 @@ import styles from "./page.module.css";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
+import { getDemoStore, isDemoMode } from "@/lib/demo/store";
 
 
 export default async function Home() {
   let products = [];
   let merchantProfiles = [];
   try {
-    const { prisma } = await import('@/lib/prisma');
-    const [productData, profileData] = await Promise.all([
-      prisma.product.findMany({
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.merchantProfile.findMany({
-        where: { status: 'active' },
-        include: {
-          owner: {
-            select: {
-              displayName: true
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      products = store.products;
+      merchantProfiles = store.merchantProfiles.filter((profile) => profile.status === 'active');
+    } else {
+      const { prisma } = await import('@/lib/prisma');
+      const [productData, profileData] = await Promise.all([
+        prisma.product.findMany({
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.merchantProfile.findMany({
+          where: { status: 'active' },
+          include: {
+            owner: {
+              select: {
+                displayName: true
+              }
             }
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      })
-    ]);
-    products = productData;
-    merchantProfiles = profileData;
+          },
+          orderBy: { updatedAt: 'desc' }
+        })
+      ]);
+      products = productData;
+      merchantProfiles = profileData;
+    }
   } catch (e) {
     console.error("Error fetching home data:", e);
   }

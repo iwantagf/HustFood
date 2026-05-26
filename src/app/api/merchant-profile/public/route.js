@@ -1,7 +1,18 @@
 import { prisma } from '@/lib/prisma';
+import { getDemoStore, isDemoMode } from '@/lib/demo/store';
 
 export async function GET() {
   try {
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      const profiles = store.merchantProfiles.filter((profile) => profile.status === 'active');
+
+      return new Response(JSON.stringify(profiles), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const profiles = await prisma.merchantProfile.findMany({
       where: { status: 'active' },
       include: {

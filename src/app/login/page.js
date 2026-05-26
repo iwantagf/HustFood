@@ -122,9 +122,6 @@ export default function LoginPage() {
     <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem', background: '#f7f7f8' }}>
       <div style={{ width: '100%', maxWidth: '720px', background: '#fff', borderRadius: '16px', boxShadow: '0 24px 60px rgba(0,0,0,0.08)', padding: '2rem', border: '1px solid #ececec' }}>
         <h1 style={{ marginBottom: '0.75rem', fontSize: '2rem', color: '#111' }}>Đăng nhập HustFood</h1>
-        <p style={{ marginBottom: '1.5rem', color: '#555', lineHeight: '1.6' }}>
-          Tài khoản test quản trị viên: <strong>huyhoangdao</strong> / <strong>1</strong>.
-        </p>
 
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
           <button type="button" onClick={() => setMode('login')} style={{ padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #ddd', background: mode === 'login' ? '#111' : '#fff', color: mode === 'login' ? '#fff' : '#111', fontWeight: 700, cursor: 'pointer' }}>

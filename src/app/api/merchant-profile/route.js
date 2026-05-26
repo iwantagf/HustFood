@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
+import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 
 const DEFAULT_OWNER_ROLE = 'seller';
 
@@ -55,6 +56,34 @@ export async function GET(request) {
     const auth = await requireRole(request, ['seller', 'admin']);
     if (auth.response) return auth.response;
 
+    if (isDemoMode()) {
+      const store = getDemoStore();
+
+      if (auth.user.role === 'admin') {
+        return new Response(JSON.stringify(store.merchantProfiles), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      let profile = store.merchantProfiles.find((item) => item.ownerId === auth.user.id);
+      if (!profile) {
+        profile = {
+          ...buildDefaultProfile(auth.user),
+          id: createDemoId('demo-profile'),
+          owner: auth.user,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        store.merchantProfiles.unshift(profile);
+      }
+
+      return new Response(JSON.stringify(profile), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     if (auth.user.role === 'admin') {
       const profiles = await prisma.merchantProfile.findMany({
         include: {
@@ -96,6 +125,44 @@ export async function PUT(request) {
   try {
     const auth = await requireRole(request, ['seller']);
     if (auth.response) return auth.response;
+
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      let existingProfile = store.merchantProfiles.find((item) => item.ownerId === auth.user.id);
+
+      if (existingProfile?.status === 'blocked') {
+        return new Response(JSON.stringify({ error: 'Cửa hàng đã bị khóa. Vui lòng liên hệ Quản trị viên.' }), { status: 403 });
+      }
+
+      const body = await request.json();
+      const { data, error } = normalizeProfilePayload(body, existingProfile?.status);
+
+      if (error) {
+        return new Response(JSON.stringify({ error }), { status: 400 });
+      }
+
+      if (!existingProfile) {
+        existingProfile = {
+          id: createDemoId('demo-profile'),
+          ownerId: auth.user.id,
+          owner: auth.user,
+          createdAt: new Date().toISOString()
+        };
+        store.merchantProfiles.unshift(existingProfile);
+      }
+
+      Object.assign(existingProfile, {
+        ...data,
+        ownerId: auth.user.id,
+        owner: auth.user,
+        updatedAt: new Date().toISOString()
+      });
+
+      return new Response(JSON.stringify(existingProfile), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     const existingProfile = await prisma.merchantProfile.findUnique({
       where: { ownerId: auth.user.id }
@@ -141,6 +208,22 @@ export async function PATCH(request) {
 
     if (!id || !nextStatus) {
       return new Response(JSON.stringify({ error: 'Thiếu hồ sơ hoặc trạng thái hợp lệ' }), { status: 400 });
+    }
+
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      const profile = store.merchantProfiles.find((item) => item.id === id);
+      if (!profile) {
+        return new Response(JSON.stringify({ error: 'Không tìm thấy hồ sơ cửa hàng' }), { status: 404 });
+      }
+
+      profile.status = nextStatus;
+      profile.updatedAt = new Date().toISOString();
+
+      return new Response(JSON.stringify(profile), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const profile = await prisma.merchantProfile.update({

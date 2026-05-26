@@ -60,17 +60,13 @@ npx prisma generate
 npx prisma db push
 ```
 
-Seed dữ liệu mẫu và tài khoản test:
+Seed dữ liệu mẫu:
 
 ```bash
 npm run seed
 ```
 
-Tài khoản test quản trị viên:
-
-- Username: `huyhoangdao`
-- Password: `1`
-- Role: `Quản trị viên`
+Nếu cần seed tài khoản quản trị viên, cấu hình `SEED_ADMIN_USERNAME` và `SEED_ADMIN_PASSWORD` trong `.env`.
 
 ### 2.4 Chạy development server
 
@@ -102,9 +98,9 @@ Môi trường test tối thiểu:
 - Đã chạy `npm run seed` nếu cần tài khoản admin test.
 - Dev server chạy bằng `npm run dev`.
 
-### 3.2 Tài khoản test
+### 3.2 Tài khoản demo
 
-- `Quản trị viên`: `huyhoangdao` / `1`.
+- Tài khoản `Quản trị viên` demo lấy từ `DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env`.
 - Người dùng thường có thể tạo tài khoản tại `/login` bằng Gmail.
 - Social login hiện là mô phỏng qua Google/Facebook/Instagram, chưa phải OAuth thật.
 
@@ -113,7 +109,7 @@ Môi trường test tối thiểu:
 - `Khách hàng`: `/` -> thêm món -> `/cart` -> `/checkout` -> `/success`.
 - `Người bán`: `/login` -> đăng nhập/tạo tài khoản role `Người bán` -> `/seller`.
 - `Người giao hàng`: `/login` -> đăng nhập/tạo tài khoản role `Người giao hàng` -> `/shipper`.
-- `Quản trị viên`: `/login` -> `huyhoangdao` / `1` -> `/admin`.
+- `Quản trị viên`: `/login` -> đăng nhập bằng tài khoản demo trong `.env` -> `/admin`.
 
 ## 4. Các script có sẵn
 
@@ -230,7 +226,7 @@ curl http://localhost:3000/api/merchant-profile
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"identifier":"huyhoangdao","password":"1"}'
+  -d '{"identifier":"<username-or-email>","password":"<password>"}'
 ```
 
 Tạo tài khoản Gmail:
@@ -238,7 +234,7 @@ Tạo tài khoản Gmail:
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"tester@gmail.com","password":"1","displayName":"Tester","role":"customer"}'
+  -d '{"email":"tester@gmail.com","password":"<password>","displayName":"Tester","role":"customer"}'
 ```
 
 ## 6. Cấu trúc repository
@@ -320,8 +316,8 @@ Body:
 
 ```json
 {
-  "identifier": "huyhoangdao",
-  "password": "1"
+  "identifier": "<username-or-email>",
+  "password": "<password>"
 }
 ```
 
@@ -332,8 +328,8 @@ Response:
   "user": {
     "id": "...",
     "email": null,
-    "username": "huyhoangdao",
-    "displayName": "huyhoangdao",
+    "username": "...",
+    "displayName": "...",
     "role": "admin",
     "provider": "credentials"
   }

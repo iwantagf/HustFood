@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createPasswordHash } from '@/lib/auth/password';
 import { isGmailAddress, normalizeIdentifier, selfRegisterRoles } from '@/lib/auth/users';
 import { sessionJson } from '@/lib/auth/session';
+import { createDemoUser, isDemoMode } from '@/lib/demo/store';
 
 export async function POST(request) {
   try {
@@ -17,6 +18,16 @@ export async function POST(request) {
 
     if (password.length < 1) {
       return new Response(JSON.stringify({ error: 'Mật khẩu là bắt buộc' }), { status: 400 });
+    }
+
+    if (isDemoMode()) {
+      const result = createDemoUser({ email, password, displayName, role });
+
+      if (result.error) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 409 });
+      }
+
+      return sessionJson(result.user, { status: 201 });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });

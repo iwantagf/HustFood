@@ -51,7 +51,7 @@
 - [x] Thêm API tạo tài khoản Gmail: `/api/auth/register`.
 - [x] Thêm API social login demo: `/api/auth/social`.
 - [x] Hash mật khẩu bằng `scrypt` + salt riêng.
-- [x] Thêm seed tài khoản test `Quản trị viên`: `huyhoangdao` / `1`.
+- [x] Thêm seed tài khoản `Quản trị viên` qua biến môi trường.
 - [x] Guard route client-side cho `/checkout`, `/seller`, `/shipper`, `/admin`.
 
 #### 3.1.2 Chưa làm

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { normalizeIdentifier } from '@/lib/auth/users';
 import { verifyPassword } from '@/lib/auth/password';
 import { sessionJson } from '@/lib/auth/session';
+import { findDemoUserByCredentials, isDemoMode } from '@/lib/demo/store';
 
 export async function POST(request) {
   try {
@@ -11,6 +12,16 @@ export async function POST(request) {
 
     if (!identifier || !password) {
       return new Response(JSON.stringify({ error: 'Thiếu thông tin đăng nhập' }), { status: 400 });
+    }
+
+    if (isDemoMode()) {
+      const demoUser = findDemoUserByCredentials(identifier, password);
+
+      if (!demoUser) {
+        return new Response(JSON.stringify({ error: 'Sai username/email hoặc mật khẩu' }), { status: 401 });
+      }
+
+      return sessionJson(demoUser, { status: 200 });
     }
 
     const user = await prisma.user.findFirst({

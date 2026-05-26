@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { isGmailAddress, normalizeIdentifier, socialProviders } from '@/lib/auth/users';
 import { sessionJson } from '@/lib/auth/session';
+import { getOrCreateDemoSocialUser, isDemoMode } from '@/lib/demo/store';
 
 export async function POST(request) {
   try {
@@ -14,6 +15,16 @@ export async function POST(request) {
 
     if (!isGmailAddress(email)) {
       return new Response(JSON.stringify({ error: 'Nhập Gmail để mô phỏng đăng nhập social' }), { status: 400 });
+    }
+
+    if (isDemoMode()) {
+      const user = getOrCreateDemoSocialUser({
+        provider,
+        email,
+        displayName: body.displayName
+      });
+
+      return sessionJson(user, { status: 200 });
     }
 
     const existingByEmail = await prisma.user.findUnique({ where: { email } });
