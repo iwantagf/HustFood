@@ -1,41 +1,26 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-
-const roleLabels = {
-  customer: 'Khách hàng',
-  seller: 'Seller',
-  admin: 'Quản trị viên'
-};
+import { roleLabels, roleRedirects, useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const { role, login } = useAuth();
-  const [next, setNext] = useState('/');
+  const next = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('next') || '/'
+    : '/';
   const router = useRouter();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      setNext(params.get('next')); // We'll handle default inside the effect below
-    }
-  }, []);
-
-  const getRoleRedirect = (currentRole) => {
-    if (currentRole === 'seller') return '/seller';
-    if (currentRole === 'admin') return '/admin';
-    return '/'; // customer or null
-  };
-
-  useEffect(() => {
     if (role) {
-      router.replace(next || getRoleRedirect(role));
+      router.replace(next || roleRedirects[role] || '/');
     }
   }, [role, next, router]);
 
   const handleLogin = (selectedRole) => {
-    login(selectedRole);
-    router.replace(next || getRoleRedirect(selectedRole));
+    const isAcceptedRole = login(selectedRole);
+    if (isAcceptedRole) {
+      router.replace(next || roleRedirects[selectedRole] || '/');
+    }
   };
 
   return (
@@ -44,7 +29,8 @@ export default function LoginPage() {
         <h1 style={{ marginBottom: '1rem', fontSize: '2rem', color: '#111' }}>Chọn quyền truy cập</h1>
         <p style={{ marginBottom: '2rem', color: '#555', lineHeight: '1.7' }}>
           Vui lòng chọn vai trò để truy cập hệ thống. Mỗi vai trò sẽ có quyền riêng:
-          <strong> Khách hàng</strong> mua hàng, <strong>Seller</strong> xử lý đơn, <strong>Admin</strong> quản lý toàn bộ.
+          <strong> Khách hàng</strong> mua hàng, <strong>Merchant</strong> xử lý đơn,
+          <strong> Shipper</strong> nhận giao hàng, <strong>Admin</strong> quản lý toàn bộ.
         </p>
         <div style={{ display: 'grid', gap: '1rem' }}>
           {Object.entries(roleLabels).map(([value, label]) => (
