@@ -1,6 +1,14 @@
 const { PrismaClient } = require('@prisma/client');
+const { randomBytes, scryptSync } = require('crypto');
 
 const prisma = new PrismaClient();
+
+function createPasswordHash(password) {
+  const passwordSalt = randomBytes(16).toString('hex');
+  const passwordHash = scryptSync(password, passwordSalt, 64).toString('hex');
+
+  return { passwordHash, passwordSalt };
+}
 
 async function main() {
   // Clear existing products just in case
@@ -39,7 +47,29 @@ async function main() {
     });
   }
 
-  console.log("Database seeded with products!");
+  const { passwordHash, passwordSalt } = createPasswordHash('1');
+
+  await prisma.user.upsert({
+    where: { username: 'huyhoangdao' },
+    update: {
+      displayName: 'huyhoangdao',
+      role: 'admin',
+      provider: 'credentials',
+      passwordHash,
+      passwordSalt
+    },
+    create: {
+      username: 'huyhoangdao',
+      displayName: 'huyhoangdao',
+      role: 'admin',
+      provider: 'credentials',
+      providerAccountId: 'huyhoangdao',
+      passwordHash,
+      passwordSalt
+    }
+  });
+
+  console.log("Database seeded with products and test admin account!");
 }
 
 main()

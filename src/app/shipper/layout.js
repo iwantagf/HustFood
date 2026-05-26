@@ -9,7 +9,7 @@ export default function ShipperLayout({ children }) {
   const { role } = useAuth();
 
   useEffect(() => {
-    // Shipper screens are isolated from customer, merchant, and admin flows.
+    // Nguoi giao hang screens are isolated from other role flows.
     if (role !== 'shipper') {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }

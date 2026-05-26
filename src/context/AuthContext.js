@@ -8,10 +8,10 @@ const AuthContext = createContext();
 export const roles = ['customer', 'seller', 'shipper', 'admin'];
 
 export const roleLabels = {
-  customer: 'Khách hàng',
-  seller: 'Merchant',
-  shipper: 'Shipper',
-  admin: 'Quản trị viên'
+  customer: 'Khach hang',
+  seller: 'Nguoi ban',
+  shipper: 'Nguoi giao hang',
+  admin: 'Quan tri vien'
 };
 
 export const roleRedirects = {
@@ -21,38 +21,48 @@ export const roleRedirects = {
   admin: '/admin'
 };
 
-function getStoredRole() {
+function getStoredUser() {
   if (typeof window === 'undefined') return null;
 
-  const storedRole = localStorage.getItem('hustfood_role');
-  return storedRole && roles.includes(storedRole) ? storedRole : null;
+  const storedUser = localStorage.getItem('hustfood_user');
+  if (!storedUser) return null;
+
+  try {
+    const user = JSON.parse(storedUser);
+    return user?.role && roles.includes(user.role) ? user : null;
+  } catch (error) {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }) {
-  const [role, setRole] = useState(getStoredRole);
+  const [user, setUser] = useState(getStoredUser);
+  const role = user?.role && roles.includes(user.role) ? user.role : null;
 
   useEffect(() => {
-    if (role) {
-      localStorage.setItem('hustfood_role', role);
+    if (user?.role && roles.includes(user.role)) {
+      localStorage.setItem('hustfood_user', JSON.stringify(user));
+      localStorage.setItem('hustfood_role', user.role);
     } else {
+      localStorage.removeItem('hustfood_user');
       localStorage.removeItem('hustfood_role');
     }
-  }, [role]);
+  }, [user]);
 
-  const login = (newRole) => {
-    if (roles.includes(newRole)) {
-      setRole(newRole);
+  const login = (authenticatedUser) => {
+    if (authenticatedUser?.role && roles.includes(authenticatedUser.role)) {
+      setUser(authenticatedUser);
       return true;
     }
     return false;
   };
 
   const logout = () => {
-    setRole(null);
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ role, login, logout }}>
+    <AuthContext.Provider value={{ user, role, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

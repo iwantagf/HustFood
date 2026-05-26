@@ -16,6 +16,22 @@ model Product {
   createdAt DateTime @default(now())
 }
 
+model User {
+  id                String   @id @default(cuid())
+  email             String?  @unique
+  username          String?  @unique
+  displayName       String
+  role              String   @default("customer") // customer, seller, shipper, admin
+  provider          String   @default("credentials") // credentials, google, facebook, instagram
+  providerAccountId String
+  passwordHash      String?
+  passwordSalt      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
 model MerchantProfile {
   id          String   @id @default(cuid())
   ownerRole   String   @unique @default("seller")

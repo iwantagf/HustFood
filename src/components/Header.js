@@ -15,9 +15,9 @@ export default function Header() {
         <div className={styles.logo}><Link href="/">HustFood.</Link></div>
         <nav className={styles.nav}>
           <Link href="/" className={styles.navLink}>Trang Chủ</Link>
-          {role === 'seller' && <Link href="/seller" className={styles.navLink}>Merchant</Link>}
-          {role === 'shipper' && <Link href="/shipper" className={styles.navLink}>Shipper</Link>}
-          {role === 'admin' && <Link href="/admin" className={styles.navLink}>Admin</Link>}
+          {role === 'seller' && <Link href="/seller" className={styles.navLink}>Nguoi ban</Link>}
+          {role === 'shipper' && <Link href="/shipper" className={styles.navLink}>Nguoi giao hang</Link>}
+          {role === 'admin' && <Link href="/admin" className={styles.navLink}>Quan tri vien</Link>}
           <Link href="/#menu" className={styles.navLink}>Thực Đơn</Link>
         </nav>
         <div className={styles.headerActions}>

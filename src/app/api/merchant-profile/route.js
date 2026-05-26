@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 const DEFAULT_OWNER_ROLE = 'seller';
 const DEFAULT_PROFILE = {
   ownerRole: DEFAULT_OWNER_ROLE,
-  shopName: 'HustFood Merchant',
+  shopName: 'HustFood Nguoi ban',
   address: 'So 1 Dai Co Viet, Hai Ba Trung, Ha Noi',
   mapLocation: '21.0059,105.8431',
   openTime: '08:00',
@@ -45,8 +45,8 @@ function normalizeProfilePayload(body) {
 
 export async function GET() {
   try {
-    // The current demo auth has one Merchant role but no user table yet, so the
-    // profile is stored as a singleton keyed by ownerRole.
+    // The current demo auth has one Nguoi ban role but no user-owned shops yet,
+    // so the profile is stored as a singleton keyed by ownerRole.
     const profile = await prisma.merchantProfile.upsert({
       where: { ownerRole: DEFAULT_OWNER_ROLE },
       update: {},

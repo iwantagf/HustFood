@@ -29,7 +29,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className={styles.adminLayout}>
       <aside className={styles.sidebar}>
-        <div className={styles.logo}>HustFood Admin</div>
+        <div className={styles.logo}>HustFood Quan tri vien</div>
         <nav className={styles.nav}>
           <Link href="/admin" className={pathname === '/admin' ? styles.activeLink : styles.navLink}>
             Dashboard
@@ -49,7 +49,7 @@ export default function AdminLayout({ children }) {
       <main className={styles.mainContent}>
         <header className={styles.topbar}>
           <div className={styles.adminProfile}>
-            <span>Admin Manager</span>
+            <span>Quan tri vien</span>
             <div className={styles.avatar}>A</div>
           </div>
         </header>

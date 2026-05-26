@@ -8,13 +8,13 @@
 - Trang sản phẩm chính hiển thị thực đơn từ `src/data/products.json`.
 - Giỏ hàng lưu trong `localStorage` cho khách hàng.
 - Trang `checkout` chỉ mở cho vai trò `customer`.
-- Trang `seller` dành cho vai trò `seller`/Merchant, gồm:
-  - Dashboard Merchant.
+- Trang `seller` dành cho vai trò `seller`/Nguoi ban, gồm:
+  - Dashboard Nguoi ban.
   - Khởi tạo và cập nhật hồ sơ cửa hàng.
   - Theo dõi đơn hàng và cập nhật trạng thái.
   - Báo cáo doanh thu cơ bản.
-- Trang `shipper` dành cho vai trò `shipper`, gồm:
-  - Dashboard Shipper được bảo vệ bằng RBAC.
+- Trang `shipper` dành cho vai trò `shipper`/Nguoi giao hang, gồm:
+  - Dashboard Nguoi giao hang được bảo vệ bằng RBAC.
   - Khung luồng giao hàng để gắn module điều phối đơn ở update tiếp theo.
 - Trang `admin` dành cho vai trò `admin`, gồm:
   - Dashboard tổng quan đơn hàng.
@@ -27,7 +27,14 @@
   - `/api/upload`
 - Hệ thống phân quyền đơn giản theo vai trò:
   - `customer`, `seller`, `shipper`, `admin`.
-  - Người dùng chọn vai trò tại `/login`.
+  - Nhãn hiển thị lần lượt là `Khach hang`, `Nguoi ban`, `Nguoi giao hang`, `Quan tri vien`.
+  - Người dùng đăng nhập hoặc tạo tài khoản tại `/login`.
+- Xác thực demo qua cơ sở dữ liệu:
+  - Đăng nhập bằng username/Gmail và mật khẩu.
+  - Tạo tài khoản mới bằng Gmail cho vai trò `Khach hang`, `Nguoi ban` hoặc `Nguoi giao hang`.
+  - Đăng nhập social mô phỏng qua Google, Facebook, Instagram.
+  - Mật khẩu được lưu bằng hash `scrypt` và salt riêng, không lưu plaintext.
+  - Tài khoản test `Quan tri vien`: `huyhoangdao` / `1`.
 
 ## Khởi động dự án (Dành cho người dùng phổ thông)
 
@@ -61,6 +68,11 @@ Chạy lệnh sau để tự động tạo các bảng dữ liệu cần thiết
 npx prisma db push
 ```
 
+Seed dữ liệu mẫu và tài khoản test:
+```bash
+npm run seed
+```
+
 5. Khởi động Server:
 Chạy ở chế độ phát triển (Development):
 ```bash
@@ -85,7 +97,10 @@ Mở trình duyệt tại: `http://localhost:3000`
 - `src/app/admin/orders/page.js` - quản lý đơn hàng.
 - `src/app/checkout/page.js` - trang thanh toán.
 - `src/app/login/page.js` - trang chọn vai trò.
-- `src/app/api/merchant-profile/route.js` - API hồ sơ cửa hàng Merchant.
+- `src/app/api/auth/login/route.js` - API đăng nhập bằng username/Gmail.
+- `src/app/api/auth/register/route.js` - API tạo tài khoản Gmail.
+- `src/app/api/auth/social/route.js` - API đăng nhập social mô phỏng.
+- `src/app/api/merchant-profile/route.js` - API hồ sơ cửa hàng Nguoi ban.
 - `src/context/AuthContext.js` - quản lý quyền truy cập.
 - `src/context/CartContext.js` - quản lý giỏ hàng.
 
@@ -150,4 +165,4 @@ git push origin hotfix/ten-sua-chua
 
 - Dự án hiện dùng Next.js `16.x`, React `19.x`.
 - Các dữ liệu mẫu được lưu trong `src/data/` (và sử dụng Prisma với MySQL cho dữ liệu thật).
-- Trang admin, seller và shipper hiện đang dùng xác thực client-side đơn giản, phù hợp với demo nội bộ.
+- Phiên đăng nhập demo vẫn được lưu ở `localStorage`; quyền và mật khẩu được kiểm soát bằng bảng `User` trong database.

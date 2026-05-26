@@ -125,7 +125,7 @@ export default function SellerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(proposal)
       });
-      alert('Đã gửi đề xuất món mới! Đang chờ Admin duyệt.');
+      alert('Đã gửi đề xuất món mới! Đang chờ Quan tri vien duyệt.');
       setProposal({ name: '', desc: '', price: '', image: '' });
     } catch (err) {
       alert('Có lỗi xảy ra khi gửi đề xuất.');
@@ -181,7 +181,7 @@ export default function SellerPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Seller Dashboard</h1>
+          <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Nguoi ban Dashboard</h1>
           <Link href="/" style={{ textDecoration: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', color: '#333', fontWeight: '500', fontSize: '0.9rem', border: '1px solid #ddd' }}>
             ← Quay lại trang chủ
           </Link>
