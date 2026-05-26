@@ -19,6 +19,7 @@ export default function SellerPage() {
   });
   const [showNotifications, setShowNotifications] = useState(false);
   const [proposal, setProposal] = useState({ name: '', desc: '', price: '', image: '' });
+  const [profileImageFile, setProfileImageFile] = useState(null);
   const [isProposing, setIsProposing] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -138,15 +139,45 @@ export default function SellerPage() {
     setMerchantProfile(prev => ({ ...prev, [field]: value }));
   };
 
+  const getProfileStatusLabel = (status) => {
+    switch (status) {
+      case 'active': return 'Đang hoạt động';
+      case 'paused': return 'Tạm dừng';
+      case 'blocked': return 'Đã bị khóa';
+      case 'pending_review': return 'Chờ Quản trị viên duyệt';
+      default: return status || 'Chờ Quản trị viên duyệt';
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSavingProfile(true);
 
     try {
+      let imageUrl = merchantProfile.image || '/images/burger.png';
+
+      if (profileImageFile) {
+        const uploadData = new FormData();
+        uploadData.append('file', profileImageFile);
+
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadData
+        });
+        const uploadResult = await uploadRes.json();
+
+        if (!uploadRes.ok || !uploadResult.success) {
+          alert(uploadResult.error || 'Không tải được ảnh đại diện.');
+          return;
+        }
+
+        imageUrl = uploadResult.url;
+      }
+
       const res = await fetch('/api/merchant-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(merchantProfile)
+        body: JSON.stringify({ ...merchantProfile, image: imageUrl })
       });
 
       const data = await res.json();
@@ -157,6 +188,7 @@ export default function SellerPage() {
       }
 
       setMerchantProfile(data);
+      setProfileImageFile(null);
       alert('Đã lưu hồ sơ cửa hàng.');
     } catch (error) {
       console.error('Không lưu được hồ sơ cửa hàng:', error);
@@ -236,8 +268,8 @@ export default function SellerPage() {
               Thiết lập thông tin gian hàng để khách hàng có thể xem địa chỉ, giờ mở cửa và liên hệ.
             </p>
           </div>
-          <span className={`${styles.statusBadge} ${merchantProfile.status === 'active' ? styles.statusCompleted : styles.statusPending}`}>
-            {merchantProfile.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}
+          <span className={`${styles.statusBadge} ${merchantProfile.status === 'active' ? styles.statusCompleted : merchantProfile.status === 'blocked' ? styles.statusRejected : styles.statusPending}`}>
+            {getProfileStatusLabel(merchantProfile.status)}
           </span>
         </div>
 
@@ -267,14 +299,22 @@ export default function SellerPage() {
             <input type="text" value={merchantProfile.mapLocation || ''} onChange={e => handleProfileChange('mapLocation', e.target.value)} placeholder="21.0059,105.8431" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>URL ảnh đại diện</label>
-            <input type="text" value={merchantProfile.image || ''} onChange={e => handleProfileChange('image', e.target.value)} placeholder="/images/burger.png" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Ảnh đại diện</label>
+            <input type="file" accept="image/*" onChange={e => setProfileImageFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
+            {merchantProfile.image && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.65rem' }}>
+                <img src={merchantProfile.image} alt={merchantProfile.shopName || 'Ảnh cửa hàng'} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{profileImageFile ? profileImageFile.name : 'Ảnh hiện tại'}</span>
+              </div>
+            )}
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Trạng thái</label>
             <select value={merchantProfile.status || 'active'} onChange={e => handleProfileChange('status', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
+              <option value="pending_review" disabled>Chờ Quản trị viên duyệt</option>
               <option value="active">Đang hoạt động</option>
               <option value="paused">Tạm dừng nhận đơn</option>
+              <option value="blocked" disabled>Đã bị khóa</option>
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'end' }}>

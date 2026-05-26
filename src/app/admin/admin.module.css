@@ -192,6 +192,7 @@
 .statusPending { background: #fff8e6; color: var(--secondary); }
 .statusProcessing { background: #e6f0ff; color: #3b82f6; }
 .statusCompleted { background: #e6f8f1; color: #10b981; }
+.statusRejected { background: #fef2f2; color: #ef4444; }
 
 .actionBtn {
   padding: 0.6rem 1rem;

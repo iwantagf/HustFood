@@ -449,11 +449,11 @@ Xóa đơn hàng theo `id`.
 
 #### `GET /api/merchant-profile`
 
-Lấy hồ sơ cửa hàng người bán. Nếu chưa có, API tạo dữ liệu mặc định.
+Người bán lấy hồ sơ cửa hàng của chính mình. Quản trị viên lấy danh sách hồ sơ cửa hàng để duyệt/khóa.
 
 #### `PUT /api/merchant-profile`
 
-Cập nhật hồ sơ cửa hàng.
+Cập nhật hồ sơ cửa hàng của người bán đang đăng nhập.
 
 Body:
 
@@ -469,6 +469,23 @@ Body:
   "status": "active"
 }
 ```
+
+#### `PATCH /api/merchant-profile`
+
+Quản trị viên cập nhật trạng thái cửa hàng.
+
+Body:
+
+```json
+{
+  "id": "merchant_profile_id",
+  "status": "active"
+}
+```
+
+#### `GET /api/merchant-profile/public`
+
+Lấy danh sách cửa hàng đang hoạt động để hiển thị cho khách hàng.
 
 ### 8.5 Proposal APIs
 

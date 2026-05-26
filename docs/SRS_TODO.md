@@ -75,10 +75,10 @@
 #### 3.2.2 Chưa làm
 
 - [ ] P0: Push schema lên DB thật để tạo bảng `MerchantProfile`.
-- [ ] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
-- [ ] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
-- [ ] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
-- [ ] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
+- [x] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
+- [x] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
+- [x] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
+- [x] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
 
 ### 3.3 FR-03: Biên soạn, cập nhật thực đơn và tùy chọn món
 
