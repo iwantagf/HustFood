@@ -101,6 +101,11 @@ Môi trường test tối thiểu:
 ### 3.2 Tài khoản demo
 
 - Tài khoản `Quản trị viên` demo lấy từ `DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env`.
+- Các tài khoản test được seed bằng `npm run seed`:
+  - `dongmanhhung` / `1` / `Người bán hàng`
+  - `tadinhtam` / `1` / `Khách hàng`
+  - `doanducmanh` / `1` / `Shipper`
+  - `nguyendanhthai` / `1` / `Khách hàng`
 - Người dùng thường có thể tạo tài khoản tại `/login` bằng Gmail.
 - Social login hiện là mô phỏng qua Google/Facebook/Instagram, chưa phải OAuth thật.
 
