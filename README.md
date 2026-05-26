@@ -87,6 +87,25 @@ npm run build
 npm start
 ```
 
+### 2.6 Installation guide cho team
+
+Quy trình cài đặt từ máy mới:
+
+```bash
+git clone https://github.com/iwantagf/HustFood.git
+cd HustFood
+cp .env.example .env
+npm install
+npx prisma generate
+npx prisma db push
+npm run seed
+npm run dev
+```
+
+Sau khi chạy `npm run dev`, mở `http://localhost:3000`.
+
+Trước khi chạy các lệnh Prisma, cập nhật `DATABASE_URL` trong `.env` trỏ tới MySQL local hoặc database được team chia sẻ. Nếu dùng database managed như Aiven, giữ `ssl-mode=REQUIRED` trong connection string.
+
 ## 3. Môi trường kiểm thử
 
 ### 3.1 Thiết lập test local
