@@ -27,6 +27,49 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
+const DEFAULT_USERS = [
+  {
+    id: 'demo-user-dongmanhhung',
+    email: null,
+    username: 'dongmanhhung',
+    displayName: 'dongmanhhung',
+    role: 'seller',
+    status: 'active',
+    provider: 'credentials',
+    password: '1'
+  },
+  {
+    id: 'demo-user-tadinhtam',
+    email: null,
+    username: 'tadinhtam',
+    displayName: 'tadinhtam',
+    role: 'customer',
+    status: 'active',
+    provider: 'credentials',
+    password: '1'
+  },
+  {
+    id: 'demo-user-doanducmanh',
+    email: null,
+    username: 'doanducmanh',
+    displayName: 'doanducmanh',
+    role: 'shipper',
+    status: 'active',
+    provider: 'credentials',
+    password: '1'
+  },
+  {
+    id: 'demo-user-nguyendanhthai',
+    email: null,
+    username: 'nguyendanhthai',
+    displayName: 'nguyendanhthai',
+    role: 'customer',
+    status: 'active',
+    provider: 'credentials',
+    password: '1'
+  }
+];
+
 const DEFAULT_PROFILE = {
   id: 'demo-merchant-profile',
   ownerId: 'demo-seller',
@@ -51,7 +94,7 @@ const DEFAULT_PROFILE = {
 
 function createDemoStore() {
   return {
-    users: [],
+    users: DEFAULT_USERS.map((user) => ({ ...user })),
     products: [...DEFAULT_PRODUCTS],
     orders: [],
     proposals: [],
