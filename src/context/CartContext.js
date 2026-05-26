@@ -54,9 +54,10 @@ export function CartProvider({ children }) {
     const price = parseInt(priceStr, 10);
     return acc + (price * item.quantity);
   }, 0);
+  const [deliveryFee] = useState(15000);
   
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, totalItems, totalPrice, isMounted }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, totalItems, totalPrice, deliveryFee, isMounted }}>
       {children}
     </CartContext.Provider>
   );
