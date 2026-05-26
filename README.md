@@ -1,168 +1,650 @@
 # HustFood
 
-Ứng dụng bán đồ ăn nhanh xây dựng bằng Next.js với cấu trúc `app/` hiện đại.
+HustFood là ứng dụng đặt và giao đồ ăn trực tuyến được xây dựng bằng Next.js App Router, React và Prisma/MySQL. Dự án mô phỏng các luồng chính trong SRS: khách hàng đặt món, người bán xử lý đơn, người giao hàng nhận giao, quản trị viên quản lý nền tảng.
 
-## Các chức năng hiện tại
+## 1. System Requirements
 
-- Đặt món online với giỏ hàng và thanh toán.
-- Trang sản phẩm chính hiển thị thực đơn từ `src/data/products.json`.
-- Giỏ hàng lưu trong `localStorage` cho khách hàng.
-- Trang `checkout` chỉ mở cho vai trò `customer`.
-- Trang `seller` dành cho vai trò `seller`/Nguoi ban, gồm:
-  - Dashboard Nguoi ban.
-  - Khởi tạo và cập nhật hồ sơ cửa hàng.
-  - Theo dõi đơn hàng và cập nhật trạng thái.
-  - Báo cáo doanh thu cơ bản.
-- Trang `shipper` dành cho vai trò `shipper`/Nguoi giao hang, gồm:
-  - Dashboard Nguoi giao hang được bảo vệ bằng RBAC.
-  - Khung luồng giao hàng để gắn module điều phối đơn ở update tiếp theo.
-- Trang `admin` dành cho vai trò `admin`, gồm:
-  - Dashboard tổng quan đơn hàng.
-  - Quản lý đơn hàng.
-  - Quản lý thực đơn (thêm/xóa món).
-- API nội bộ với các route:
-  - `/api/orders`
-  - `/api/products`
-  - `/api/merchant-profile`
-  - `/api/upload`
-- Hệ thống phân quyền đơn giản theo vai trò:
-  - `customer`, `seller`, `shipper`, `admin`.
-  - Nhãn hiển thị lần lượt là `Khach hang`, `Nguoi ban`, `Nguoi giao hang`, `Quan tri vien`.
-  - Người dùng đăng nhập hoặc tạo tài khoản tại `/login`.
-- Xác thực demo qua cơ sở dữ liệu:
-  - Đăng nhập bằng username/Gmail và mật khẩu.
-  - Tạo tài khoản mới bằng Gmail cho vai trò `Khach hang`, `Nguoi ban` hoặc `Nguoi giao hang`.
-  - Đăng nhập social mô phỏng qua Google, Facebook, Instagram.
-  - Mật khẩu được lưu bằng hash `scrypt` và salt riêng, không lưu plaintext.
-  - Tài khoản test `Quan tri vien`: `huyhoangdao` / `1`.
+### 1.1 Runtime
 
-## Khởi động dự án (Dành cho người dùng phổ thông)
+- Node.js LTS, khuyến nghị Node.js 20+.
+- npm, đi kèm Node.js.
+- MySQL Server hoặc managed MySQL như Aiven.
+- Git.
 
-Yêu cầu hệ thống:
-- Node.js (Khuyên dùng bản LTS)
-- MySQL Server
+### 1.2 Project Stack
 
-Các bước triển khai:
+- Next.js `16.x`.
+- React `19.x`.
+- Prisma `5.x`.
+- MySQL datasource.
+- Client-side route guard theo role cho demo.
 
-1. Tải mã nguồn về máy:
+### 1.3 Environment Variables
+
+Tạo file `.env` từ file mẫu:
+
 ```bash
-git clone <URL_CUA_REPO>
-cd HustFood
+cp .env.example .env
 ```
 
-2. Cài đặt các thư viện yêu cầu:
+Biến bắt buộc:
+
+```env
+DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE?ssl-mode=REQUIRED"
+```
+
+Ghi chú:
+
+- Không commit `.env`.
+- Với Aiven hoặc managed MySQL, thường cần giữ `ssl-mode=REQUIRED`.
+- Nếu đổi schema Prisma, cần chạy lại `npx prisma db push`.
+
+## 2. Quick Start
+
+### 2.1 Install Dependencies
+
 ```bash
 npm install
 ```
 
-3. Cấu hình biến môi trường:
-Tạo file cấu hình để kết nối với cơ sở dữ liệu MySQL của bạn.
-```bash
-cp .env.example .env
-```
-(Lưu ý: Bạn hãy mở file `.env` vừa tạo và sửa lại dòng `DATABASE_URL` sao cho khớp với tên đăng nhập, mật khẩu, host, port và tên database của bạn trên MySQL. Nếu dùng Aiven hoặc managed MySQL, giữ tham số `ssl-mode=REQUIRED`.)
+### 2.2 Generate Prisma Client
 
-4. Khởi tạo Database với Prisma:
-Chạy lệnh sau để tự động tạo các bảng dữ liệu cần thiết vào MySQL:
+```bash
+npx prisma generate
+```
+
+### 2.3 Initialize Database
+
 ```bash
 npx prisma db push
 ```
 
 Seed dữ liệu mẫu và tài khoản test:
+
 ```bash
 npm run seed
 ```
 
-5. Khởi động Server:
-Chạy ở chế độ phát triển (Development):
+Tài khoản test quản trị viên:
+
+- Username: `huyhoangdao`
+- Password: `1`
+- Role: `Quan tri vien`
+
+### 2.4 Run Development Server
+
 ```bash
 npm run dev
 ```
 
-Hoặc build và chạy ở chế độ thực tế (Production):
+Mở trình duyệt tại:
+
+```text
+http://localhost:3000
+```
+
+### 2.5 Production Build
+
 ```bash
 npm run build
 npm start
 ```
 
-Mở trình duyệt tại: `http://localhost:3000`
+## 3. Test Environment
 
-## Cấu trúc chính
+### 3.1 Local Test Setup
 
-- `src/app/page.js` - trang chủ.
-- `src/app/seller/page.js` - trang seller.
-- `src/app/shipper/page.js` - trang shipper.
-- `src/app/admin/page.js` - trang admin dashboard.
-- `src/app/admin/menu/page.js` - quản lý thực đơn.
-- `src/app/admin/orders/page.js` - quản lý đơn hàng.
-- `src/app/checkout/page.js` - trang thanh toán.
-- `src/app/login/page.js` - trang chọn vai trò.
-- `src/app/api/auth/login/route.js` - API đăng nhập bằng username/Gmail.
-- `src/app/api/auth/register/route.js` - API tạo tài khoản Gmail.
-- `src/app/api/auth/social/route.js` - API đăng nhập social mô phỏng.
-- `src/app/api/merchant-profile/route.js` - API hồ sơ cửa hàng Nguoi ban.
-- `src/context/AuthContext.js` - quản lý quyền truy cập.
-- `src/context/CartContext.js` - quản lý giỏ hàng.
+Môi trường test tối thiểu:
 
-## Hướng dẫn đóng góp
+- `.env` có `DATABASE_URL` hợp lệ.
+- Database đã chạy `npx prisma db push`.
+- Đã chạy `npm run seed` nếu cần tài khoản admin test.
+- Dev server chạy bằng `npm run dev`.
 
-Nếu bạn muốn đóng góp:
+### 3.2 Test Accounts
 
-1. Tạo branch mới từ `main` hoặc branch chính hiện tại:
+- `Quan tri vien`: `huyhoangdao` / `1`.
+- Người dùng thường có thể tạo tài khoản tại `/login` bằng Gmail.
+- Social login hiện là mô phỏng qua Google/Facebook/Instagram, chưa phải OAuth thật.
+
+### 3.3 Main Manual Test Paths
+
+- `Khach hang`: `/` -> thêm món -> `/cart` -> `/checkout` -> `/success`.
+- `Nguoi ban`: `/login` -> đăng nhập/tạo tài khoản role `Nguoi ban` -> `/seller`.
+- `Nguoi giao hang`: `/login` -> đăng nhập/tạo tài khoản role `Nguoi giao hang` -> `/shipper`.
+- `Quan tri vien`: `/login` -> `huyhoangdao` / `1` -> `/admin`.
+
+## 4. Available Scripts
+
+```bash
+npm run dev
+```
+
+Chạy Next.js ở chế độ phát triển.
+
+```bash
+npm run build
+```
+
+Build production và kiểm tra lỗi compile.
+
+```bash
+npm start
+```
+
+Chạy build production sau khi đã `npm run build`.
+
+```bash
+npm run lint
+```
+
+Chạy ESLint toàn repo. Lưu ý: repo hiện còn một số lỗi lint legacy ở các page cũ liên quan rule `react-hooks/set-state-in-effect`.
+
+```bash
+npm run seed
+```
+
+Seed sản phẩm mẫu và tài khoản admin test.
+
+## 5. Debug Commands
+
+### 5.1 Prisma
+
+Validate schema:
+
+```bash
+npx prisma validate
+```
+
+Generate Prisma Client:
+
+```bash
+npx prisma generate
+```
+
+Sync schema lên database:
+
+```bash
+npx prisma db push
+```
+
+Mở Prisma Studio:
+
+```bash
+npx prisma studio
+```
+
+In schema từ database để kiểm tra kết nối:
+
+```bash
+npx prisma db pull --print
+```
+
+### 5.2 Next.js
+
+Build có debug:
+
+```bash
+npx next build --debug
+```
+
+Chạy dev server trên port khác:
+
+```bash
+npm run dev -- -p 3001
+```
+
+### 5.3 Git
+
+Kiểm tra branch và file thay đổi:
+
+```bash
+git status --short --branch
+```
+
+Xem commit gần nhất:
+
+```bash
+git log --oneline --decorate -5
+```
+
+Kiểm tra whitespace trước khi commit:
+
+```bash
+git diff --check
+```
+
+### 5.4 API Smoke Test
+
+Khi dev server đang chạy tại `http://localhost:3000`, có thể thử nhanh:
+
+```bash
+curl http://localhost:3000/api/products
+curl http://localhost:3000/api/orders
+curl http://localhost:3000/api/merchant-profile
+```
+
+Đăng nhập credential:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"huyhoangdao","password":"1"}'
+```
+
+Tạo tài khoản Gmail:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"tester@gmail.com","password":"1","displayName":"Tester","role":"customer"}'
+```
+
+## 6. Repository Structure
+
+```text
+.
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.js
+├── public/
+│   └── images/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── admin/
+│   │   ├── cart/
+│   │   ├── checkout/
+│   │   ├── login/
+│   │   ├── seller/
+│   │   ├── shipper/
+│   │   ├── success/
+│   │   ├── layout.js
+│   │   └── page.js
+│   ├── components/
+│   ├── context/
+│   └── lib/
+├── docs/
+│   └── SRS_TODO.md
+├── .env.example
+├── package.json
+└── README.md
+```
+
+### 6.1 Important Files
+
+- `prisma/schema.prisma`: Prisma models and MySQL datasource.
+- `prisma/seed.js`: seed products and test admin account.
+- `src/lib/prisma.js`: shared Prisma client.
+- `src/lib/auth/password.js`: password hashing and verification.
+- `src/lib/auth/users.js`: auth helpers and role labels.
+- `src/context/AuthContext.js`: demo auth session and role context.
+- `src/context/CartContext.js`: localStorage cart state.
+- `src/components/Header.js`: navigation and role-aware links.
+- `docs/SRS_TODO.md`: implementation checklist mapped to SRS.
+
+## 7. Main Pages
+
+### 7.1 Public and Customer
+
+- `/`: home page and product menu.
+- `/cart`: shopping cart.
+- `/checkout`: checkout, allowed for `customer`.
+- `/success`: order success page.
+- `/login`: credential login, Gmail registration, demo social login.
+
+### 7.2 Nguoi ban
+
+- `/seller`: seller dashboard, merchant profile, order status update, product proposal, revenue summary.
+
+### 7.3 Nguoi giao hang
+
+- `/shipper`: protected shipper dashboard placeholder for delivery workflow.
+
+### 7.4 Quan tri vien
+
+- `/admin`: admin dashboard.
+- `/admin/orders`: order management.
+- `/admin/menu`: menu management.
+
+## 8. API Routes
+
+### 8.1 Auth APIs
+
+#### `POST /api/auth/login`
+
+Đăng nhập bằng username/Gmail và mật khẩu.
+
+Body:
+
+```json
+{
+  "identifier": "huyhoangdao",
+  "password": "1"
+}
+```
+
+Response:
+
+```json
+{
+  "user": {
+    "id": "...",
+    "email": null,
+    "username": "huyhoangdao",
+    "displayName": "huyhoangdao",
+    "role": "admin",
+    "provider": "credentials"
+  }
+}
+```
+
+#### `POST /api/auth/register`
+
+Tạo tài khoản bằng Gmail. Cho phép role `customer`, `seller`, `shipper`.
+
+Body:
+
+```json
+{
+  "email": "tester@gmail.com",
+  "password": "1",
+  "displayName": "Tester",
+  "role": "customer"
+}
+```
+
+#### `POST /api/auth/social`
+
+Đăng nhập social mô phỏng. Provider hỗ trợ: `google`, `facebook`, `instagram`.
+
+Body:
+
+```json
+{
+  "provider": "google",
+  "email": "tester@gmail.com"
+}
+```
+
+### 8.2 Product APIs
+
+#### `GET /api/products`
+
+Lấy danh sách món ăn.
+
+#### `POST /api/products`
+
+Tạo món ăn.
+
+Body:
+
+```json
+{
+  "name": "Burger",
+  "desc": "Mo ta mon an",
+  "price": "65.000d",
+  "image": "/images/burger.png"
+}
+```
+
+#### `DELETE /api/products`
+
+Xóa món ăn theo `id`.
+
+Body:
+
+```json
+{
+  "id": "product_id"
+}
+```
+
+### 8.3 Order APIs
+
+#### `GET /api/orders`
+
+Lấy danh sách đơn hàng.
+
+#### `POST /api/orders`
+
+Tạo đơn hàng.
+
+Body:
+
+```json
+{
+  "customer": {
+    "name": "Nguyen Van A",
+    "phone": "0987654321",
+    "address": "Ha Noi",
+    "notes": "",
+    "paymentMethod": "cod"
+  },
+  "items": [],
+  "totalItems": 1,
+  "totalPrice": 65000
+}
+```
+
+#### `PUT /api/orders`
+
+Cập nhật trạng thái đơn.
+
+Body:
+
+```json
+{
+  "id": "#HF1234",
+  "status": "processing"
+}
+```
+
+#### `DELETE /api/orders`
+
+Xóa đơn hàng theo `id`.
+
+### 8.4 Merchant Profile APIs
+
+#### `GET /api/merchant-profile`
+
+Lấy hồ sơ cửa hàng người bán. Nếu chưa có, API tạo dữ liệu mặc định.
+
+#### `PUT /api/merchant-profile`
+
+Cập nhật hồ sơ cửa hàng.
+
+Body:
+
+```json
+{
+  "shopName": "HustFood Nguoi ban",
+  "address": "So 1 Dai Co Viet, Hai Ba Trung, Ha Noi",
+  "mapLocation": "21.0059,105.8431",
+  "openTime": "08:00",
+  "closeTime": "22:00",
+  "phone": "0987654321",
+  "image": "/images/burger.png",
+  "status": "active"
+}
+```
+
+### 8.5 Proposal APIs
+
+#### `GET /api/proposals`
+
+Lấy danh sách đề xuất món mới.
+
+#### `POST /api/proposals`
+
+Người bán gửi đề xuất món mới.
+
+#### `PUT /api/proposals`
+
+Quản trị viên duyệt hoặc từ chối đề xuất.
+
+Body:
+
+```json
+{
+  "id": "proposal_id",
+  "status": "accepted"
+}
+```
+
+Nếu `status = accepted`, hệ thống tạo món mới trong `Product`.
+
+### 8.6 Notification APIs
+
+#### `GET /api/notifications`
+
+Lấy danh sách thông báo.
+
+#### `PUT /api/notifications`
+
+Đánh dấu thông báo đã đọc.
+
+Body:
+
+```json
+{
+  "id": "notification_id"
+}
+```
+
+Đánh dấu tất cả:
+
+```json
+{
+  "id": "all"
+}
+```
+
+### 8.7 Upload API
+
+#### `POST /api/upload`
+
+Upload file ảnh. Kiểm tra implementation cụ thể tại `src/app/api/upload/route.js`.
+
+## 9. Database Models
+
+### 9.1 `User`
+
+Lưu tài khoản đăng nhập.
+
+- `email`: Gmail cho tài khoản tự tạo hoặc social.
+- `username`: dùng cho tài khoản admin test.
+- `role`: `customer`, `seller`, `shipper`, `admin`.
+- `provider`: `credentials`, `google`, `facebook`, `instagram`.
+- `passwordHash`, `passwordSalt`: lưu mật khẩu đã hash, không lưu plaintext.
+
+### 9.2 `MerchantProfile`
+
+Lưu hồ sơ cửa hàng người bán: tên quán, địa chỉ, tọa độ, giờ mở/đóng cửa, số điện thoại, ảnh, trạng thái.
+
+### 9.3 `Product`
+
+Lưu món ăn.
+
+### 9.4 `Order`
+
+Lưu đơn hàng. Hiện `customer` và `items` đang là JSON để demo nhanh.
+
+### 9.5 `Proposal`
+
+Lưu đề xuất món mới từ người bán.
+
+### 9.6 `Notification`
+
+Lưu thông báo nội bộ cho dashboard.
+
+## 10. Current Feature Status
+
+### 10.1 Done or Partially Done
+
+- RBAC demo với 4 role.
+- Credential login, Gmail registration, demo social login.
+- Password hashing bằng `scrypt`.
+- Customer product menu, cart, checkout.
+- Seller dashboard, merchant profile, order status update.
+- Shipper protected dashboard placeholder.
+- Admin dashboard, order/menu/proposal management.
+- Prisma schema for current demo models.
+
+### 10.2 Not Yet Done
+
+Chi tiết theo SRS nằm trong:
+
+```text
+docs/SRS_TODO.md
+```
+
+Các phần lớn còn thiếu:
+
+- Voucher và phí giao hàng.
+- Shipper workflow thật.
+- Order tracking cho khách hàng.
+- Review/rating.
+- Sentiment analysis.
+- API authorization server-side.
+- JWT/cookie auth thay cho `localStorage`.
+- Realtime WebSocket/SSE.
+
+## 11. Contribution Guide
+
+### 11.1 Branch Naming
+
+Tạo branch từ `main` hoặc branch đang được nhóm thống nhất:
 
 ```bash
 git checkout main
 git pull
+git checkout -b features/ten-tinh-nang
 ```
 
-2. Chọn tên branch phù hợp:
+Gợi ý:
 
-- `features/ten-tinh-nang` cho phát triển tính năng mới.
-- `hotfix/ten-sua-chua` cho sửa lỗi khẩn cấp.
+- `features/ten-tinh-nang` cho feature.
+- `hotfix/ten-loi` cho sửa lỗi khẩn cấp.
+- `docs/noi-dung` cho tài liệu.
 
-Ví dụ:
+### 11.2 Before Commit
+
+Chạy các lệnh tối thiểu:
 
 ```bash
-git checkout -b features/seller-dashboard
+npx prisma validate
+npm run build
+git diff --check
 ```
 
-hoặc:
+Nếu thay đổi auth/API quan trọng, test thêm bằng curl hoặc UI.
+
+### 11.3 Commit Message
+
+Dùng message rõ ràng:
 
 ```bash
-git checkout -b hotfix/fix-checkout-bug
+git commit -m "feat: add voucher checkout flow"
+git commit -m "fix: guard seller order update"
+git commit -m "docs: update api guide"
 ```
 
-3. Thực hiện thay đổi và commit rõ ràng:
+### 11.4 Pull Request Checklist
 
-```bash
-git add .
-git commit -m "feat: thêm tính năng ..."    # với feature
-# hoặc
-git commit -m "fix: sửa lỗi ..."              # với hotfix
-```
+Trong PR nên ghi:
 
-4. Đẩy branch lên remote:
+- Mục tiêu thay đổi.
+- File/module chính đã sửa.
+- API/DB migration nếu có.
+- Cách test.
+- Screenshot nếu thay đổi GUI.
+- Rủi ro hoặc phần chưa hoàn thiện.
 
-```bash
-git push origin features/ten-tinh-nang
-```
+## 12. Known Issues
 
-hoặc:
-
-```bash
-git push origin hotfix/ten-sua-chua
-```
-
-5. Tạo Pull Request mô tả rõ mục đích, thay đổi chính và cách test.
-
-6. Với hotfix, ưu tiên:
-
-- tạo branch từ `main`
-- sửa nhanh, review nhanh
-- merge về `main` sau khi kiểm tra
-
-## Ghi chú
-
-- Dự án hiện dùng Next.js `16.x`, React `19.x`.
-- Các dữ liệu mẫu được lưu trong `src/data/` (và sử dụng Prisma với MySQL cho dữ liệu thật).
-- Phiên đăng nhập demo vẫn được lưu ở `localStorage`; quyền và mật khẩu được kiểm soát bằng bảng `User` trong database.
+- `npm run lint` toàn repo có thể fail do một số lỗi legacy ở page cũ với rule `react-hooks/set-state-in-effect`.
+- Auth hiện vẫn lưu session demo ở `localStorage`; SRS yêu cầu JWT/cookie và RBAC server-side.
+- `npx prisma db push` cần DB reachable. Nếu DNS/host Aiven không resolve, cần kiểm tra network, host, port và SSL.
+- Social login hiện là demo endpoint, chưa tích hợp OAuth thật.
+- Một số UI còn dùng `<img>` nên ESLint có thể cảnh báo về tối ưu ảnh Next.js.
