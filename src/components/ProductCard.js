@@ -9,6 +9,7 @@ export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { role } = useAuth();
   const router = useRouter();
+  const canOrder = !role || role === 'customer';
 
   const handleAdd = () => {
     if (!role) {
@@ -27,7 +28,7 @@ export default function ProductCard({ product }) {
       <p className={styles.productDesc}>{product.desc}</p>
       <div className={styles.productFooter}>
         <span className={styles.productPrice}>{product.price}</span>
-        {role !== 'seller' && role !== 'admin' && (
+        {canOrder && (
           <button className={styles.addBtn} onClick={handleAdd}>+</button>
         )}
       </div>

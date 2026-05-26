@@ -8,10 +8,13 @@
 - Trang sản phẩm chính hiển thị thực đơn từ `src/data/products.json`.
 - Giỏ hàng lưu trong `localStorage` cho khách hàng.
 - Trang `checkout` chỉ mở cho vai trò `customer`.
-- Trang `seller` dành cho vai trò `seller`, gồm:
-  - Dashboard seller.
+- Trang `seller` dành cho vai trò `seller`/Merchant, gồm:
+  - Dashboard Merchant.
   - Theo dõi đơn hàng và cập nhật trạng thái.
   - Báo cáo doanh thu cơ bản.
+- Trang `shipper` dành cho vai trò `shipper`, gồm:
+  - Dashboard Shipper được bảo vệ bằng RBAC.
+  - Khung luồng giao hàng để gắn module điều phối đơn ở update tiếp theo.
 - Trang `admin` dành cho vai trò `admin`, gồm:
   - Dashboard tổng quan đơn hàng.
   - Quản lý đơn hàng.
@@ -21,7 +24,7 @@
   - `/api/products`
   - `/api/upload`
 - Hệ thống phân quyền đơn giản theo vai trò:
-  - `customer`, `seller`, `admin`.
+  - `customer`, `seller`, `shipper`, `admin`.
   - Người dùng chọn vai trò tại `/login`.
 
 ## Khởi động dự án (Dành cho người dùng phổ thông)
@@ -48,7 +51,7 @@ Tạo file cấu hình để kết nối với cơ sở dữ liệu MySQL của 
 ```bash
 cp .env.example .env
 ```
-(Lưu ý: Bạn hãy mở file `.env` vừa tạo và sửa lại dòng `DATABASE_URL` sao cho khớp với tên đăng nhập, mật khẩu và tên database của bạn trên MySQL).
+(Lưu ý: Bạn hãy mở file `.env` vừa tạo và sửa lại dòng `DATABASE_URL` sao cho khớp với tên đăng nhập, mật khẩu, host, port và tên database của bạn trên MySQL. Nếu dùng Aiven hoặc managed MySQL, giữ tham số `ssl-mode=REQUIRED`.)
 
 4. Khởi tạo Database với Prisma:
 Chạy lệnh sau để tự động tạo các bảng dữ liệu cần thiết vào MySQL:
@@ -74,6 +77,7 @@ Mở trình duyệt tại: `http://localhost:3000`
 
 - `src/app/page.js` - trang chủ.
 - `src/app/seller/page.js` - trang seller.
+- `src/app/shipper/page.js` - trang shipper.
 - `src/app/admin/page.js` - trang admin dashboard.
 - `src/app/admin/menu/page.js` - quản lý thực đơn.
 - `src/app/admin/orders/page.js` - quản lý đơn hàng.
@@ -143,4 +147,4 @@ git push origin hotfix/ten-sua-chua
 
 - Dự án hiện dùng Next.js `16.x`, React `19.x`.
 - Các dữ liệu mẫu được lưu trong `src/data/` (và sử dụng Prisma với MySQL cho dữ liệu thật).
-- Trang admin và seller hiện đang dùng xác thực client-side đơn giản, phù hợp với demo nội bộ.
+- Trang admin, seller và shipper hiện đang dùng xác thực client-side đơn giản, phù hợp với demo nội bộ.

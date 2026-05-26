@@ -1,18 +1,13 @@
 "use client";
 import styles from '@/app/page.module.css';
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
+import { roleLabels, useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-
-const roleLabels = {
-  customer: 'Khách hàng',
-  seller: 'Seller',
-  admin: 'Quản trị viên'
-};
 
 export default function Header() {
   const { totalItems, isMounted } = useCart();
   const { role, logout } = useAuth();
+  const canUseCart = !role || role === 'customer';
   
   return (
     <header className={styles.header}>
@@ -20,9 +15,10 @@ export default function Header() {
         <div className={styles.logo}><Link href="/">HustFood.</Link></div>
         <nav className={styles.nav}>
           <Link href="/" className={styles.navLink}>Trang Chủ</Link>
-          {role === 'seller' && <Link href="/seller" className={styles.navLink}>Seller</Link>}
+          {role === 'seller' && <Link href="/seller" className={styles.navLink}>Merchant</Link>}
+          {role === 'shipper' && <Link href="/shipper" className={styles.navLink}>Shipper</Link>}
           {role === 'admin' && <Link href="/admin" className={styles.navLink}>Admin</Link>}
-          <a href="/#menu" className={styles.navLink}>Thực Đơn</a>
+          <Link href="/#menu" className={styles.navLink}>Thực Đơn</Link>
         </nav>
         <div className={styles.headerActions}>
           {role ? (
@@ -34,7 +30,7 @@ export default function Header() {
             <Link href="/login" className={styles.navLink}>Đăng nhập</Link>
           )}
         </div>
-        {role !== 'seller' && role !== 'admin' && (
+        {canUseCart && (
           <Link href="/cart" className={styles.cartBtn}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"></circle>
