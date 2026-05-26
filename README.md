@@ -605,7 +605,7 @@ Lưu thông báo nội bộ cho dashboard.
 - Password hashing bằng `scrypt`.
 - Customer product menu, cart, checkout.
 - Seller dashboard, merchant profile, order status update.
-- Shipper protected dashboard placeholder.
+- Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
 - Admin dashboard, order/menu/proposal management.
 - Prisma schema for current demo models.
 
@@ -620,7 +620,6 @@ docs/SRS_TODO.md
 Các phần lớn còn thiếu:
 
 - Voucher và phí giao hàng.
-- Shipper workflow thật.
 - Order tracking cho khách hàng.
 - Review/rating.
 - Sentiment analysis.
