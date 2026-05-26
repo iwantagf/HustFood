@@ -6,21 +6,27 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [products, setProducts] = useState([]);
+  const [merchantProfiles, setMerchantProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, proposalsRes, productsRes] = await Promise.all([
+      const [ordersRes, proposalsRes, productsRes, profilesRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/proposals'),
-        fetch('/api/products')
+        fetch('/api/products'),
+        fetch('/api/merchant-profile')
       ]);
-      const ordersData = await ordersRes.json();
-      const proposalsData = await proposalsRes.json();
-      const productsData = await productsRes.json();
+      const [ordersData, proposalsData, productsData, profilesData] = await Promise.all([
+        ordersRes.json(),
+        proposalsRes.json(),
+        productsRes.json(),
+        profilesRes.json()
+      ]);
       setOrders(ordersData);
       setProposals(proposalsData);
       setProducts(productsData);
+      setMerchantProfiles(Array.isArray(profilesData) ? profilesData : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -29,9 +35,12 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const initialFetch = setTimeout(fetchData, 0);
     const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
   }, []);
 
   const todayTotal = orders
@@ -47,6 +56,16 @@ export default function DashboardPage() {
       case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang nấu & giao</span>;
       case 'completed': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Hoàn thành</span>;
       default: return null;
+    }
+  };
+
+  const getMerchantStatusBadge = (status) => {
+    switch (status) {
+      case 'active': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Đã duyệt</span>;
+      case 'paused': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Tạm dừng</span>;
+      case 'blocked': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Đã khóa</span>;
+      case 'pending_review': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ duyệt</span>;
+      default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
 
@@ -94,7 +113,29 @@ export default function DashboardPage() {
     }
   };
 
+  const handleMerchantStatus = async (id, status) => {
+    try {
+      const res = await fetch('/api/merchant-profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không cập nhật được cửa hàng.');
+        return;
+      }
+
+      setMerchantProfiles(prev => prev.map(profile => profile.id === id ? data : profile));
+    } catch (e) {
+      console.error(e);
+      alert('Có lỗi xảy ra khi cập nhật cửa hàng.');
+    }
+  };
+
   const pendingProposals = proposals.filter(p => p.status === 'pending');
+  const pendingProfiles = merchantProfiles.filter(profile => profile.status === 'pending_review').length;
 
   return (
     <>
@@ -122,6 +163,14 @@ export default function DashboardPage() {
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Đã Giao Xong</div>
             <div className={styles.statValue}>{completedCount} Đơn</div>
+          </div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconYellow}`}>🏪</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Cửa Hàng Chờ Duyệt</div>
+            <div className={styles.statValue}>{pendingProfiles}</div>
           </div>
         </div>
       </div>
@@ -160,6 +209,56 @@ export default function DashboardPage() {
           </tbody>
         </table>
       </div>
+
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Duyệt Cửa Hàng Người Bán</h2>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Cửa Hàng</th>
+              <th>Người Bán</th>
+              <th>Liên Hệ</th>
+              <th>Trạng Thái</th>
+              <th>Hành Động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {merchantProfiles.map(profile => (
+              <tr key={profile.id}>
+                <td>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    {profile.image ? <img src={profile.image} alt={profile.shopName} style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }} /> : null}
+                    <div>
+                      <div style={{ fontWeight: '700' }}>{profile.shopName}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{profile.address}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>{profile.owner?.displayName || profile.owner?.email || 'Chưa gắn user'}</td>
+                <td>{profile.phone}</td>
+                <td>{getMerchantStatusBadge(profile.status)}</td>
+                <td>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {profile.status !== 'active' && (
+                      <button onClick={() => handleMerchantStatus(profile.id, 'active')} className={styles.actionBtn}>Duyệt</button>
+                    )}
+                    {profile.status !== 'blocked' && (
+                      <button onClick={() => handleMerchantStatus(profile.id, 'blocked')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.85rem' }}>Khóa</button>
+                    )}
+                    {profile.status === 'blocked' && (
+                      <button onClick={() => handleMerchantStatus(profile.id, 'pending_review')} style={{ background: '#f3f4f6', color: '#111', border: '1px solid #ddd', padding: '0.6rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.85rem' }}>Mở xét duyệt</button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {merchantProfiles.length === 0 && (
+              <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Chưa có hồ sơ cửa hàng nào.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Yêu Cầu Món Mới</h2>
       <div className={styles.tableContainer}>
         <table className={styles.table}>

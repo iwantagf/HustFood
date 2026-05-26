@@ -198,6 +198,11 @@
   background-color: var(--surface);
 }
 
+.storeSection {
+  padding: 5rem 0;
+  background-color: var(--bg-color);
+}
+
 .sectionHeader {
   text-align: center;
   margin-bottom: 3.5rem;
@@ -219,6 +224,60 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
+}
+
+.storeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.storeCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.storeImage {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: var(--primary-light);
+}
+
+.storeInfo {
+  padding: 1.25rem;
+}
+
+.storeOwner {
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.storeName {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.storeAddress {
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.storeMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .productCard {

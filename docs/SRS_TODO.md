@@ -51,7 +51,7 @@
 - [x] Thêm API tạo tài khoản Gmail: `/api/auth/register`.
 - [x] Thêm API social login demo: `/api/auth/social`.
 - [x] Hash mật khẩu bằng `scrypt` + salt riêng.
-- [x] Thêm seed tài khoản test `Quản trị viên`: `huyhoangdao` / `1`.
+- [x] Thêm seed tài khoản `Quản trị viên` qua biến môi trường.
 - [x] Guard route client-side cho `/checkout`, `/seller`, `/shipper`, `/admin`.
 
 #### 3.1.2 Chưa làm
@@ -75,10 +75,10 @@
 #### 3.2.2 Chưa làm
 
 - [ ] P0: Push schema lên DB thật để tạo bảng `MerchantProfile`.
-- [ ] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
-- [ ] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
-- [ ] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
-- [ ] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
+- [x] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
+- [x] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
+- [x] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
+- [x] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
 
 ### 3.3 FR-03: Biên soạn, cập nhật thực đơn và tùy chọn món
 

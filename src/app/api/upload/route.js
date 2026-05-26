@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import path from "path";
-import { writeFile } from "fs/promises";
+import { mkdir, writeFile } from "fs/promises";
 import { requireRole } from '@/lib/auth/session';
 
 export async function POST(req) {
@@ -19,9 +19,11 @@ export async function POST(req) {
 
   // Generate unique filename
   const filename = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.]/g, "");
-  const uploadPath = path.join(process.cwd(), "public/uploads", filename);
+  const uploadDir = path.join(process.cwd(), "public/uploads");
+  const uploadPath = path.join(uploadDir, filename);
 
   try {
+    await mkdir(uploadDir, { recursive: true });
     await writeFile(uploadPath, buffer);
     return NextResponse.json({ success: true, url: `/uploads/${filename}` });
   } catch (error) {
