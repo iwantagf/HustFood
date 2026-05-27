@@ -8,9 +8,8 @@ import { useEffect, useState } from 'react';
 
 export default function CheckoutPage() {
   const { cart, totalItems, totalPrice, isMounted } = useCart();
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const router = useRouter();
-  const [ready, setReady] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -24,16 +23,12 @@ export default function CheckoutPage() {
   const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (ready && role !== 'customer') {
+    if (!isLoading && role !== 'customer') {
       router.replace(`/login?next=/checkout`);
     }
-  }, [ready, role, router]);
+  }, [isLoading, role, router]);
 
-  if (!isMounted || !ready || role !== 'customer') return null;
+  if (!isMounted || isLoading || role !== 'customer') return null;
 
   if (cart.length === 0) {
     router.push('/cart');

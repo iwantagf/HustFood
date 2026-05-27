@@ -19,10 +19,13 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    const initialFetch = setTimeout(fetchOrders, 0);
     // Tự động làm mới mỗi 5 giây
     const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
   }, []);
 
   const updateStatus = async (id, newStatus) => {
@@ -42,9 +45,13 @@ export default function OrdersPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ xác nhận</span>;
-      case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang nấu & giao</span>;
+      case 'ready_for_pickup': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
+      case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
+      case 'picked_up': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã lấy hàng</span>;
+      case 'delivering': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
       case 'completed': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Hoàn thành</span>;
-      default: return null;
+      case 'rejected': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Từ chối</span>;
+      default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
 
@@ -87,10 +94,10 @@ export default function OrdersPage() {
                 <td>{getStatusBadge(order.status)}</td>
                 <td>
                   {order.status === 'pending' && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'processing')}>Xác nhận & Nấu</button>
+                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>Sẵn sàng giao</button>
                   )}
-                  {order.status === 'processing' && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'completed')}>Đã giao xong</button>
+                  {['ready_for_pickup', 'processing', 'picked_up', 'delivering'].includes(order.status) && (
+                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'completed')}>Hoàn thành</button>
                   )}
                   {order.status === 'completed' && (
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Không có</span>

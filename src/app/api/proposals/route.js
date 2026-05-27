@@ -1,7 +1,20 @@
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/auth/session';
+import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['seller', 'admin']);
+    if (auth.response) return auth.response;
+
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      return new Response(JSON.stringify(store.proposals), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const proposals = await prisma.proposal.findMany({
       orderBy: { createdAt: 'desc' }
     });
@@ -16,7 +29,29 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const auth = await requireRole(request, ['seller']);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
+
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      const newProposal = {
+        id: createDemoId('demo-proposal'),
+        name: body.name,
+        desc: body.desc,
+        price: body.price,
+        image: body.image || '/images/burger.png',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+      store.proposals.unshift(newProposal);
+
+      return new Response(JSON.stringify(newProposal), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     
     const newProposal = await prisma.proposal.create({
       data: {
@@ -39,7 +74,47 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    const auth = await requireRole(request, ['admin']);
+    if (auth.response) return auth.response;
+
     const { id, status } = await request.json();
+
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      const proposal = store.proposals.find((item) => item.id === id);
+      if (!proposal) {
+        return new Response(JSON.stringify({ error: 'Proposal not found' }), { status: 404 });
+      }
+
+      proposal.status = status;
+
+      const notificationMsg = status === 'accepted'
+        ? `Món ăn "${proposal.name}" của bạn đã được duyệt!`
+        : `Món ăn "${proposal.name}" của bạn đã bị từ chối.`;
+
+      store.notifications.unshift({
+        id: createDemoId('demo-notification'),
+        message: notificationMsg,
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+
+      if (status === 'accepted') {
+        store.products.unshift({
+          id: createDemoId('demo-product'),
+          name: proposal.name,
+          desc: proposal.desc,
+          price: proposal.price,
+          image: proposal.image || '/images/burger.png',
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      return new Response(JSON.stringify(proposal), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     
     const proposal = await prisma.proposal.findUnique({ where: { id } });
     if (!proposal) {

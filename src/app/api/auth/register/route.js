@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { createPasswordHash } from '@/lib/auth/password';
-import { isGmailAddress, normalizeIdentifier, sanitizeUser, selfRegisterRoles } from '@/lib/auth/users';
+import { isGmailAddress, normalizeIdentifier, selfRegisterRoles } from '@/lib/auth/users';
+import { sessionJson } from '@/lib/auth/session';
+import { createDemoUser, isDemoMode } from '@/lib/demo/store';
 
 export async function POST(request) {
   try {
@@ -18,6 +20,16 @@ export async function POST(request) {
       return new Response(JSON.stringify({ error: 'Mật khẩu là bắt buộc' }), { status: 400 });
     }
 
+    if (isDemoMode()) {
+      const result = createDemoUser({ email, password, displayName, role });
+
+      if (result.error) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 409 });
+      }
+
+      return sessionJson(result.user, { status: 201 });
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return new Response(JSON.stringify({ error: 'Tài khoản Gmail này đã tồn tại' }), { status: 409 });
@@ -29,6 +41,7 @@ export async function POST(request) {
         email,
         displayName: displayName || email.split('@')[0],
         role,
+        status: 'active',
         provider: 'credentials',
         providerAccountId: email,
         passwordHash,
@@ -36,10 +49,7 @@ export async function POST(request) {
       }
     });
 
-    return new Response(JSON.stringify({ user: sanitizeUser(user) }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return sessionJson(user, { status: 201 });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Không tạo được tài khoản' }), { status: 500 });
   }

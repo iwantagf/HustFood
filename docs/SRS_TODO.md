@@ -51,15 +51,15 @@
 - [x] Thêm API tạo tài khoản Gmail: `/api/auth/register`.
 - [x] Thêm API social login demo: `/api/auth/social`.
 - [x] Hash mật khẩu bằng `scrypt` + salt riêng.
-- [x] Thêm seed tài khoản test `Quản trị viên`: `huyhoangdao` / `1`.
+- [x] Thêm seed tài khoản `Quản trị viên` qua biến môi trường.
 - [x] Guard route client-side cho `/checkout`, `/seller`, `/shipper`, `/admin`.
 
 #### 3.1.2 Chưa làm
 
 - [ ] P0: Chạy `npx prisma db push` và `npm run seed` trên DB thật khi host Aiven resolve được.
-- [ ] P1: Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
-- [ ] P1: Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
-- [ ] P1: Bảo vệ API theo role, không chỉ bảo vệ UI.
+- [x] P1: Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
+- [x] P1: Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
+- [x] P1: Bảo vệ API theo role, không chỉ bảo vệ UI.
 - [ ] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
@@ -75,10 +75,10 @@
 #### 3.2.2 Chưa làm
 
 - [ ] P0: Push schema lên DB thật để tạo bảng `MerchantProfile`.
-- [ ] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
-- [ ] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
-- [ ] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
-- [ ] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
+- [x] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
+- [x] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
+- [x] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
+- [x] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
 
 ### 3.3 FR-03: Biên soạn, cập nhật thực đơn và tùy chọn món
 
@@ -175,15 +175,14 @@
 
 - [x] Có role `Người giao hàng`.
 - [x] Có route guard `/shipper`.
-- [x] Có dashboard placeholder cho `Người giao hàng`.
-- [x] Có khung luồng giao hàng dự kiến.
+- [x] Có dashboard đơn hàng cho `Người giao hàng`.
+- [x] Hiển thị đơn chờ nhận từ các đơn đã sẵn sàng giao.
+- [x] Có nút nhận đơn và gắn shipper vào đơn.
+- [x] Cập nhật trạng thái `Đã lấy hàng`, `Đang giao`, `Hoàn thành`.
 
 #### 3.8.2 Chưa làm
 
-- [ ] P0: Hiển thị đơn cho giao gần khu vực.
-- [ ] P0: Nút nhận đơn.
-- [ ] P0: Cập nhật trạng thái `Đã lấy hàng`, `Đang giao`, `Hoàn thành`.
-- [ ] P1: Lưu shipper được gắn vào đơn.
+- [ ] P1: Lọc đơn gần khu vực theo địa chỉ/GPS thật.
 - [ ] P1: Ghi nhận COD và doanh thu chuyến đi cho `Người giao hàng`.
 - [ ] P1: Báo cáo sự cố khách không nghe máy.
 - [ ] P2: GPS/live location mobile-friendly.
@@ -299,13 +298,13 @@
 
 - [x] Route `/shipper`.
 - [x] Guard role `shipper`.
-- [x] Dashboard placeholder.
+- [x] Dashboard danh sách đơn chờ nhận.
+- [x] Nút nhận đơn.
+- [x] Nút cập nhật trạng thái giao hàng.
 
 #### 4.3.2 Chưa làm
 
-- [ ] P0: Danh sách đơn có thể nhận.
-- [ ] P0: Màn hình chi tiết lộ trình.
-- [ ] P0: Nút cập nhật trạng thái giao hàng.
+- [ ] P1: Màn hình chi tiết lộ trình.
 - [ ] P1: UI COD/đối soát.
 - [ ] P1: UI báo cáo sự cố.
 
@@ -336,6 +335,7 @@
 - [x] `MerchantProfile`.
 - [x] `Product`.
 - [x] `Order`.
+- [x] Trường gắn shipper vào `Order`.
 - [x] `Proposal`.
 - [x] `Notification`.
 - [x] API auth: login/register/social.
@@ -353,7 +353,6 @@
 - [ ] P0: `Review`.
 - [ ] P0: Thêm trường payment/delivery vào `Order`.
 - [ ] P1: `Shop`/`MerchantProfile` liên kết với `User`.
-- [ ] P1: `ShipperAssignment` hoặc trường `shipperId` trong `Order`.
 - [ ] P1: `Transaction`/`Payment`.
 - [ ] P1: `MenuCategory`.
 - [ ] P1: `MenuOption`/`Topping`.
@@ -402,10 +401,9 @@
 
 1. Push schema DB và seed admin test khi kết nối Aiven đúng.
 2. Voucher + phí giao hàng + payment fields trong `Order`.
-3. Shipper workflow: nhận đơn, đã lấy hàng, đang giao, hoàn thành.
-4. Order tracking cho `Khách hàng`.
-5. Review + sentiment mock.
-6. API authorization theo role.
+3. Order tracking cho `Khách hàng`.
+4. Review + sentiment mock.
+5. API authorization theo role.
 
 ### 7.2 P1 sau khi demo P0 ổn định
 
@@ -414,4 +412,3 @@
 3. Realtime bằng WebSocket/SSE.
 4. Dashboard biểu đồ và lọc thời gian.
 5. OAuth thật và JWT/cookie.
-

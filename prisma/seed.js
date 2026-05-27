@@ -1,7 +1,16 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { randomBytes, scryptSync } = require('crypto');
 
 const prisma = new PrismaClient();
+const adminUsername = process.env.SEED_ADMIN_USERNAME;
+const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+const seedUsers = [
+  { username: 'dongmanhhung', password: '1', role: 'seller', displayName: 'dongmanhhung' },
+  { username: 'tadinhtam', password: '1', role: 'customer', displayName: 'tadinhtam' },
+  { username: 'doanducmanh', password: '1', role: 'shipper', displayName: 'doanducmanh' },
+  { username: 'nguyendanhthai', password: '1', role: 'customer', displayName: 'nguyendanhthai' }
+];
 
 function createPasswordHash(password) {
   const passwordSalt = randomBytes(16).toString('hex');
@@ -47,29 +56,60 @@ async function main() {
     });
   }
 
-  const { passwordHash, passwordSalt } = createPasswordHash('1');
+  if (adminUsername && adminPassword) {
+    const { passwordHash, passwordSalt } = createPasswordHash(adminPassword);
 
-  await prisma.user.upsert({
-    where: { username: 'huyhoangdao' },
-    update: {
-      displayName: 'huyhoangdao',
-      role: 'admin',
-      provider: 'credentials',
-      passwordHash,
-      passwordSalt
-    },
-    create: {
-      username: 'huyhoangdao',
-      displayName: 'huyhoangdao',
-      role: 'admin',
-      provider: 'credentials',
-      providerAccountId: 'huyhoangdao',
-      passwordHash,
-      passwordSalt
-    }
-  });
+    await prisma.user.upsert({
+      where: { username: adminUsername },
+      update: {
+        displayName: adminUsername,
+        role: 'admin',
+        status: 'active',
+        provider: 'credentials',
+        passwordHash,
+        passwordSalt
+      },
+      create: {
+        username: adminUsername,
+        displayName: adminUsername,
+        role: 'admin',
+        status: 'active',
+        provider: 'credentials',
+        providerAccountId: adminUsername,
+        passwordHash,
+        passwordSalt
+      }
+    });
+  }
 
-  console.log("Database seeded with products and test admin account!");
+  for (const user of seedUsers) {
+    const { passwordHash, passwordSalt } = createPasswordHash(user.password);
+
+    await prisma.user.upsert({
+      where: { username: user.username },
+      update: {
+        displayName: user.displayName,
+        role: user.role,
+        status: 'active',
+        provider: 'credentials',
+        providerAccountId: user.username,
+        passwordHash,
+        passwordSalt
+      },
+      create: {
+        username: user.username,
+        displayName: user.displayName,
+        role: user.role,
+        status: 'active',
+        provider: 'credentials',
+        providerAccountId: user.username,
+        passwordHash,
+        passwordSalt
+      }
+    });
+  }
+
+  console.log("Database seeded with products and user accounts.");
 }
 
 main()

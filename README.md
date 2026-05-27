@@ -17,7 +17,8 @@ HustFood là ứng dụng đặt và giao đồ ăn trực tuyến được xây
 - React `19.x`.
 - Prisma `5.x`.
 - MySQL datasource.
-- Client-side route guard theo role cho demo.
+- Cookie httpOnly/JWT demo cho session đăng nhập.
+- Guard theo role cho UI và API thao tác dữ liệu.
 
 ### 1.3 Biến môi trường
 
@@ -59,17 +60,13 @@ npx prisma generate
 npx prisma db push
 ```
 
-Seed dữ liệu mẫu và tài khoản test:
+Seed dữ liệu mẫu:
 
 ```bash
 npm run seed
 ```
 
-Tài khoản test quản trị viên:
-
-- Username: `huyhoangdao`
-- Password: `1`
-- Role: `Quản trị viên`
+Nếu cần seed tài khoản quản trị viên, cấu hình `SEED_ADMIN_USERNAME` và `SEED_ADMIN_PASSWORD` trong `.env`.
 
 ### 2.4 Chạy development server
 
@@ -90,6 +87,25 @@ npm run build
 npm start
 ```
 
+### 2.6 Installation guide cho team
+
+Quy trình cài đặt từ máy mới:
+
+```bash
+git clone https://github.com/iwantagf/HustFood.git
+cd HustFood
+cp .env.example .env
+npm install
+npx prisma generate
+npx prisma db push
+npm run seed
+npm run dev
+```
+
+Sau khi chạy `npm run dev`, mở `http://localhost:3000`.
+
+Trước khi chạy các lệnh Prisma, cập nhật `DATABASE_URL` trong `.env` trỏ tới MySQL local hoặc database được team chia sẻ. Nếu dùng database managed như Aiven, giữ `ssl-mode=REQUIRED` trong connection string.
+
 ## 3. Môi trường kiểm thử
 
 ### 3.1 Thiết lập test local
@@ -101,9 +117,14 @@ Môi trường test tối thiểu:
 - Đã chạy `npm run seed` nếu cần tài khoản admin test.
 - Dev server chạy bằng `npm run dev`.
 
-### 3.2 Tài khoản test
+### 3.2 Tài khoản demo
 
-- `Quản trị viên`: `huyhoangdao` / `1`.
+- Tài khoản `Quản trị viên` demo lấy từ `DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env`.
+- Các tài khoản test có sẵn trong `DEMO_MODE=true` và được seed bằng `npm run seed`:
+  - `dongmanhhung` / `1` / `Người bán hàng`
+  - `tadinhtam` / `1` / `Khách hàng`
+  - `doanducmanh` / `1` / `Shipper`
+  - `nguyendanhthai` / `1` / `Khách hàng`
 - Người dùng thường có thể tạo tài khoản tại `/login` bằng Gmail.
 - Social login hiện là mô phỏng qua Google/Facebook/Instagram, chưa phải OAuth thật.
 
@@ -112,7 +133,7 @@ Môi trường test tối thiểu:
 - `Khách hàng`: `/` -> thêm món -> `/cart` -> `/checkout` -> `/success`.
 - `Người bán`: `/login` -> đăng nhập/tạo tài khoản role `Người bán` -> `/seller`.
 - `Người giao hàng`: `/login` -> đăng nhập/tạo tài khoản role `Người giao hàng` -> `/shipper`.
-- `Quản trị viên`: `/login` -> `huyhoangdao` / `1` -> `/admin`.
+- `Quản trị viên`: `/login` -> đăng nhập bằng tài khoản demo trong `.env` -> `/admin`.
 
 ## 4. Các script có sẵn
 
@@ -229,7 +250,7 @@ curl http://localhost:3000/api/merchant-profile
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"identifier":"huyhoangdao","password":"1"}'
+  -d '{"identifier":"<username-or-email>","password":"<password>"}'
 ```
 
 Tạo tài khoản Gmail:
@@ -237,7 +258,7 @@ Tạo tài khoản Gmail:
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"tester@gmail.com","password":"1","displayName":"Tester","role":"customer"}'
+  -d '{"email":"tester@gmail.com","password":"<password>","displayName":"Tester","role":"customer"}'
 ```
 
 ## 6. Cấu trúc repository
@@ -319,8 +340,8 @@ Body:
 
 ```json
 {
-  "identifier": "huyhoangdao",
-  "password": "1"
+  "identifier": "<username-or-email>",
+  "password": "<password>"
 }
 ```
 
@@ -331,8 +352,8 @@ Response:
   "user": {
     "id": "...",
     "email": null,
-    "username": "huyhoangdao",
-    "displayName": "huyhoangdao",
+    "username": "...",
+    "displayName": "...",
     "role": "admin",
     "provider": "credentials"
   }
@@ -448,11 +469,11 @@ Xóa đơn hàng theo `id`.
 
 #### `GET /api/merchant-profile`
 
-Lấy hồ sơ cửa hàng người bán. Nếu chưa có, API tạo dữ liệu mặc định.
+Người bán lấy hồ sơ cửa hàng của chính mình. Quản trị viên lấy danh sách hồ sơ cửa hàng để duyệt/khóa.
 
 #### `PUT /api/merchant-profile`
 
-Cập nhật hồ sơ cửa hàng.
+Cập nhật hồ sơ cửa hàng của người bán đang đăng nhập.
 
 Body:
 
@@ -468,6 +489,23 @@ Body:
   "status": "active"
 }
 ```
+
+#### `PATCH /api/merchant-profile`
+
+Quản trị viên cập nhật trạng thái cửa hàng.
+
+Body:
+
+```json
+{
+  "id": "merchant_profile_id",
+  "status": "active"
+}
+```
+
+#### `GET /api/merchant-profile/public`
+
+Lấy danh sách cửa hàng đang hoạt động để hiển thị cho khách hàng.
 
 ### 8.5 Proposal APIs
 
@@ -567,7 +605,7 @@ Lưu thông báo nội bộ cho dashboard.
 - Password hashing bằng `scrypt`.
 - Customer product menu, cart, checkout.
 - Seller dashboard, merchant profile, order status update.
-- Shipper protected dashboard placeholder.
+- Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
 - Admin dashboard, order/menu/proposal management.
 - Prisma schema for current demo models.
 
@@ -582,7 +620,6 @@ docs/SRS_TODO.md
 Các phần lớn còn thiếu:
 
 - Voucher và phí giao hàng.
-- Shipper workflow thật.
 - Order tracking cho khách hàng.
 - Review/rating.
 - Sentiment analysis.
