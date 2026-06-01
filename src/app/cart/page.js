@@ -5,7 +5,7 @@ import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, totalItems, totalPrice, deliveryFee, isMounted } = useCart();
+  const { cart, removeFromCart, updateQuantity, totalItems, totalPrice, deliveryFee, finalTotal, isMounted } = useCart();
 
   if (!isMounted) return null;
 
@@ -59,7 +59,7 @@ export default function CartPage() {
               </div>
               <div className={styles.summaryTotal}>
                 <span>Tổng cộng:</span>
-                <span style={{ color: 'var(--primary)' }}>{(totalPrice + deliveryFee).toLocaleString('vi-VN')}đ</span>
+                <span style={{ color: 'var(--primary)' }}>{finalTotal.toLocaleString('vi-VN')}đ</span>
               </div>
               <Link href="/checkout" className={`btn btn-primary ${styles.checkoutBtn}`} style={{ display: 'block', textAlign: 'center' }}>
                 Tiến Hành Thanh Toán

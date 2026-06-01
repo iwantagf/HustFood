@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { calculateOrderTotals } from '@/lib/pricing';
 
 const SELLER_STATUSES = ['pending', 'ready_for_pickup', 'rejected'];
 const SHIPPER_STATUSES = ['picked_up', 'delivering', 'completed'];
@@ -11,6 +12,97 @@ function json(data, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json' }
   });
+}
+
+function normalizeRequestedItems(rawItems) {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    return { error: 'Giỏ hàng không có món nào' };
+  }
+
+  const quantityByProductId = new Map();
+
+  for (const item of rawItems) {
+    const id = String(item?.id || '').trim();
+    const quantity = Number(item?.quantity);
+
+    if (!id || !Number.isInteger(quantity) || quantity <= 0) {
+      return { error: 'Dữ liệu món trong giỏ hàng không hợp lệ' };
+    }
+
+    quantityByProductId.set(id, (quantityByProductId.get(id) || 0) + quantity);
+  }
+
+  return {
+    items: Array.from(quantityByProductId, ([id, quantity]) => ({ id, quantity }))
+  };
+}
+
+function buildOrderCreateData(body, products) {
+  const requestedItems = normalizeRequestedItems(body.items);
+  if (requestedItems.error) return requestedItems;
+
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const missingItem = requestedItems.items.find((item) => !productById.has(item.id));
+
+  if (missingItem) {
+    return { error: 'Món trong giỏ hàng không tồn tại' };
+  }
+
+  const items = requestedItems.items.map((item) => {
+    const product = productById.get(item.id);
+
+    return {
+      id: product.id,
+      name: product.name,
+      desc: product.desc,
+      price: product.price,
+      image: product.image,
+      quantity: item.quantity
+    };
+  });
+
+  const { totalPrice, deliveryFee, finalTotal } = calculateOrderTotals(items);
+
+  return {
+    data: {
+      customer: {
+        ...(body.customer || {}),
+        deliveryFee,
+        finalTotal
+      },
+      items,
+      totalItems: items.reduce((total, item) => total + item.quantity, 0),
+      totalPrice
+    }
+  };
+}
+
+async function getOrderProducts(productIds) {
+  if (isDemoMode()) {
+    const store = getDemoStore();
+    return store.products.filter((product) => productIds.includes(product.id));
+  }
+
+  return prisma.product.findMany({
+    where: {
+      id: {
+        in: productIds
+      }
+    }
+  });
+}
+
+function buildOrderRecord(orderData, extraData = {}) {
+  return {
+    ...extraData,
+    customer: {
+      ...orderData.customer
+    },
+    items: orderData.items,
+    totalItems: orderData.totalItems,
+    totalPrice: orderData.totalPrice,
+    status: 'pending'
+  };
 }
 
 function buildOrderUpdate({ order, status, action, user }) {
@@ -99,37 +191,36 @@ export async function POST(request) {
     if (auth.response) return auth.response;
 
     const body = await request.json();
+    const requestedItems = normalizeRequestedItems(body.items);
+    if (requestedItems.error) return json({ error: requestedItems.error }, 400);
+
+    const productIds = requestedItems.items.map((item) => item.id);
+    const products = await getOrderProducts(productIds);
+    const orderResult = buildOrderCreateData(body, products);
+    if (orderResult.error) return json({ error: orderResult.error }, 400);
+
+    const orderData = orderResult.data;
 
     if (isDemoMode()) {
       const store = getDemoStore();
-      const newOrder = {
+      const newOrder = buildOrderRecord(orderData, {
         id: '#HF' + Math.floor(1000 + Math.random() * 9000),
-        customer: body.customer,
-        items: body.items,
-        totalItems: body.totalItems,
-        totalPrice: body.totalPrice,
-        status: 'pending',
         shipperId: null,
         shipperName: null,
         acceptedAt: null,
         pickedUpAt: null,
         deliveredAt: null,
         createdAt: new Date().toISOString()
-      };
+      });
       store.orders.unshift(newOrder);
 
       return json(newOrder, 201);
     }
     
     const newOrder = await prisma.order.create({
-      data: {
-        id: '#HF' + Math.floor(1000 + Math.random() * 9000), // Custom ID prefix
-        customer: body.customer,
-        items: body.items,
-        totalItems: body.totalItems,
-        totalPrice: body.totalPrice,
-        status: 'pending'
-      }
+      data: buildOrderRecord(orderData, {
+        id: '#HF' + Math.floor(1000 + Math.random() * 9000) // Custom ID prefix
+      })
     });
     
     return json(newOrder, 201);

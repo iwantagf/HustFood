@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import styles from '../admin.module.css';
+import { getOrderFinalTotal } from '@/lib/pricing';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -90,7 +91,7 @@ export default function OrdersPage() {
                     <div key={item.id}>{item.quantity}x {item.name}</div>
                   ))}
                 </td>
-                <td style={{ fontWeight: '600' }}>{order.totalPrice?.toLocaleString('vi-VN')}đ</td>
+                <td style={{ fontWeight: '600' }}>{getOrderFinalTotal(order).toLocaleString('vi-VN')}đ</td>
                 <td>{getStatusBadge(order.status)}</td>
                 <td>
                   {order.status === 'pending' && (

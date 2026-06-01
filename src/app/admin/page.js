@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import styles from './admin.module.css';
+import { getOrderFinalTotal } from '@/lib/pricing';
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
@@ -45,7 +46,7 @@ export default function DashboardPage() {
 
   const todayTotal = orders
     .filter(o => o.status === 'completed')
-    .reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+    .reduce((acc, curr) => acc + getOrderFinalTotal(curr), 0);
   
   const pendingCount = orders.filter(o => o.status === 'pending').length;
   const completedCount = orders.filter(o => o.status === 'completed').length;
@@ -193,7 +194,7 @@ export default function DashboardPage() {
               <tr key={order.id}>
                 <td>{order.id}</td>
                 <td>{order.customer?.name}</td>
-                <td style={{ fontWeight: '600' }}>{order.totalPrice?.toLocaleString('vi-VN')}đ</td>
+                <td style={{ fontWeight: '600' }}>{getOrderFinalTotal(order).toLocaleString('vi-VN')}đ</td>
                 <td>{getStatusBadge(order.status)}</td>
                 <td>{new Date(order.createdAt).toLocaleTimeString('vi-VN')}</td>
                 <td>

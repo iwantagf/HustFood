@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../admin/admin.module.css';
 import Link from 'next/link';
+import { getOrderFinalTotal } from '@/lib/pricing';
 
 export default function SellerPage() {
   const [orders, setOrders] = useState([]);
@@ -101,7 +102,7 @@ export default function SellerPage() {
 
   const revenue = orders
     .filter(order => order.status === 'completed')
-    .reduce((acc, order) => acc + (order.totalPrice || 0), 0);
+    .reduce((acc, order) => acc + getOrderFinalTotal(order), 0);
 
   const pendingCount = orders.filter(order => order.status === 'pending').length;
   const processingCount = orders.filter(order => ['ready_for_pickup', 'processing', 'picked_up', 'delivering'].includes(order.status)).length;
@@ -385,7 +386,7 @@ export default function SellerPage() {
                   <tr key={order.id}>
                     <td>{order.id}</td>
                     <td>{order.customer?.name || 'Khách ẩn'}</td>
-                    <td style={{ fontWeight: '700' }}>{order.totalPrice?.toLocaleString('vi-VN')}đ</td>
+                    <td style={{ fontWeight: '700' }}>{getOrderFinalTotal(order).toLocaleString('vi-VN')}đ</td>
                     <td>{getStatusBadge(order.status)}</td>
                     <td>
                       {order.status === 'pending' && (

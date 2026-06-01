@@ -123,10 +123,10 @@
 - [x] Giỏ hàng lưu bằng `localStorage`.
 - [x] Thêm/xóa/cập nhật số lượng món.
 - [x] Tính tổng số lượng và tổng tiền món.
-- [x] Thêm phí giao hàng theo km hoặc rule demo.
 
 #### 3.5.2 Chưa làm
 
+- [x] P0: Thêm phí giao hàng theo km hoặc rule demo.
 - [ ] P0: Thêm voucher/mã giảm giá.
 - [ ] P1: Validate điều kiện voucher: giá trị tối thiểu, hạn sử dụng, số lần dùng.
 - [ ] P1: Tách đơn khi thêm món từ 2 cửa hàng khác nhau.
