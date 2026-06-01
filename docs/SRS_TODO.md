@@ -126,7 +126,7 @@
 
 #### 3.5.2 Chưa làm
 
-- [ ] P0: Thêm phí giao hàng theo km hoặc rule demo.
+- [x] P0: Thêm phí giao hàng theo km hoặc rule demo.
 - [ ] P0: Thêm voucher/mã giảm giá.
 - [ ] P1: Validate điều kiện voucher: giá trị tối thiểu, hạn sử dụng, số lần dùng.
 - [ ] P1: Tách đơn khi thêm món từ 2 cửa hàng khác nhau.

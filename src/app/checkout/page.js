@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function CheckoutPage() {
-  const { cart, totalItems, totalPrice, isMounted } = useCart();
+  const { cart, totalItems, totalPrice, deliveryFee, finalTotal, isMounted } = useCart();
   const { role, isLoading } = useAuth();
   const router = useRouter();
 
@@ -52,7 +52,9 @@ export default function CheckoutPage() {
         customer: formData,
         items: cart,
         totalItems,
-        totalPrice
+        totalPrice,
+        deliveryFee,
+        finalTotal
       };
 
       const res = await fetch('/api/orders', {
@@ -99,7 +101,7 @@ export default function CheckoutPage() {
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
               <h3>Thanh toán qua {formData.paymentMethod === 'momo' ? 'MoMo' : 'Ngân hàng'}</h3>
-              <p>Quét mã QR dưới đây để thanh toán số tiền: <strong>{totalPrice.toLocaleString('vi-VN')}đ</strong></p>
+              <p>Quét mã QR dưới đây để thanh toán số tiền: <strong>{finalTotal.toLocaleString('vi-VN')}đ</strong></p>
               <div className={styles.qrPlaceholder}>
                 <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
                 <div style={{ marginTop: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>Đang chờ thanh toán...</div>
@@ -170,14 +172,14 @@ export default function CheckoutPage() {
             </div>
             <div className={styles.summaryItem}>
               <span className={styles.summaryItemName}>Phí giao hàng</span>
-              <span>Miễn phí</span>
+              <span>{deliveryFee.toLocaleString('vi-VN')}đ</span>
             </div>
 
             <div className={styles.divider}></div>
 
             <div className={styles.summaryTotal}>
               <span>Tổng cộng</span>
-              <span>{totalPrice.toLocaleString('vi-VN')}đ</span>
+              <span>{finalTotal.toLocaleString('vi-VN')}đ</span>
             </div>
 
             <button type="submit" disabled={isProcessing} className={`btn btn-primary ${styles.submitBtn}`}>

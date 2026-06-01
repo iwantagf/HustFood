@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import styles from '../admin/admin.module.css';
 import { useAuth } from '@/context/AuthContext';
+import { getOrderFinalTotal } from '@/lib/pricing';
 
 const READY_STATUSES = ['ready_for_pickup', 'processing'];
 const ACTIVE_STATUSES = ['picked_up', 'delivering'];
@@ -94,7 +95,7 @@ export default function ShipperPage() {
     orders.filter((order) => order.status === 'completed' && order.shipperId === user?.id)
   ), [orders, user?.id]);
 
-  const codTotal = completedOrders.reduce((total, order) => total + Number(order.totalPrice || 0), 0);
+  const codTotal = completedOrders.reduce((total, order) => total + getOrderFinalTotal(order), 0);
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem' }}>
@@ -173,7 +174,7 @@ export default function ShipperPage() {
                   <td>{order.id}</td>
                   <td>{order.customer?.name || 'Khách ẩn'}</td>
                   <td>{order.customer?.address || 'Chưa có địa chỉ'}</td>
-                  <td style={{ fontWeight: 700 }}>{formatMoney(order.totalPrice)}</td>
+                  <td style={{ fontWeight: 700 }}>{formatMoney(getOrderFinalTotal(order))}</td>
                   <td>{getStatusBadge(order.status)}</td>
                   <td>
                     <button className={styles.actionBtn} onClick={() => updateOrder({ id: order.id, action: 'accept' })}>
@@ -213,7 +214,7 @@ export default function ShipperPage() {
                   <td>{order.id}</td>
                   <td>{order.customer?.name || 'Khách ẩn'}</td>
                   <td>{order.customer?.phone || 'Chưa có SĐT'}</td>
-                  <td style={{ fontWeight: 700 }}>{formatMoney(order.totalPrice)}</td>
+                  <td style={{ fontWeight: 700 }}>{formatMoney(getOrderFinalTotal(order))}</td>
                   <td>{getStatusBadge(order.status)}</td>
                   <td>
                     {order.status === 'picked_up' && (

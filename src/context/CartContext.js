@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useState, useContext, useEffect } from 'react';
+import { DEMO_DELIVERY_FEE, calculateFinalTotal, calculateItemsSubtotal } from '@/lib/pricing';
 
 const CartContext = createContext();
 
@@ -48,15 +49,12 @@ export function CartProvider({ children }) {
   };
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = cart.reduce((acc, item) => {
-    // Parse price string like "65.000đ" to number
-    const priceStr = item.price.replace(/\D/g, '');
-    const price = parseInt(priceStr, 10);
-    return acc + (price * item.quantity);
-  }, 0);
+  const totalPrice = calculateItemsSubtotal(cart);
+  const deliveryFee = DEMO_DELIVERY_FEE;
+  const finalTotal = calculateFinalTotal(totalPrice, deliveryFee);
   
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, totalItems, totalPrice, isMounted }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, totalItems, totalPrice, deliveryFee, finalTotal, isMounted }}>
       {children}
     </CartContext.Provider>
   );
