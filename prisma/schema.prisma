@@ -84,20 +84,29 @@ model MerchantProfile {
 }
 
 model Order {
-  id           String    @id @default(cuid())
-  merchantId   String?
-  merchantName String?
-  customer     Json // Store customer info (name, phone, address, etc.)
-  items        Json // Store array of items {id, name, price, quantity, etc.}
-  totalItems   Int
-  totalPrice   Int
-  status       String    @default("pending") // pending, ready_for_pickup, picked_up, delivering, completed
-  shipperId    String?
-  shipperName  String?
-  acceptedAt   DateTime?
-  pickedUpAt   DateTime?
-  deliveredAt  DateTime?
-  createdAt    DateTime  @default(now())
+  id                   String    @id @default(cuid())
+  merchantId           String?
+  merchantName         String?
+  customer             Json // Store customer info (name, phone, address, etc.)
+  items                Json // Store array of items {id, name, price, quantity, etc.}
+  totalItems           Int
+  totalPrice           Int
+  deliveryFee          Int       @default(0)
+  discount             Int       @default(0)
+  finalTotal           Int       @default(0)
+  paymentMethod        String    @default("cod") // cod, momo, card
+  paymentStatus        String    @default("pending") // pending, paid, failed, retry_required
+  paymentProvider      String?
+  paymentTransactionId String?
+  paymentChecksum      String?
+  paymentFailureReason String?
+  status               String    @default("pending") // pending, payment_retry, ready_for_pickup, picked_up, delivering, completed
+  shipperId            String?
+  shipperName          String?
+  acceptedAt           DateTime?
+  pickedUpAt           DateTime?
+  deliveredAt          DateTime?
+  createdAt            DateTime  @default(now())
 }
 
 model Voucher {
@@ -128,6 +137,7 @@ model Proposal {
 
 model Notification {
   id        String   @id @default(cuid())
+  ownerId   String?
   message   String   @db.Text
   read      Boolean  @default(false)
   createdAt DateTime @default(now())

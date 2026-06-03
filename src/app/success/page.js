@@ -2,14 +2,19 @@
 import styles from './page.module.css';
 import Header from '@/components/Header';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 
 export default function SuccessPage() {
   const { clearCart } = useCart();
+  const [isPaymentRetry, setIsPaymentRetry] = useState(false);
 
   useEffect(() => {
-    clearCart();
+    const initialLoad = setTimeout(() => {
+      setIsPaymentRetry(new URLSearchParams(window.location.search).get('payment') === 'retry');
+      clearCart();
+    }, 0);
+    return () => clearTimeout(initialLoad);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -22,9 +27,11 @@ export default function SuccessPage() {
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <h1 className={styles.successTitle}>Đặt Hàng Thành Công!</h1>
+        <h1 className={styles.successTitle}>{isPaymentRetry ? 'Đơn Đang Chờ Thanh Toán Lại' : 'Đặt Hàng Thành Công!'}</h1>
         <p className={styles.successDesc}>
-          Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng của bạn đã được tiếp nhận và đang được bếp chuẩn bị. Người giao hàng sẽ liên hệ với bạn trong thời gian sớm nhất. Chúc bạn có một bữa ăn ngon miệng!
+          {isPaymentRetry
+            ? 'Thanh toán online chưa hoàn tất. Đơn hàng đã được lưu ở trạng thái chờ thanh toán lại để bạn có thể xử lý tiếp với bộ phận hỗ trợ.'
+            : 'Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng của bạn đã được tiếp nhận và đang được bếp chuẩn bị. Người giao hàng sẽ liên hệ với bạn trong thời gian sớm nhất. Chúc bạn có một bữa ăn ngon miệng!'}
         </p>
         <Link href="/" className={`btn btn-primary ${styles.homeBtn}`}>
           Quay Về Trang Chủ

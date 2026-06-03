@@ -510,11 +510,17 @@ Body:
       "itemNote": "Ít sốt"
     }
   ],
-  "voucherCode": "HUSTFOOD10"
+  "voucherCode": "HUSTFOOD10",
+  "payment": {
+    "provider": "mock",
+    "transactionId": "MOCK-MOMO-123",
+    "status": "paid",
+    "checksum": "mock_checksum"
+  }
 }
 ```
 
-Nếu giỏ hàng có món từ nhiều cửa hàng, API tự tách thành nhiều đơn theo `merchantId`.
+Nếu giỏ hàng có món từ nhiều cửa hàng, API tự tách thành nhiều đơn theo `merchantId`. Với `momo` hoặc `card`, API kiểm tra checksum của payment mock trước khi lưu đơn. Nếu payment mock thất bại, đơn được lưu với trạng thái `payment_retry`.
 
 #### `PUT /api/orders`
 
@@ -697,7 +703,7 @@ Lưu danh mục món theo cửa hàng người bán.
 
 ### 9.5 `Order`
 
-Lưu đơn hàng. `merchantId`/`merchantName` dùng để tách đơn theo cửa hàng; `customer` và `items` vẫn là JSON để demo nhanh.
+Lưu đơn hàng. `merchantId`/`merchantName` dùng để tách đơn theo cửa hàng; `deliveryFee`, `discount`, `finalTotal`, `paymentMethod`, `paymentStatus`, `paymentProvider`, `paymentTransactionId`, `paymentChecksum` lưu trạng thái chốt đơn/thanh toán. `customer` và `items` vẫn là JSON để demo nhanh.
 
 ### 9.6 `SavedCart`
 

@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
-import { getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 import { DEMO_DELIVERY_FEE, calculateItemsSubtotal, calculateVoucherDiscount } from '@/lib/pricing';
 import { normalizeVoucherCode, serializeVoucher, validateVoucher } from '@/lib/vouchers';
+import { getInitialPaymentState, isOnlinePayment, normalizePaymentMethod, verifyPaymentChecksum } from '@/lib/payments';
 
-const SELLER_STATUSES = ['pending', 'ready_for_pickup', 'rejected'];
+const SELLER_STATUSES = ['pending', 'payment_retry', 'ready_for_pickup', 'rejected'];
 const SHIPPER_STATUSES = ['picked_up', 'delivering', 'completed'];
 const LEGACY_SHIPPER_READY_STATUSES = ['processing'];
 
@@ -54,7 +55,7 @@ function getProductMerchant(product) {
   };
 }
 
-function buildOrderCreateData(body, products, voucher = null) {
+function buildOrderCreateData(body, products, voucher = null, paymentState = null) {
   const requestedItems = normalizeRequestedItems(body.items);
   if (requestedItems.error) return requestedItems;
 
@@ -120,7 +121,11 @@ function buildOrderCreateData(body, products, voucher = null) {
       },
       items: group.items,
       totalItems: group.items.reduce((total, item) => total + item.quantity, 0),
-      totalPrice
+      totalPrice,
+      deliveryFee,
+      discount,
+      finalTotal,
+      paymentState
     };
   });
 
@@ -176,7 +181,16 @@ function buildOrderRecord(orderData, extraData = {}) {
     items: orderData.items,
     totalItems: orderData.totalItems,
     totalPrice: orderData.totalPrice,
-    status: 'pending'
+    deliveryFee: orderData.deliveryFee,
+    discount: orderData.discount,
+    finalTotal: orderData.finalTotal,
+    paymentMethod: orderData.paymentState?.paymentMethod || 'cod',
+    paymentStatus: orderData.paymentState?.paymentStatus || 'pending',
+    paymentProvider: orderData.paymentState?.paymentProvider || null,
+    paymentTransactionId: orderData.paymentState?.paymentTransactionId || null,
+    paymentChecksum: orderData.paymentState?.paymentChecksum || null,
+    paymentFailureReason: orderData.paymentState?.paymentFailureReason || null,
+    status: orderData.paymentState?.orderStatus || 'pending'
   };
 }
 
@@ -206,6 +220,30 @@ async function markVoucherUsed(voucher) {
   });
 }
 
+async function notifySellerNewOrders(orders) {
+  if (isDemoMode()) {
+    const store = getDemoStore();
+    for (const order of orders) {
+      store.notifications.unshift({
+        id: createDemoId('demo-notification'),
+        ownerId: order.merchantId || null,
+        message: `Bạn có đơn mới ${order.id} trị giá ${Number(order.finalTotal || order.customer?.finalTotal || 0).toLocaleString('vi-VN')}đ.`,
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+    }
+    return;
+  }
+
+  await prisma.notification.createMany({
+    data: orders.map((order) => ({
+      ownerId: order.merchantId,
+      message: `Bạn có đơn mới ${order.id} trị giá ${Number(order.finalTotal || 0).toLocaleString('vi-VN')}đ.`,
+      read: false
+    }))
+  });
+}
+
 function buildOrderUpdate({ order, status, action, user }) {
   const update = {};
   const now = new Date();
@@ -232,6 +270,10 @@ function buildOrderUpdate({ order, status, action, user }) {
   }
 
   if (user.role === 'seller' || user.role === 'admin') {
+    if (['failed', 'retry_required'].includes(order.paymentStatus) && status !== 'payment_retry') {
+      return { error: 'Đơn đang chờ thanh toán lại, chưa thể chuyển trạng thái xử lý' };
+    }
+
     if (!SELLER_STATUSES.includes(status) && !(user.role === 'admin' && status === 'completed')) {
       return { error: 'Trạng thái này không thuộc luồng xử lý của người bán' };
     }
@@ -317,7 +359,21 @@ export async function POST(request) {
       if (voucherResult.error) return json({ error: voucherResult.error }, 400);
     }
 
-    const orderResult = buildOrderCreateData(body, products, voucher);
+    const paymentMethod = normalizePaymentMethod(body.customer?.paymentMethod);
+    const preliminaryDiscount = voucher ? calculateVoucherDiscount(subtotal, voucher) : 0;
+    const expectedFinalTotal = Math.max(subtotal - preliminaryDiscount, 0) + (DEMO_DELIVERY_FEE * preliminaryOrderResult.data.length);
+    const payment = body.payment || null;
+
+    if (isOnlinePayment(paymentMethod) && !verifyPaymentChecksum({ method: paymentMethod, amount: expectedFinalTotal, payment })) {
+      return json({ error: 'Thông tin thanh toán không hợp lệ hoặc sai checksum' }, 400);
+    }
+
+    const paymentState = getInitialPaymentState(paymentMethod, payment);
+    if (paymentState.paymentStatus === 'failed') {
+      paymentState.paymentStatus = 'retry_required';
+    }
+
+    const orderResult = buildOrderCreateData(body, products, voucher, paymentState);
     if (orderResult.error) {
       return json({
         error: orderResult.error === 'Món trong giỏ hàng không tồn tại'
@@ -341,6 +397,7 @@ export async function POST(request) {
       }));
       store.orders.unshift(...newOrders);
       await markVoucherUsed(voucher);
+      await notifySellerNewOrders(newOrders);
 
       return json(newOrders, 201);
     }
@@ -355,6 +412,7 @@ export async function POST(request) {
       newOrders.push(newOrder);
     }
     await markVoucherUsed(voucher);
+    await notifySellerNewOrders(newOrders);
     
     return json(newOrders, 201);
   } catch (error) {

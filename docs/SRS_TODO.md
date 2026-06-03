@@ -147,11 +147,11 @@
 
 #### 3.6.2 Chưa làm
 
-- [ ] P0: Lưu `paymentMethod`, `paymentStatus`, `deliveryFee`, `discount`, `finalTotal` vào DB.
-- [ ] P1: Tích hợp cổng thanh toán thật hoặc mock có trạng thái rõ ràng.
-- [ ] P1: Checksum/signature verification cho kết quả thanh toán.
-- [ ] P1: Trạng thái `Chờ thanh toán lại` khi thanh toán fail.
-- [ ] P1: Tạo notification realtime cho `Người bán` khi có đơn mới.
+- [x] Lưu `paymentMethod`, `paymentStatus`, `deliveryFee`, `discount`, `finalTotal` vào DB.
+- [x] Tích hợp mock thanh toán có trạng thái rõ ràng.
+- [x] Checksum/signature verification cho kết quả thanh toán mock.
+- [x] Trạng thái `Chờ thanh toán lại` khi thanh toán fail.
+- [x] Tạo notification cho `Người bán` khi có đơn mới.
 
 ### 3.7 FR-07: Người bán tiếp nhận và chuyển trạng thái đơn
 
@@ -352,7 +352,7 @@
 - [ ] P0: Push schema lên DB thật và seed admin test.
 - [x] `Voucher`.
 - [ ] P0: `Review`.
-- [ ] P0: Thêm trường payment/delivery vào `Order`.
+- [x] Thêm trường payment/delivery vào `Order`.
 - [ ] P1: `Shop`/`MerchantProfile` liên kết với `User`.
 - [ ] P1: `Transaction`/`Payment`.
 - [x] `MenuCategory`.
@@ -376,7 +376,7 @@
 - [ ] P0: Bảo vệ API theo role.
 - [ ] P1: JWT/cookie httpOnly thay cho localStorage.
 - [ ] P1: HTTPS/TLS trên môi trường deploy.
-- [ ] P1: Signature/checksum cho thanh toán online.
+- [x] Signature/checksum cho thanh toán online mock.
 - [ ] P1: Rate limit login/register.
 
 ### 6.3 Khả dụng và tin cậy
@@ -401,9 +401,8 @@
 ### 7.1 P0 nên làm trước
 
 1. Push schema DB và seed admin test khi kết nối Aiven đúng.
-2. Payment fields trong `Order`.
-3. Order tracking cho `Khách hàng`.
-4. Review + sentiment mock.
+2. Order tracking cho `Khách hàng`.
+3. Review + sentiment mock.
 5. API authorization theo role.
 
 ### 7.2 P1 sau khi demo P0 ổn định

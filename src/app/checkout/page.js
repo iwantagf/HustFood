@@ -5,6 +5,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { createMockPayment } from '@/lib/payments';
 
 export default function CheckoutPage() {
   const { cart, cartGroups, voucher, discount, totalItems, totalPrice, deliveryFee, finalTotal, isMounted } = useCart();
@@ -45,7 +46,7 @@ export default function CheckoutPage() {
     return regex.test(phone.replace(/\s+/g, ''));
   };
 
-  const processOrder = async () => {
+  const processOrder = async (payment = null) => {
     setIsProcessing(true);
     try {
       const orderData = {
@@ -55,7 +56,8 @@ export default function CheckoutPage() {
         totalPrice,
         deliveryFee,
         finalTotal,
-        voucherCode: voucher?.code || ''
+        voucherCode: voucher?.code || '',
+        payment
       };
 
       const res = await fetch('/api/orders', {
@@ -65,7 +67,7 @@ export default function CheckoutPage() {
       });
 
       if (res.ok) {
-        router.push('/success');
+        router.push(payment?.status === 'failed' ? '/success?payment=retry' : '/success');
       } else {
         const data = await res.json();
         alert(data.error || 'Có lỗi xảy ra khi đặt hàng');
@@ -109,9 +111,11 @@ export default function CheckoutPage() {
                 <div style={{ marginTop: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>Đang chờ thanh toán...</div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'center' }}>
-                <button type="button" className="btn btn-outline" onClick={() => setShowQR(false)}>Hủy</button>
-                <button type="button" className="btn btn-primary" onClick={() => { setShowQR(false); processOrder(); }}>
-                  {isProcessing ? 'Đang xử lý...' : 'Đã Thanh Toán Xong'}
+                <button type="button" className="btn btn-outline" onClick={() => { setShowQR(false); processOrder(createMockPayment({ method: formData.paymentMethod, amount: finalTotal, status: 'failed' })); }}>
+                  Mô phỏng thất bại
+                </button>
+                <button type="button" className="btn btn-primary" onClick={() => { setShowQR(false); processOrder(createMockPayment({ method: formData.paymentMethod, amount: finalTotal, status: 'paid' })); }}>
+                  {isProcessing ? 'Đang xử lý...' : 'Xác nhận đã thanh toán'}
                 </button>
               </div>
             </div>

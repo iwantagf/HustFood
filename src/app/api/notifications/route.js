@@ -9,13 +9,22 @@ export async function GET(request) {
 
     if (isDemoMode()) {
       const store = getDemoStore();
-      return new Response(JSON.stringify(store.notifications), {
+      const notifications = store.notifications.filter((notification) => (
+        !notification.ownerId || notification.ownerId === auth.user.id
+      ));
+      return new Response(JSON.stringify(notifications), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
     const notifications = await prisma.notification.findMany({
+      where: {
+        OR: [
+          { ownerId: null },
+          { ownerId: auth.user.id }
+        ]
+      },
       orderBy: { createdAt: 'desc' }
     });
     return new Response(JSON.stringify(notifications), {
@@ -37,11 +46,15 @@ export async function PUT(request) {
     if (isDemoMode()) {
       const store = getDemoStore();
       if (id === 'all') {
-        store.notifications.forEach((notification) => {
-          notification.read = true;
-        });
+        store.notifications
+          .filter((notification) => !notification.ownerId || notification.ownerId === auth.user.id)
+          .forEach((notification) => {
+            notification.read = true;
+          });
       } else {
-        const notification = store.notifications.find((item) => item.id === id);
+        const notification = store.notifications.find((item) => (
+          item.id === id && (!item.ownerId || item.ownerId === auth.user.id)
+        ));
         if (notification) notification.read = true;
       }
 
@@ -53,11 +66,23 @@ export async function PUT(request) {
     
     if (id === 'all') {
       await prisma.notification.updateMany({
+        where: {
+          OR: [
+            { ownerId: null },
+            { ownerId: auth.user.id }
+          ]
+        },
         data: { read: true }
       });
     } else {
-      await prisma.notification.update({
-        where: { id },
+      await prisma.notification.updateMany({
+        where: {
+          id,
+          OR: [
+            { ownerId: null },
+            { ownerId: auth.user.id }
+          ]
+        },
         data: { read: true }
       });
     }

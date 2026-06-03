@@ -96,6 +96,7 @@ export async function PUT(request) {
 
       store.notifications.unshift({
         id: createDemoId('demo-notification'),
+        ownerId: proposal.ownerId || null,
         message: notificationMsg,
         read: false,
         createdAt: new Date().toISOString()
@@ -145,6 +146,7 @@ export async function PUT(request) {
       
     await prisma.notification.create({
       data: {
+        ownerId: proposal.ownerId,
         message: notificationMsg,
         read: false
       }

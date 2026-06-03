@@ -46,6 +46,7 @@ export default function OrdersPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ xác nhận</span>;
+      case 'payment_retry': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Chờ thanh toán lại</span>;
       case 'ready_for_pickup': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'picked_up': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã lấy hàng</span>;
@@ -91,11 +92,19 @@ export default function OrdersPage() {
                     <div key={item.id}>{item.quantity}x {item.name}</div>
                   ))}
                 </td>
-                <td style={{ fontWeight: '600' }}>{getOrderFinalTotal(order).toLocaleString('vi-VN')}đ</td>
+                <td style={{ fontWeight: '600' }}>
+                  {getOrderFinalTotal(order).toLocaleString('vi-VN')}đ
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    {order.paymentMethod?.toUpperCase() || 'COD'} · {order.paymentStatus || 'pending'}
+                  </div>
+                </td>
                 <td>{getStatusBadge(order.status)}</td>
                 <td>
                   {order.status === 'pending' && (
                     <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>Sẵn sàng giao</button>
+                  )}
+                  {order.status === 'payment_retry' && (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
                   )}
                   {['ready_for_pickup', 'processing', 'picked_up', 'delivering'].includes(order.status) && (
                     <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'completed')}>Hoàn thành</button>

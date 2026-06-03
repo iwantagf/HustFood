@@ -47,6 +47,9 @@ export function calculateOrderTotals(items = [], voucher = null) {
 }
 
 export function getOrderFinalTotal(order) {
+  const orderFinalTotal = Number(order?.finalTotal);
+  if (Number.isFinite(orderFinalTotal) && orderFinalTotal > 0) return orderFinalTotal;
+
   const finalTotal = Number(order?.customer?.finalTotal);
   if (Number.isFinite(finalTotal)) return finalTotal;
 
