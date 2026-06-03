@@ -12,14 +12,15 @@
 
 ### 1.2 Trạng thái code hiện tại
 
-- Branch đang làm: `feature-srs-missing-modules`.
+- Branch đang làm: `feature/srs-fr06-payment`.
 - Các module đã có code chính:
   - Trang chủ, thực đơn, giỏ hàng, checkout, success.
   - Login/register demo qua database.
   - Phân quyền client-side theo role.
   - Dashboard `Người bán`, `Người giao hàng`, `Quản trị viên`.
   - API sản phẩm, đơn hàng, thông báo, đề xuất món, upload, hồ sơ cửa hàng, auth.
-  - Prisma schema cho `User`, `MerchantProfile`, `Product`, `Order`, `Proposal`, `Notification`.
+  - Prisma schema cho `User`, `MerchantProfile`, `Product`, `MenuCategory`, `SavedCart`, `Voucher`, `Order`, `Proposal`, `Notification`.
+  - Schema đã được push lên Aiven MySQL và seed dữ liệu demo.
 
 ## 2. Chú thích trạng thái
 
@@ -53,13 +54,13 @@
 - [x] Hash mật khẩu bằng `scrypt` + salt riêng.
 - [x] Thêm seed tài khoản `Quản trị viên` qua biến môi trường.
 - [x] Guard route client-side cho `/checkout`, `/seller`, `/shipper`, `/admin`.
+- [x] Chạy `npx prisma db push` và `npm run seed` trên DB thật Aiven.
+- [x] Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
+- [x] Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
+- [x] Bảo vệ API theo role, không chỉ bảo vệ UI.
 
 #### 3.1.2 Chưa làm
 
-- [ ] P0: Chạy `npx prisma db push` và `npm run seed` trên DB thật khi host Aiven resolve được.
-- [x] P1: Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
-- [x] P1: Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
-- [x] P1: Bảo vệ API theo role, không chỉ bảo vệ UI.
 - [ ] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
@@ -67,18 +68,19 @@
 #### 3.2.1 Đã làm
 
 - [x] Thêm model `MerchantProfile`.
-- [x] Thêm API `/api/merchant-profile` với `GET` và `PUT`.
+- [x] Thêm API `/api/merchant-profile` với `GET` và `PUT`.1
 - [x] Thêm form hồ sơ cửa hàng trong dashboard `Người bán`.
 - [x] Hồ sơ có tên quán, địa chỉ, tọa độ bản đồ, giờ mở/đóng cửa, số điện thoại, ảnh đại diện, trạng thái.
 - [x] Validate số điện thoại Việt Nam ở API.
+- [x] Push schema lên DB thật để tạo bảng `MerchantProfile`.
+- [x] Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
+- [x] Upload ảnh đại diện bằng file thật thay vì nhập URL.
+- [x] Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
+- [x] Duyệt/khóa cửa hàng từ `Quản trị viên`.
 
 #### 3.2.2 Chưa làm
 
-- [ ] P0: Push schema lên DB thật để tạo bảng `MerchantProfile`.
-- [x] P1: Gắn hồ sơ cửa hàng theo user `Người bán` thật, không dùng singleton `ownerRole = seller`.
-- [x] P1: Upload ảnh đại diện bằng file thật thay vì nhập URL.
-- [x] P1: Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
-- [x] P2: Duyệt/khóa cửa hàng từ `Quản trị viên`.
+- Không còn mục thiếu trong phạm vi FR-02 demo hiện tại.
 
 ### 3.3 FR-03: Biên soạn, cập nhật thực đơn và tùy chọn món
 
@@ -124,15 +126,16 @@
 - [x] Giỏ hàng lưu bằng `localStorage`.
 - [x] Thêm/xóa/cập nhật số lượng món.
 - [x] Tính tổng số lượng và tổng tiền món.
-
-#### 3.5.2 Chưa làm
-
 - [x] Thêm phí giao hàng theo km hoặc rule demo.
 - [x] Thêm voucher/mã giảm giá.
 - [x] Validate điều kiện voucher: giá trị tối thiểu, hạn sử dụng, số lần dùng.
 - [x] Tách đơn khi thêm món từ 2 cửa hàng khác nhau.
 - [x] Topping/tùy chọn món và ghi chú theo từng item.
 - [x] Lưu giỏ hàng server-side cho user đã đăng nhập.
+
+#### 3.5.2 Chưa làm
+
+- Không còn mục thiếu trong phạm vi FR-05 demo hiện tại.
 
 ### 3.6 FR-06: Thanh toán đa hình thức và chốt đơn
 
@@ -144,14 +147,15 @@
 - [x] Có modal QR mô phỏng cho thanh toán online.
 - [x] Có API tạo đơn `/api/orders`.
 - [x] Có trang success sau khi đặt đơn.
-
-#### 3.6.2 Chưa làm
-
 - [x] Lưu `paymentMethod`, `paymentStatus`, `deliveryFee`, `discount`, `finalTotal` vào DB.
 - [x] Tích hợp mock thanh toán có trạng thái rõ ràng.
 - [x] Checksum/signature verification cho kết quả thanh toán mock.
 - [x] Trạng thái `Chờ thanh toán lại` khi thanh toán fail.
 - [x] Tạo notification cho `Người bán` khi có đơn mới.
+
+#### 3.6.2 Chưa làm
+
+- Không còn mục thiếu trong phạm vi FR-06 demo hiện tại.
 
 ### 3.7 FR-07: Người bán tiếp nhận và chuyển trạng thái đơn
 
@@ -161,6 +165,7 @@
 - [x] Cập nhật trạng thái `pending` -> `processing` -> `completed`.
 - [x] Có polling 5 giây để làm mới dữ liệu.
 - [x] Có thông báo đề xuất món mới.
+- [x] Tách đơn theo cửa hàng của từng `Người bán`.
 
 #### 3.7.2 Chưa làm
 
@@ -168,7 +173,6 @@
 - [ ] P1: Pop-up/chuông âm thanh khi có đơn mới.
 - [ ] P1: Nút `Từ chối đơn` kèm lý do.
 - [ ] P1: Broadcast đơn cho `Người giao hàng` gần khu vực.
-- [ ] P1: Tách đơn theo cửa hàng của từng `Người bán`.
 
 ### 3.8 FR-08: Người giao hàng nhận đơn và cập nhật giao hàng
 
@@ -265,14 +269,14 @@
 - [x] Checkout.
 - [x] Success page.
 - [x] Đăng nhập/đăng ký.
+- [x] Trang tìm kiếm/lọc.
+- [x] Trang chi tiết cửa hàng.
+- [x] UI voucher và phí giao hàng.
 
 #### 4.1.2 Chưa làm
 
-- [ ] P0: Trang tìm kiếm/lọc.
 - [ ] P0: Trang theo dõi đơn.
 - [ ] P0: Trang đánh giá sau đơn.
-- [x] Trang chi tiết cửa hàng.
-- [x] UI voucher và phí giao hàng.
 
 ### 4.2 Người bán
 
@@ -339,6 +343,12 @@
 - [x] Trường gắn shipper vào `Order`.
 - [x] `Proposal`.
 - [x] `Notification`.
+- [x] `SavedCart`.
+- [x] `Voucher`.
+- [x] `MenuCategory`.
+- [x] `Shop`/`MerchantProfile` liên kết với `User`.
+- [x] Tùy chọn món bằng `Product.options`.
+- [x] Thêm trường payment/delivery vào `Order`.
 - [x] API auth: login/register/social.
 - [x] API merchant profile.
 - [x] API products.
@@ -346,19 +356,15 @@
 - [x] API proposals.
 - [x] API notifications.
 - [x] API upload.
+- [x] API authorization theo role.
+- [x] Push schema lên Aiven MySQL.
+- [x] Seed dữ liệu demo trên Aiven MySQL.
 
 ### 5.2 Chưa làm
 
-- [ ] P0: Push schema lên DB thật và seed admin test.
-- [x] `Voucher`.
 - [ ] P0: `Review`.
-- [x] Thêm trường payment/delivery vào `Order`.
-- [ ] P1: `Shop`/`MerchantProfile` liên kết với `User`.
 - [ ] P1: `Transaction`/`Payment`.
-- [x] `MenuCategory`.
-- [x] Tùy chọn món bằng `Product.options`.
 - [ ] P1: `SentimentAnalysis`.
-- [ ] P1: API authorization theo role.
 
 ## 6. Checklist phi chức năng
 
@@ -372,9 +378,9 @@
 ### 6.2 Bảo mật
 
 - [x] Mật khẩu hash bằng `scrypt` + salt.
-- [~] RBAC có trên UI/route guard client-side.
-- [ ] P0: Bảo vệ API theo role.
-- [ ] P1: JWT/cookie httpOnly thay cho localStorage.
+- [x] RBAC có trên UI/route guard client-side.
+- [x] Bảo vệ API theo role.
+- [x] JWT/cookie httpOnly thay cho localStorage.
 - [ ] P1: HTTPS/TLS trên môi trường deploy.
 - [x] Signature/checksum cho thanh toán online mock.
 - [ ] P1: Rate limit login/register.
@@ -400,15 +406,11 @@
 
 ### 7.1 P0 nên làm trước
 
-1. Push schema DB và seed admin test khi kết nối Aiven đúng.
-2. Order tracking cho `Khách hàng`.
-3. Review + sentiment mock.
-5. API authorization theo role.
+1. Order tracking cho `Khách hàng`.
+2. Review + sentiment mock.
 
 ### 7.2 P1 sau khi demo P0 ổn định
 
-1. Tìm kiếm/lọc quán ăn và món.
-2. Quản lý menu theo cửa hàng của `Người bán`.
-3. Realtime bằng WebSocket/SSE.
-4. Dashboard biểu đồ và lọc thời gian.
-5. OAuth thật và JWT/cookie.
+1. Realtime bằng WebSocket/SSE.
+2. Dashboard biểu đồ và lọc thời gian.
+3. OAuth thật.
