@@ -535,6 +535,43 @@ Body:
 }
 ```
 
+Người giao hàng có các action riêng:
+
+```json
+{
+  "id": "#HF1234",
+  "action": "accept"
+}
+```
+
+```json
+{
+  "id": "#HF1234",
+  "action": "collect_cod"
+}
+```
+
+```json
+{
+  "id": "#HF1234",
+  "action": "update_location",
+  "location": {
+    "latitude": 21.0059,
+    "longitude": 105.8431
+  }
+}
+```
+
+```json
+{
+  "id": "#HF1234",
+  "action": "report_issue",
+  "issue": "Khách không nghe máy"
+}
+```
+
+Đơn COD phải được ghi nhận `collect_cod` trước khi chuyển `completed`. Màn hình `/shipper` dùng GPS trình duyệt để sắp xếp/lọc đơn gần điểm lấy hàng và lưu vị trí cuối của người giao hàng vào đơn.
+
 Từ chối đơn cần lý do:
 
 ```json

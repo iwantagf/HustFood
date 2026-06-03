@@ -52,7 +52,9 @@ function getProductMerchant(product) {
   const profile = product?.owner?.merchantProfile;
   return {
     merchantId: profile?.ownerId || product?.ownerId || product?.owner?.id || 'shared-menu',
-    merchantName: profile?.shopName || 'HustFood'
+    merchantName: profile?.shopName || 'HustFood',
+    pickupAddress: profile?.address || null,
+    pickupLocation: profile?.mapLocation || null
   };
 }
 
@@ -78,6 +80,8 @@ function buildOrderCreateData(body, products, voucher = null, paymentState = nul
       image: product.image,
       merchantId: getProductMerchant(product).merchantId,
       merchantName: getProductMerchant(product).merchantName,
+      pickupAddress: getProductMerchant(product).pickupAddress,
+      pickupLocation: getProductMerchant(product).pickupLocation,
       selectedOptions: item.selectedOptions,
       itemNote: item.itemNote,
       quantity: item.quantity
@@ -90,6 +94,8 @@ function buildOrderCreateData(body, products, voucher = null, paymentState = nul
       groups.set(item.merchantId, {
         merchantId: item.merchantId,
         merchantName: item.merchantName,
+        pickupAddress: item.pickupAddress,
+        pickupLocation: item.pickupLocation,
         items: []
       });
     }
@@ -113,6 +119,8 @@ function buildOrderCreateData(body, products, voucher = null, paymentState = nul
     return {
       merchantId: group.merchantId,
       merchantName: group.merchantName,
+      pickupAddress: group.pickupAddress,
+      pickupLocation: group.pickupLocation,
       customer: {
         ...(body.customer || {}),
         deliveryFee,
@@ -176,6 +184,8 @@ function buildOrderRecord(orderData, extraData = {}) {
     ...extraData,
     merchantId: orderData.merchantId,
     merchantName: orderData.merchantName,
+    pickupAddress: orderData.pickupAddress,
+    pickupLocation: orderData.pickupLocation,
     customer: {
       ...orderData.customer
     },
@@ -191,6 +201,7 @@ function buildOrderRecord(orderData, extraData = {}) {
     paymentTransactionId: orderData.paymentState?.paymentTransactionId || null,
     paymentChecksum: orderData.paymentState?.paymentChecksum || null,
     paymentFailureReason: orderData.paymentState?.paymentFailureReason || null,
+    codAmount: orderData.paymentState?.paymentMethod === 'cod' ? orderData.finalTotal : 0,
     status: orderData.paymentState?.orderStatus || 'pending'
   };
 }
@@ -245,10 +256,73 @@ async function notifySellerNewOrders(orders) {
   });
 }
 
-function buildOrderUpdate({ order, status, action, rejectionReason, user }) {
+function normalizeCoordinate(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function buildOrderUpdate({ order, status, action, rejectionReason, issue, location, user }) {
   const update = {};
   const now = new Date();
   const reason = String(rejectionReason || '').trim();
+  const issueText = String(issue || '').trim();
+
+  if (action === 'update_location') {
+    if (user.role !== 'shipper') {
+      return { error: 'Chỉ người giao hàng được cập nhật vị trí' };
+    }
+
+    if (!order.shipperId || order.shipperId !== user.id) {
+      return { error: 'Bạn chưa được phân công đơn hàng này' };
+    }
+
+    const latitude = normalizeCoordinate(location?.latitude);
+    const longitude = normalizeCoordinate(location?.longitude);
+
+    if (latitude === null || longitude === null) {
+      return { error: 'Tọa độ GPS không hợp lệ' };
+    }
+
+    update.shipperLatitude = latitude;
+    update.shipperLongitude = longitude;
+    update.shipperLocationAt = now;
+    return { update };
+  }
+
+  if (action === 'collect_cod') {
+    if (user.role !== 'shipper') {
+      return { error: 'Chỉ người giao hàng được ghi nhận COD' };
+    }
+
+    if (!order.shipperId || order.shipperId !== user.id) {
+      return { error: 'Bạn chưa được phân công đơn hàng này' };
+    }
+
+    if (order.paymentMethod !== 'cod') {
+      return { error: 'Đơn này không phải thanh toán COD' };
+    }
+
+    update.codCollectedAt = now;
+    return { update };
+  }
+
+  if (action === 'report_issue') {
+    if (user.role !== 'shipper') {
+      return { error: 'Chỉ người giao hàng được báo cáo sự cố' };
+    }
+
+    if (!order.shipperId || order.shipperId !== user.id) {
+      return { error: 'Bạn chưa được phân công đơn hàng này' };
+    }
+
+    if (!issueText) {
+      return { error: 'Vui lòng nhập nội dung sự cố' };
+    }
+
+    update.shipperIssue = issueText;
+    update.shipperIssueAt = now;
+    return { update };
+  }
 
   if (action === 'accept') {
     if (!SHIPPER_READY_STATUSES.includes(order.status)) {
@@ -340,6 +414,10 @@ function buildOrderUpdate({ order, status, action, rejectionReason, user }) {
     }
 
     if (status === 'completed') {
+      if (order.paymentMethod === 'cod' && !order.codCollectedAt) {
+        return { error: 'Vui lòng ghi nhận đã thu COD trước khi hoàn thành đơn' };
+      }
+
       update.deliveredAt = now;
     }
 
@@ -457,6 +535,12 @@ export async function POST(request) {
         acceptedAt: null,
         pickedUpAt: null,
         deliveredAt: null,
+        codCollectedAt: null,
+        shipperIssue: null,
+        shipperIssueAt: null,
+        shipperLatitude: null,
+        shipperLongitude: null,
+        shipperLocationAt: null,
         createdAt: new Date(Date.now() + index).toISOString()
       }));
       store.orders.unshift(...newOrders);
@@ -489,7 +573,7 @@ export async function PUT(request) {
     const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
     if (auth.response) return auth.response;
 
-    const { id, status, action, rejectionReason } = await request.json();
+    const { id, status, action, rejectionReason, issue, location } = await request.json();
 
     if (!id) {
       return json({ error: 'Thiếu mã đơn hàng' }, 400);
@@ -506,7 +590,7 @@ export async function PUT(request) {
         return json({ error: 'Bạn không được xử lý đơn của cửa hàng khác' }, 403);
       }
 
-      const result = buildOrderUpdate({ order, status, action, rejectionReason, user: auth.user });
+      const result = buildOrderUpdate({ order, status, action, rejectionReason, issue, location, user: auth.user });
       if (result.error) return json({ error: result.error }, 400);
 
       Object.assign(order, result.update);
@@ -520,7 +604,7 @@ export async function PUT(request) {
       return json({ error: 'Bạn không được xử lý đơn của cửa hàng khác' }, 403);
     }
 
-    const result = buildOrderUpdate({ order, status, action, rejectionReason, user: auth.user });
+    const result = buildOrderUpdate({ order, status, action, rejectionReason, issue, location, user: auth.user });
     if (result.error) return json({ error: result.error }, 400);
     
     const updatedOrder = await prisma.order.update({

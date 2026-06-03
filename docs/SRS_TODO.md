@@ -184,13 +184,14 @@
 - [x] Hiển thị đơn chờ nhận từ các đơn đã sẵn sàng giao.
 - [x] Có nút nhận đơn và gắn shipper vào đơn.
 - [x] Cập nhật trạng thái `Đã lấy hàng`, `Đang giao`, `Hoàn thành`.
+- [x] Lọc/sắp xếp đơn gần khu vực bằng GPS trình duyệt và tọa độ cửa hàng.
+- [x] Ghi nhận COD và doanh thu chuyến đi cho `Người giao hàng`.
+- [x] Báo cáo sự cố khách không nghe máy.
+- [x] GPS/live location mobile-friendly và lưu vị trí cuối vào đơn.
 
 #### 3.8.2 Chưa làm
 
-- [ ] P1: Lọc đơn gần khu vực theo địa chỉ/GPS thật.
-- [ ] P1: Ghi nhận COD và doanh thu chuyến đi cho `Người giao hàng`.
-- [ ] P1: Báo cáo sự cố khách không nghe máy.
-- [ ] P2: GPS/live location mobile-friendly.
+- Không còn mục thiếu trong phạm vi FR-08 demo hiện tại.
 
 ### 3.9 FR-09: Theo dõi tiến độ đơn hàng thời gian thực
 
@@ -306,12 +307,13 @@
 - [x] Dashboard danh sách đơn chờ nhận.
 - [x] Nút nhận đơn.
 - [x] Nút cập nhật trạng thái giao hàng.
+- [x] Màn hình chi tiết lộ trình.
+- [x] UI COD/đối soát.
+- [x] UI báo cáo sự cố.
 
 #### 4.3.2 Chưa làm
 
-- [ ] P1: Màn hình chi tiết lộ trình.
-- [ ] P1: UI COD/đối soát.
-- [ ] P1: UI báo cáo sự cố.
+- Không còn mục thiếu trong phạm vi shipper demo hiện tại.
 
 ### 4.4 Quản trị viên
 
