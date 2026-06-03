@@ -1,4 +1,5 @@
 "use client";
+import { useState } from 'react';
 import styles from '@/app/page.module.css';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -10,13 +11,23 @@ export default function ProductCard({ product }) {
   const { role } = useAuth();
   const router = useRouter();
   const canOrder = !role || role === 'customer';
+  const [selection, setSelection] = useState({
+    size: product.options?.sizes?.[0] || '',
+    topping: product.options?.toppings?.[0] || '',
+    taste: product.options?.tastes?.[0] || '',
+    note: ''
+  });
+
+  const handleSelectionChange = (field, value) => {
+    setSelection(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleAdd = () => {
     if (!role) {
       router.push('/login');
       return;
     }
-    addToCart(product);
+    addToCart(product, selection);
   };
 
   return (
@@ -26,6 +37,28 @@ export default function ProductCard({ product }) {
       </div>
       <h3 className={styles.productName}>{product.name}</h3>
       <p className={styles.productDesc}>{product.desc}</p>
+      {canOrder && (
+        <div className={styles.optionControls}>
+          {product.options?.sizes?.length > 0 && (
+            <select value={selection.size} onChange={e => handleSelectionChange('size', e.target.value)} aria-label="Chọn kích cỡ">
+              {product.options.sizes.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          )}
+          {product.options?.toppings?.length > 0 && (
+            <select value={selection.topping} onChange={e => handleSelectionChange('topping', e.target.value)} aria-label="Chọn topping">
+              {product.options.toppings.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          )}
+          {product.options?.tastes?.length > 0 && (
+            <select value={selection.taste} onChange={e => handleSelectionChange('taste', e.target.value)} aria-label="Chọn vị">
+              {product.options.tastes.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          )}
+          {product.options?.allowNote !== false && (
+            <input value={selection.note} onChange={e => handleSelectionChange('note', e.target.value)} placeholder="Ghi chú món" aria-label="Ghi chú món" />
+          )}
+        </div>
+      )}
       <div className={styles.productFooter}>
         <span className={styles.productPrice}>{product.price}</span>
         {canOrder && (

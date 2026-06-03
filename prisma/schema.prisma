@@ -8,30 +8,60 @@ datasource db {
 }
 
 model Product {
-  id        String   @id @default(cuid())
+  id          String        @id @default(cuid())
+  ownerId     String?
+  owner       User?         @relation(fields: [ownerId], references: [id])
+  categoryId  String?
+  category    MenuCategory? @relation(fields: [categoryId], references: [id])
+  name        String
+  desc        String        @db.Text
+  price       String
+  image       String
+  options     Json?
+  isAvailable Boolean       @default(true)
+  isHidden    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model MenuCategory {
+  id        String    @id @default(cuid())
+  ownerId   String?
+  owner     User?     @relation(fields: [ownerId], references: [id])
   name      String
-  desc      String   @db.Text
-  price     String
-  image     String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  products  Product[]
 }
 
 model User {
-  id                String   @id @default(cuid())
-  email             String?  @unique
-  username          String?  @unique
+  id                String           @id @default(cuid())
+  email             String?          @unique
+  username          String?          @unique
   displayName       String
-  role              String   @default("customer") // customer, seller, shipper, admin
-  status            String   @default("active") // active, blocked
-  provider          String   @default("credentials") // credentials, google, facebook, instagram
+  role              String           @default("customer") // customer, seller, shipper, admin
+  status            String           @default("active") // active, blocked
+  provider          String           @default("credentials") // credentials, google, facebook, instagram
   providerAccountId String
   passwordHash      String?
   passwordSalt      String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
   merchantProfile   MerchantProfile?
+  products          Product[]
+  proposals         Proposal[]
+  menuCategories    MenuCategory[]
+  savedCart         SavedCart?
 
   @@unique([provider, providerAccountId])
+}
+
+model SavedCart {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  items     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MerchantProfile {
@@ -46,28 +76,48 @@ model MerchantProfile {
   closeTime   String
   phone       String
   image       String
+  rating      Float    @default(4.5)
+  reviewCount Int      @default(0)
   status      String   @default("pending_review") // active, paused, pending_review, blocked
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Order {
-  id          String    @id @default(cuid())
-  customer    Json      // Store customer info (name, phone, address, etc.)
-  items       Json      // Store array of items {id, name, price, quantity, etc.}
-  totalItems  Int
-  totalPrice  Int
-  status      String    @default("pending") // pending, ready_for_pickup, picked_up, delivering, completed
-  shipperId   String?
-  shipperName String?
-  acceptedAt  DateTime?
-  pickedUpAt  DateTime?
-  deliveredAt DateTime?
-  createdAt   DateTime  @default(now())
+  id           String    @id @default(cuid())
+  merchantId   String?
+  merchantName String?
+  customer     Json // Store customer info (name, phone, address, etc.)
+  items        Json // Store array of items {id, name, price, quantity, etc.}
+  totalItems   Int
+  totalPrice   Int
+  status       String    @default("pending") // pending, ready_for_pickup, picked_up, delivering, completed
+  shipperId    String?
+  shipperName  String?
+  acceptedAt   DateTime?
+  pickedUpAt   DateTime?
+  deliveredAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model Voucher {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  description   String
+  discountType  String // fixed, percent
+  discountValue Int
+  minSubtotal   Int       @default(0)
+  expiresAt     DateTime?
+  usageLimit    Int?
+  usedCount     Int       @default(0)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
 }
 
 model Proposal {
   id        String   @id @default(cuid())
+  ownerId   String?
+  owner     User?    @relation(fields: [ownerId], references: [id])
   name      String
   desc      String   @db.Text
   price     String

@@ -4,9 +4,62 @@ import styles from '../admin/admin.module.css';
 import Link from 'next/link';
 import { getOrderFinalTotal } from '@/lib/pricing';
 
+const DEFAULT_MENU_FORM = {
+  name: '',
+  desc: '',
+  price: '',
+  image: '',
+  categoryId: '',
+  sizes: '',
+  toppings: '',
+  tastes: '',
+  allowNote: true,
+  isAvailable: true,
+  isHidden: false
+};
+
+function optionArrayToText(value) {
+  return Array.isArray(value) ? value.join(', ') : '';
+}
+
+function productToMenuForm(product) {
+  return {
+    name: product.name || '',
+    desc: product.desc || '',
+    price: product.price || '',
+    image: product.image || '',
+    categoryId: product.categoryId || '',
+    sizes: optionArrayToText(product.options?.sizes),
+    toppings: optionArrayToText(product.options?.toppings),
+    tastes: optionArrayToText(product.options?.tastes),
+    allowNote: product.options?.allowNote !== false,
+    isAvailable: product.isAvailable !== false,
+    isHidden: Boolean(product.isHidden)
+  };
+}
+
+function menuFormToPayload(menuForm, imageUrl) {
+  return {
+    name: menuForm.name,
+    desc: menuForm.desc,
+    price: menuForm.price,
+    image: imageUrl,
+    categoryId: menuForm.categoryId || null,
+    options: {
+      sizes: menuForm.sizes,
+      toppings: menuForm.toppings,
+      tastes: menuForm.tastes,
+      allowNote: menuForm.allowNote
+    },
+    isAvailable: menuForm.isAvailable,
+    isHidden: menuForm.isHidden
+  };
+}
+
 export default function SellerPage() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [merchantProfile, setMerchantProfile] = useState({
     shopName: '',
@@ -20,29 +73,37 @@ export default function SellerPage() {
   });
   const [showNotifications, setShowNotifications] = useState(false);
   const [proposal, setProposal] = useState({ name: '', desc: '', price: '', image: '' });
+  const [menuForm, setMenuForm] = useState(DEFAULT_MENU_FORM);
+  const [categoryForm, setCategoryForm] = useState('');
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [menuImageFile, setMenuImageFile] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [isProposing, setIsProposing] = useState(false);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, notificationsRes, profileRes] = await Promise.all([
+      const [ordersRes, productsRes, notificationsRes, profileRes, categoriesRes] = await Promise.all([
         fetch('/api/orders'),
-        fetch('/api/products'),
+        fetch('/api/products?scope=mine'),
         fetch('/api/notifications'),
-        fetch('/api/merchant-profile')
+        fetch('/api/merchant-profile'),
+        fetch('/api/menu-categories?scope=mine')
       ]);
-      const [ordersData, productsData, notifData, profileData] = await Promise.all([
+      const [ordersData, productsData, notifData, profileData, categoriesData] = await Promise.all([
         ordersRes.json(),
         productsRes.json(),
         notificationsRes.json(),
-        profileRes.json()
+        profileRes.json(),
+        categoriesRes.json()
       ]);
-      setOrders(ordersData);
-      setProducts(productsData);
-      setNotifications(notifData);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setProducts(Array.isArray(productsData) ? productsData : []);
+      setNotifications(Array.isArray(notifData) ? notifData : []);
       setMerchantProfile(profileData);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error('Không tải được dữ liệu seller:', error);
     } finally {
@@ -200,6 +261,150 @@ export default function SellerPage() {
       alert('Có lỗi xảy ra khi lưu hồ sơ cửa hàng.');
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleMenuProductChange = (field, value) => {
+    setMenuForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const resetMenuForm = () => {
+    setMenuForm(DEFAULT_MENU_FORM);
+    setEditingProductId(null);
+    setMenuImageFile(null);
+    const fileInput = document.getElementById('seller-menu-file');
+    if (fileInput) fileInput.value = '';
+  };
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch('/api/menu-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: categoryForm })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không tạo được danh mục.');
+        return;
+      }
+
+      setCategories(prev => [...prev, data]);
+      setMenuForm(prev => ({ ...prev, categoryId: data.id }));
+      setCategoryForm('');
+    } catch (error) {
+      console.error('Không tạo được danh mục:', error);
+      alert('Có lỗi xảy ra khi tạo danh mục.');
+    }
+  };
+
+  const handleEditProduct = (product) => {
+    setEditingProductId(product.id);
+    setMenuForm(productToMenuForm(product));
+    setMenuImageFile(null);
+    const fileInput = document.getElementById('seller-menu-file');
+    if (fileInput) fileInput.value = '';
+  };
+
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    setIsSavingProduct(true);
+
+    try {
+      let imageUrl = menuForm.image || '/images/burger.png';
+
+      if (menuImageFile) {
+        const uploadData = new FormData();
+        uploadData.append('file', menuImageFile);
+
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadData
+        });
+        const uploadResult = await uploadRes.json();
+
+        if (!uploadRes.ok || !uploadResult.success) {
+          alert(uploadResult.error || 'Không tải được ảnh món.');
+          return;
+        }
+
+        imageUrl = uploadResult.url;
+      }
+
+      const payload = menuFormToPayload(menuForm, imageUrl);
+      const res = await fetch('/api/products', {
+        method: editingProductId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingProductId ? { id: editingProductId, ...payload } : payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không lưu được món trong thực đơn.');
+        return;
+      }
+
+      setProducts(prev => editingProductId
+        ? prev.map(product => product.id === editingProductId ? data : product)
+        : [data, ...prev]);
+      resetMenuForm();
+    } catch (error) {
+      console.error('Không lưu được món:', error);
+      alert('Có lỗi xảy ra khi lưu món.');
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  const updateProductInline = async (product, patch) => {
+    try {
+      const payload = {
+        ...productToMenuForm(product),
+        ...patch
+      };
+      const imageUrl = payload.image || product.image || '/images/burger.png';
+      const res = await fetch('/api/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: product.id, ...menuFormToPayload(payload, imageUrl) })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không cập nhật được món.');
+        return;
+      }
+
+      setProducts(prev => prev.map(item => item.id === product.id ? data : item));
+    } catch (error) {
+      console.error('Không cập nhật được món:', error);
+      alert('Có lỗi xảy ra khi cập nhật món.');
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa món này khỏi thực đơn cửa hàng?')) return;
+
+    try {
+      const res = await fetch('/api/products', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không xóa được món khỏi thực đơn.');
+        return;
+      }
+
+      setProducts(prev => prev.filter(product => product.id !== id));
+    } catch (error) {
+      console.error('Không xóa được món:', error);
+      alert('Có lỗi xảy ra khi xóa món.');
     }
   };
 
@@ -435,15 +640,126 @@ export default function SellerPage() {
           )}
 
           <div style={{ marginTop: '2rem' }}>
-            <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>Số món đang bán</h2>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <div className={styles.statCard} style={{ flex: '1 1 100%', padding: '1rem' }}>
-                <div className={styles.statInfo}>
-                  <div className={styles.statLabel}>Tổng món</div>
-                  <div className={styles.statValue}>{products.length}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: 0 }}>Thực đơn cửa hàng</h2>
+              <span className={styles.statusBadge}>{products.length} món</span>
+            </div>
+
+            <form onSubmit={handleCreateCategory} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', marginBottom: '1rem' }}>
+              <input type="text" value={categoryForm} onChange={e => setCategoryForm(e.target.value)} placeholder="Thêm danh mục mới" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              <button type="submit" className={styles.actionBtn} disabled={!categoryForm.trim()} style={{ padding: '0.75rem 0.9rem', opacity: categoryForm.trim() ? 1 : 0.6 }}>
+                Thêm
+              </button>
+            </form>
+
+            <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.25rem' }}>
+              {editingProductId && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                  <span style={{ fontWeight: '700', color: 'var(--text)' }}>Đang sửa món</span>
+                  <button type="button" onClick={resetMenuForm} className={styles.actionBtn} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.45rem 0.7rem' }}>
+                    Hủy sửa
+                  </button>
+                </div>
+              )}
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Tên món</label>
+                <input required type="text" value={menuForm.name} onChange={e => handleMenuProductChange('name', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Mô tả</label>
+                <textarea required value={menuForm.desc} onChange={e => handleMenuProductChange('desc', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', minHeight: '74px' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Giá (VD: 65.000đ)</label>
+                <input required type="text" value={menuForm.price} onChange={e => handleMenuProductChange('price', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Danh mục</label>
+                <select value={menuForm.categoryId} onChange={e => handleMenuProductChange('categoryId', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
+                  <option value="">Chưa phân loại</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Ảnh món</label>
+                <input id="seller-menu-file" type="file" accept="image/*" onChange={e => setMenuImageFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
+                <input type="text" value={menuForm.image} onChange={e => handleMenuProductChange('image', e.target.value)} placeholder="/images/burger.png" style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Kích cỡ</label>
+                  <input type="text" value={menuForm.sizes} onChange={e => handleMenuProductChange('sizes', e.target.value)} placeholder="Nhỏ, Vừa, Lớn" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Topping</label>
+                  <input type="text" value={menuForm.toppings} onChange={e => handleMenuProductChange('toppings', e.target.value)} placeholder="Phô mai, Trứng, Sốt" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Vị/cấp độ</label>
+                  <input type="text" value={menuForm.tastes} onChange={e => handleMenuProductChange('tastes', e.target.value)} placeholder="Không cay, Cay vừa" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
                 </div>
               </div>
-            </div>
+              <div style={{ display: 'grid', gap: '0.55rem' }}>
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
+                  <input type="checkbox" checked={menuForm.allowNote} onChange={e => handleMenuProductChange('allowNote', e.target.checked)} />
+                  Cho khách ghi chú riêng
+                </label>
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
+                  <input type="checkbox" checked={menuForm.isAvailable} onChange={e => handleMenuProductChange('isAvailable', e.target.checked)} />
+                  Còn hàng
+                </label>
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
+                  <input type="checkbox" checked={menuForm.isHidden} onChange={e => handleMenuProductChange('isHidden', e.target.checked)} />
+                  Ẩn khỏi thực đơn khách hàng
+                </label>
+              </div>
+              <button type="submit" disabled={isSavingProduct} className={styles.actionBtn} style={{ width: '100%', padding: '0.8rem', opacity: isSavingProduct ? 0.7 : 1 }}>
+                {isSavingProduct ? 'Đang lưu...' : editingProductId ? 'Lưu chỉnh sửa món' : 'Thêm món vào thực đơn'}
+              </button>
+            </form>
+
+            {products.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)' }}>Cửa hàng chưa có món nào.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '0.85rem' }}>
+                {products.map((product) => (
+                  <div key={product.id} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: '0.75rem', alignItems: 'start', padding: '0.75rem', border: '1px solid #eee', borderRadius: '10px', background: product.isHidden ? '#f9fafb' : '#fff' }}>
+                    <img src={product.image || '/images/burger.png'} alt={product.name} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'start' }}>
+                        <div style={{ fontWeight: '700' }}>{product.name}</div>
+                        <span className={`${styles.statusBadge} ${product.isAvailable === false ? styles.statusRejected : styles.statusCompleted}`} style={{ whiteSpace: 'nowrap' }}>
+                          {product.isAvailable === false ? 'Hết hàng' : 'Còn hàng'}
+                        </span>
+                      </div>
+                      <div style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>{product.price}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{product.category?.name || 'Chưa phân loại'}{product.isHidden ? ' · Đang ẩn' : ''}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.desc}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>
+                        {(product.options?.sizes || []).slice(0, 2).map((item) => <span key={`size-${product.id}-${item}`} className={styles.statusBadge}>{item}</span>)}
+                        {(product.options?.toppings || []).slice(0, 2).map((item) => <span key={`top-${product.id}-${item}`} className={styles.statusBadge}>{item}</span>)}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginTop: '0.65rem' }}>
+                        <button type="button" onClick={() => handleEditProduct(product)} className={styles.actionBtn} style={{ padding: '0.45rem 0.65rem' }}>
+                          Sửa
+                        </button>
+                        <button type="button" onClick={() => updateProductInline(product, { isAvailable: product.isAvailable === false })} className={styles.actionBtn} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.45rem 0.65rem' }}>
+                          {product.isAvailable === false ? 'Bật còn hàng' : 'Đánh dấu hết'}
+                        </button>
+                        <button type="button" onClick={() => updateProductInline(product, { isHidden: !product.isHidden })} className={styles.actionBtn} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.45rem 0.65rem' }}>
+                          {product.isHidden ? 'Hiện' : 'Ẩn'}
+                        </button>
+                        <button type="button" onClick={() => handleDeleteProduct(product.id)} className={styles.actionBtn} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', padding: '0.45rem 0.65rem' }}>
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <div style={{ marginTop: '2rem', background: '#fff', padding: '1.5rem', borderRadius: '16px', border: '1px solid #eee' }}>

@@ -89,31 +89,32 @@
 - [x] Có trang `Quản trị viên` quản lý thực đơn.
 - [x] `Người bán` có form đề xuất món mới, `Quản trị viên` duyệt để tạo sản phẩm.
 
-#### 3.3.2 Chưa làm
+#### 3.3.2 Hoàn thiện quản lý thực đơn theo cửa hàng
 
-- [ ] P0: Cho `Người bán` quản lý thực đơn của chính cửa hàng theo SRS.
-- [ ] P1: Thêm sửa món, không chỉ thêm/xóa.
-- [ ] P1: Thêm danh mục món `MenuCategory`.
-- [ ] P1: Thêm tùy chọn món: topping, kích cỡ, cay/ngọt, ghi chú riêng.
-- [ ] P1: Thêm trạng thái `Còn hàng` / `Hết hàng`.
-- [ ] P1: Chặn xóa món đang nằm trong đơn cho xử lý, chỉ cho ẩn hoặc hết hàng.
-- [ ] P2: Upload ảnh món bằng file thật và tối ưu ảnh.
+- [x] `Người bán` quản lý thực đơn của chính cửa hàng.
+- [x] Sửa món, không chỉ thêm/xóa.
+- [x] Thêm danh mục món `MenuCategory`.
+- [x] Thêm tùy chọn món: topping, kích cỡ, cay/ngọt, ghi chú riêng.
+- [x] Thêm trạng thái `Còn hàng` / `Hết hàng`.
+- [x] Chặn xóa món đang nằm trong đơn đang xử lý, chỉ cho ẩn hoặc hết hàng.
+- [x] Upload ảnh món bằng file thật qua `/api/upload`.
 
 ### 3.4 FR-04: Tìm kiếm quán ăn và lọc kết quả
 
 #### 3.4.1 Đã làm
 
-- [~] Trang chủ hiển thị danh sách món từ database.
-- [~] Có CTA tới khu vực menu.
+- [x] Trang chủ hiển thị danh sách món từ database.
+- [x] Có CTA tới khu vực menu.
+- [x] Có thanh tìm kiếm món/quán.
+- [x] Lọc theo giá.
+- [x] Lọc theo khoảng cách GPS demo từ tọa độ cửa hàng.
+- [x] Lọc theo điểm đánh giá.
+- [x] Trang chi tiết cửa hàng và menu theo cửa hàng.
+- [x] Gợi ý món thịnh hành khi không có kết quả.
 
 #### 3.4.2 Chưa làm
 
-- [ ] P0: Thêm thanh tìm kiếm món/quán.
-- [ ] P1: Lọc theo giá.
-- [ ] P1: Lọc theo khoảng cách GPS.
-- [ ] P1: Lọc theo điểm đánh giá.
-- [ ] P1: Trang chi tiết cửa hàng và menu theo cửa hàng.
-- [ ] P2: Gợi ý món thịnh hành khi không có kết quả.
+- Không còn mục thiếu trong phạm vi FR-04 demo hiện tại.
 
 ### 3.5 FR-05: Giỏ hàng, tính tiền tự động và khuyến mãi
 
@@ -126,12 +127,12 @@
 
 #### 3.5.2 Chưa làm
 
-- [x] P0: Thêm phí giao hàng theo km hoặc rule demo.
-- [ ] P0: Thêm voucher/mã giảm giá.
-- [ ] P1: Validate điều kiện voucher: giá trị tối thiểu, hạn sử dụng, số lần dùng.
-- [ ] P1: Tách đơn khi thêm món từ 2 cửa hàng khác nhau.
-- [ ] P1: Topping/tùy chọn món và ghi chú theo từng item.
-- [ ] P2: Lưu giỏ hàng server-side cho user đã đăng nhập.
+- [x] Thêm phí giao hàng theo km hoặc rule demo.
+- [x] Thêm voucher/mã giảm giá.
+- [x] Validate điều kiện voucher: giá trị tối thiểu, hạn sử dụng, số lần dùng.
+- [x] Tách đơn khi thêm món từ 2 cửa hàng khác nhau.
+- [x] Topping/tùy chọn món và ghi chú theo từng item.
+- [x] Lưu giỏ hàng server-side cho user đã đăng nhập.
 
 ### 3.6 FR-06: Thanh toán đa hình thức và chốt đơn
 
@@ -270,8 +271,8 @@
 - [ ] P0: Trang tìm kiếm/lọc.
 - [ ] P0: Trang theo dõi đơn.
 - [ ] P0: Trang đánh giá sau đơn.
-- [ ] P1: Trang chi tiết cửa hàng.
-- [ ] P1: UI voucher và phí giao hàng.
+- [x] Trang chi tiết cửa hàng.
+- [x] UI voucher và phí giao hàng.
 
 ### 4.2 Người bán
 
@@ -282,11 +283,11 @@
 - [x] Danh sách đơn hàng.
 - [x] Cập nhật trạng thái đơn cơ bản.
 - [x] Đề xuất món mới.
+- [x] Quản lý menu riêng của cửa hàng.
 - [x] Thống kê doanh thu cơ bản.
 
 #### 4.2.2 Chưa làm
 
-- [ ] P0: Quản lý menu riêng của cửa hàng.
 - [ ] P0: UI nhận/từ chối đơn đầy đủ.
 - [ ] P1: Pop-up đơn mới.
 - [ ] P1: Dashboard sentiment.
@@ -349,13 +350,13 @@
 ### 5.2 Chưa làm
 
 - [ ] P0: Push schema lên DB thật và seed admin test.
-- [ ] P0: `Voucher`.
+- [x] `Voucher`.
 - [ ] P0: `Review`.
 - [ ] P0: Thêm trường payment/delivery vào `Order`.
 - [ ] P1: `Shop`/`MerchantProfile` liên kết với `User`.
 - [ ] P1: `Transaction`/`Payment`.
-- [ ] P1: `MenuCategory`.
-- [ ] P1: `MenuOption`/`Topping`.
+- [x] `MenuCategory`.
+- [x] Tùy chọn món bằng `Product.options`.
 - [ ] P1: `SentimentAnalysis`.
 - [ ] P1: API authorization theo role.
 
@@ -400,7 +401,7 @@
 ### 7.1 P0 nên làm trước
 
 1. Push schema DB và seed admin test khi kết nối Aiven đúng.
-2. Voucher + phí giao hàng + payment fields trong `Order`.
+2. Payment fields trong `Order`.
 3. Order tracking cho `Khách hàng`.
 4. Review + sentiment mock.
 5. API authorization theo role.

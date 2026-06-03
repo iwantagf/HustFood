@@ -308,7 +308,8 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ### 7.1 Trang public và Khách hàng
 
-- `/`: home page and product menu.
+- `/`: home page, search/filter cửa hàng và món theo từ khóa, giá, khoảng cách demo, điểm đánh giá.
+- `/stores/[id]`: trang chi tiết cửa hàng và menu theo cửa hàng.
 - `/cart`: shopping cart.
 - `/checkout`: checkout, allowed for `customer`.
 - `/success`: order success page.
@@ -394,9 +395,11 @@ Body:
 
 Lấy danh sách món ăn.
 
+- `GET /api/products?scope=mine`: người bán lấy thực đơn của chính cửa hàng.
+
 #### `POST /api/products`
 
-Tạo món ăn.
+Tạo món ăn. `admin` tạo món chung, `seller` tạo món thuộc cửa hàng của mình.
 
 Body:
 
@@ -405,13 +408,47 @@ Body:
   "name": "Burger",
   "desc": "Mô tả món ăn",
   "price": "65.000đ",
-  "image": "/images/burger.png"
+  "image": "/images/burger.png",
+  "categoryId": "category_id",
+  "options": {
+    "sizes": "Nhỏ, Vừa, Lớn",
+    "toppings": "Phô mai, Trứng",
+    "tastes": "Không cay, Cay vừa",
+    "allowNote": true
+  },
+  "isAvailable": true,
+  "isHidden": false
+}
+```
+
+#### `PUT /api/products`
+
+Sửa món ăn. `seller` chỉ được sửa món thuộc cửa hàng của mình.
+
+Body:
+
+```json
+{
+  "id": "product_id",
+  "name": "Burger",
+  "desc": "Mô tả món ăn",
+  "price": "65.000đ",
+  "image": "/images/burger.png",
+  "categoryId": "category_id",
+  "options": {
+    "sizes": "Nhỏ, Vừa, Lớn",
+    "toppings": "Phô mai, Trứng",
+    "tastes": "Không cay, Cay vừa",
+    "allowNote": true
+  },
+  "isAvailable": true,
+  "isHidden": false
 }
 ```
 
 #### `DELETE /api/products`
 
-Xóa món ăn theo `id`.
+Xóa món ăn theo `id`. `seller` chỉ được xóa món thuộc cửa hàng của mình. Nếu món đang nằm trong đơn đang xử lý, hệ thống chặn xóa và yêu cầu chuyển `Hết hàng` hoặc `Ẩn`.
 
 Body:
 
@@ -421,7 +458,25 @@ Body:
 }
 ```
 
-### 8.3 Order APIs
+### 8.3 Menu Category APIs
+
+#### `GET /api/menu-categories?scope=mine`
+
+Người bán lấy danh mục thực đơn của chính cửa hàng.
+
+#### `POST /api/menu-categories`
+
+Người bán tạo danh mục thực đơn.
+
+Body:
+
+```json
+{
+  "name": "Burger"
+}
+```
+
+### 8.4 Order APIs
 
 #### `GET /api/orders`
 
@@ -442,11 +497,24 @@ Body:
     "notes": "",
     "paymentMethod": "cod"
   },
-  "items": [],
-  "totalItems": 1,
-  "totalPrice": 65000
+  "items": [
+    {
+      "id": "product_id",
+      "cartKey": "product_id:{...}",
+      "quantity": 1,
+      "selectedOptions": {
+        "size": "Vừa",
+        "topping": "Phô mai",
+        "taste": "Không cay"
+      },
+      "itemNote": "Ít sốt"
+    }
+  ],
+  "voucherCode": "HUSTFOOD10"
 }
 ```
+
+Nếu giỏ hàng có món từ nhiều cửa hàng, API tự tách thành nhiều đơn theo `merchantId`.
 
 #### `PUT /api/orders`
 
@@ -465,7 +533,7 @@ Body:
 
 Xóa đơn hàng theo `id`.
 
-### 8.4 Merchant Profile APIs
+### 8.5 Merchant Profile APIs
 
 #### `GET /api/merchant-profile`
 
@@ -507,7 +575,7 @@ Body:
 
 Lấy danh sách cửa hàng đang hoạt động để hiển thị cho khách hàng.
 
-### 8.5 Proposal APIs
+### 8.6 Proposal APIs
 
 #### `GET /api/proposals`
 
@@ -530,9 +598,9 @@ Body:
 }
 ```
 
-Nếu `status = accepted`, hệ thống tạo món mới trong `Product`.
+Nếu `status = accepted`, hệ thống tạo món mới trong `Product` và giữ chủ sở hữu là người bán đã gửi đề xuất.
 
-### 8.6 Notification APIs
+### 8.7 Notification APIs
 
 #### `GET /api/notifications`
 
@@ -558,7 +626,46 @@ Body:
 }
 ```
 
-### 8.7 Upload API
+### 8.8 Cart APIs
+
+#### `GET /api/cart`
+
+Khách hàng lấy giỏ hàng đã lưu server-side.
+
+#### `PUT /api/cart`
+
+Khách hàng lưu giỏ hàng server-side.
+
+Body:
+
+```json
+{
+  "items": []
+}
+```
+
+#### `DELETE /api/cart`
+
+Khách hàng xóa giỏ hàng đã lưu.
+
+### 8.9 Voucher APIs
+
+#### `POST /api/vouchers/validate`
+
+Kiểm tra mã giảm giá theo tạm tính, giá trị tối thiểu, hạn sử dụng và số lượt dùng.
+
+Body:
+
+```json
+{
+  "code": "HUSTFOOD10",
+  "subtotal": 120000
+}
+```
+
+Mã seed/demo có sẵn: `HUSTFOOD10`, `SV20`.
+
+### 8.10 Upload API
 
 #### `POST /api/upload`
 
@@ -582,17 +689,29 @@ Lưu hồ sơ cửa hàng người bán: tên quán, địa chỉ, tọa độ, 
 
 ### 9.3 `Product`
 
-Lưu món ăn.
+Lưu món ăn. `ownerId` liên kết món với người bán; món không có `ownerId` là món chung do quản trị viên tạo. `categoryId`, `options`, `isAvailable`, `isHidden` phục vụ quản lý danh mục, tùy chọn, còn/hết hàng và ẩn món.
 
-### 9.4 `Order`
+### 9.4 `MenuCategory`
 
-Lưu đơn hàng. Hiện `customer` và `items` đang là JSON để demo nhanh.
+Lưu danh mục món theo cửa hàng người bán.
 
-### 9.5 `Proposal`
+### 9.5 `Order`
+
+Lưu đơn hàng. `merchantId`/`merchantName` dùng để tách đơn theo cửa hàng; `customer` và `items` vẫn là JSON để demo nhanh.
+
+### 9.6 `SavedCart`
+
+Lưu giỏ hàng server-side theo `User` khi khách hàng đã đăng nhập.
+
+### 9.7 `Voucher`
+
+Lưu mã giảm giá, loại giảm, giá trị tối thiểu, hạn dùng, giới hạn lượt dùng và số lượt đã dùng.
+
+### 9.8 `Proposal`
 
 Lưu đề xuất món mới từ người bán.
 
-### 9.6 `Notification`
+### 9.9 `Notification`
 
 Lưu thông báo nội bộ cho dashboard.
 
@@ -603,7 +722,7 @@ Lưu thông báo nội bộ cho dashboard.
 - RBAC demo với 4 role.
 - Credential login, Gmail registration, demo social login.
 - Password hashing bằng `scrypt`.
-- Customer product menu, cart, checkout.
+- Customer product menu, cart, voucher, checkout.
 - Seller dashboard, merchant profile, order status update.
 - Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
 - Admin dashboard, order/menu/proposal management.

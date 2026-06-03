@@ -15,6 +15,8 @@ function buildDefaultProfile(user) {
     closeTime: '22:00',
     phone: '0987654321',
     image: '/images/burger.png',
+    rating: 4.6,
+    reviewCount: 128,
     status: 'pending_review'
   };
 }

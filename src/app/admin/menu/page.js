@@ -15,7 +15,8 @@ export default function MenuPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    const initialFetch = setTimeout(fetchProducts, 0);
+    return () => clearTimeout(initialFetch);
   }, []);
 
   const handleDelete = async (id) => {

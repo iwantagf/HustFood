@@ -110,9 +110,27 @@
   align-items: center;
 }
 
+.summaryGroup {
+  margin-bottom: 1.5rem;
+}
+
+.summaryGroup h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+}
+
 .summaryItemName {
   font-weight: 600;
   flex: 1;
+}
+
+.summaryItemName small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .summaryItemQty {

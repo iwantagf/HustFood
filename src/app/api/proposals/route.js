@@ -38,6 +38,7 @@ export async function POST(request) {
       const store = getDemoStore();
       const newProposal = {
         id: createDemoId('demo-proposal'),
+        ownerId: auth.user.id,
         name: body.name,
         desc: body.desc,
         price: body.price,
@@ -55,6 +56,7 @@ export async function POST(request) {
     
     const newProposal = await prisma.proposal.create({
       data: {
+        ownerId: auth.user.id,
         name: body.name,
         desc: body.desc,
         price: body.price,
@@ -102,10 +104,20 @@ export async function PUT(request) {
       if (status === 'accepted') {
         store.products.unshift({
           id: createDemoId('demo-product'),
+          ownerId: proposal.ownerId || null,
+          categoryId: null,
           name: proposal.name,
           desc: proposal.desc,
           price: proposal.price,
           image: proposal.image || '/images/burger.png',
+          options: {
+            sizes: [],
+            toppings: [],
+            tastes: [],
+            allowNote: true
+          },
+          isAvailable: true,
+          isHidden: false,
           createdAt: new Date().toISOString()
         });
       }
@@ -144,7 +156,16 @@ export async function PUT(request) {
           name: proposal.name,
           desc: proposal.desc,
           price: proposal.price,
-          image: proposal.image || '/images/burger.png'
+          image: proposal.image || '/images/burger.png',
+          ownerId: proposal.ownerId,
+          options: {
+            sizes: [],
+            toppings: [],
+            tastes: [],
+            allowNote: true
+          },
+          isAvailable: true,
+          isHidden: false
         }
       });
     }

@@ -232,12 +232,84 @@
   gap: 1.5rem;
 }
 
+.searchPanel {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) repeat(3, minmax(150px, 1fr)) auto;
+  gap: 1rem;
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.searchField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.searchField label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.searchField input,
+.searchField select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 0 0.75rem;
+  background: var(--bg-color);
+  color: var(--text-main);
+}
+
+.searchActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+.clearFilter {
+  color: var(--text-muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.resultSummary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.resultSummary span {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .storeCard {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  color: inherit;
+  transition: var(--transition);
+}
+
+.storeCard:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
 }
 
 .storeImage {
@@ -278,6 +350,54 @@
   color: var(--text-main);
   font-weight: 700;
   font-size: 0.9rem;
+}
+
+.storeDetailHero {
+  padding: 3rem 0 4rem;
+  background: var(--bg-color);
+}
+
+.storeDetailGrid {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) 1fr;
+  gap: 2.5rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.storeDetailImage {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  background: var(--primary-light);
+}
+
+.storeDetailInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.storeDetailInfo .heroTitle {
+  font-size: 3.5rem;
+}
+
+.storeDetailMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.storeDetailMeta span {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 0.5rem 0.85rem;
+  font-weight: 800;
+  color: var(--text-main);
 }
 
 .productCard {
@@ -330,6 +450,25 @@
   flex-grow: 1;
 }
 
+.optionControls {
+  width: 100%;
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.optionControls select,
+.optionControls input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-color);
+  color: var(--text-main);
+  padding: 0 0.65rem;
+  font-size: 0.9rem;
+}
+
 .productFooter {
   width: 100%;
   display: flex;
@@ -363,6 +502,20 @@
   transform: scale(1.1);
 }
 
+.emptyResults {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-color);
+}
+
+.suggestionBlock {
+  margin-top: 4rem;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .hero {
@@ -385,5 +538,22 @@
   
   .nav {
     display: none;
+  }
+
+  .searchPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .searchActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .storeDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .storeDetailInfo .heroTitle {
+    font-size: 2.5rem;
   }
 }
