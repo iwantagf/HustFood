@@ -87,6 +87,8 @@ model Order {
   id                   String    @id @default(cuid())
   merchantId           String?
   merchantName         String?
+  pickupAddress        String?
+  pickupLocation       String?
   customer             Json // Store customer info (name, phone, address, etc.)
   items                Json // Store array of items {id, name, price, quantity, etc.}
   totalItems           Int
@@ -110,6 +112,13 @@ model Order {
   acceptedAt           DateTime?
   pickedUpAt           DateTime?
   deliveredAt          DateTime?
+  codAmount            Int       @default(0)
+  codCollectedAt       DateTime?
+  shipperIssue         String?   @db.Text
+  shipperIssueAt       DateTime?
+  shipperLatitude      Float?
+  shipperLongitude     Float?
+  shipperLocationAt    DateTime?
   createdAt            DateTime  @default(now())
 }
 
