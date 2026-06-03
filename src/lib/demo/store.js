@@ -1,28 +1,80 @@
 import { randomUUID } from 'crypto';
+import { DEMO_VOUCHERS } from '@/lib/vouchers';
 
 const DEFAULT_PRODUCTS = [
   {
     id: 'demo-product-burger',
+    ownerId: 'demo-user-dongmanhhung',
+    categoryId: 'demo-category-burger',
     name: 'Burger Bò Phô Mai',
     desc: 'Burger bò nướng, phô mai cheddar, xà lách tươi và sốt đặc biệt.',
     price: '65.000đ',
     image: '/images/burger.png',
+    options: {
+      sizes: ['Vừa', 'Lớn'],
+      toppings: ['Phô mai', 'Thịt bò thêm'],
+      tastes: ['Ít cay', 'Không cay'],
+      allowNote: true
+    },
+    isAvailable: true,
+    isHidden: false,
     createdAt: new Date().toISOString()
   },
   {
     id: 'demo-product-chicken',
+    ownerId: 'demo-user-dongmanhhung',
+    categoryId: 'demo-category-chicken',
     name: 'Gà Rán Giòn Rụm',
     desc: 'Gà rán giòn, thịt mềm mọng nước, tẩm ướp gia vị đậm đà.',
     price: '85.000đ',
     image: '/images/chicken.png',
+    options: {
+      sizes: ['2 miếng', '4 miếng'],
+      toppings: ['Sốt cay', 'Sốt phô mai'],
+      tastes: ['Cay vừa', 'Cay nhiều'],
+      allowNote: true
+    },
+    isAvailable: true,
+    isHidden: false,
     createdAt: new Date().toISOString()
   },
   {
     id: 'demo-product-combo',
+    ownerId: 'demo-user-dongmanhhung',
+    categoryId: 'demo-category-combo',
     name: 'Combo Sinh Viên',
     desc: 'Burger bò, khoai tây chiên cỡ vừa và nước ngọt tự chọn.',
     price: '49.000đ',
     image: '/images/burger.png',
+    options: {
+      sizes: ['Tiêu chuẩn'],
+      toppings: ['Thêm khoai', 'Thêm nước'],
+      tastes: ['Không cay'],
+      allowNote: true
+    },
+    isAvailable: true,
+    isHidden: false,
+    createdAt: new Date().toISOString()
+  }
+];
+
+const DEFAULT_CATEGORIES = [
+  {
+    id: 'demo-category-burger',
+    ownerId: 'demo-user-dongmanhhung',
+    name: 'Burger',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'demo-category-chicken',
+    ownerId: 'demo-user-dongmanhhung',
+    name: 'Gà rán',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'demo-category-combo',
+    ownerId: 'demo-user-dongmanhhung',
+    name: 'Combo',
     createdAt: new Date().toISOString()
   }
 ];
@@ -72,7 +124,7 @@ const DEFAULT_USERS = [
 
 const DEFAULT_PROFILE = {
   id: 'demo-merchant-profile',
-  ownerId: 'demo-seller',
+  ownerId: 'demo-user-dongmanhhung',
   ownerRole: 'seller',
   shopName: 'HustFood Demo Store',
   address: 'Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội',
@@ -81,11 +133,13 @@ const DEFAULT_PROFILE = {
   closeTime: '22:00',
   phone: '0987654321',
   image: '/images/burger.png',
+  rating: 4.7,
+  reviewCount: 186,
   status: 'active',
   owner: {
-    id: 'demo-seller',
-    displayName: 'Người bán Demo',
-    email: 'seller.demo@gmail.com',
+    id: 'demo-user-dongmanhhung',
+    displayName: 'dongmanhhung',
+    email: null,
     role: 'seller'
   },
   createdAt: new Date().toISOString(),
@@ -96,6 +150,9 @@ function createDemoStore() {
   return {
     users: DEFAULT_USERS.map((user) => ({ ...user })),
     products: [...DEFAULT_PRODUCTS],
+    menuCategories: [...DEFAULT_CATEGORIES],
+    vouchers: DEMO_VOUCHERS.map((voucher) => ({ ...voucher })),
+    savedCarts: [],
     orders: [],
     proposals: [],
     notifications: [],

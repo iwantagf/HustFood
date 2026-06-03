@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function CheckoutPage() {
-  const { cart, totalItems, totalPrice, deliveryFee, finalTotal, isMounted } = useCart();
+  const { cart, cartGroups, voucher, discount, totalItems, totalPrice, deliveryFee, finalTotal, isMounted } = useCart();
   const { role, isLoading } = useAuth();
   const router = useRouter();
 
@@ -54,7 +54,8 @@ export default function CheckoutPage() {
         totalItems,
         totalPrice,
         deliveryFee,
-        finalTotal
+        finalTotal,
+        voucherCode: voucher?.code || ''
       };
 
       const res = await fetch('/api/orders', {
@@ -66,7 +67,8 @@ export default function CheckoutPage() {
       if (res.ok) {
         router.push('/success');
       } else {
-        alert('Có lỗi xảy ra khi đặt hàng');
+        const data = await res.json();
+        alert(data.error || 'Có lỗi xảy ra khi đặt hàng');
         setIsProcessing(false);
       }
     } catch (error) {
@@ -156,11 +158,24 @@ export default function CheckoutPage() {
           <div className={styles.orderSummary}>
             <h2 className={styles.sectionTitle}>Đơn hàng của bạn</h2>
 
-            {cart.map(item => (
-              <div key={item.id} className={styles.summaryItem}>
-                <span className={styles.summaryItemQty}>{item.quantity}x</span>
-                <span className={styles.summaryItemName}>{item.name}</span>
-                <span>{item.price}</span>
+            {cartGroups.map(group => (
+              <div key={group.merchantId} className={styles.summaryGroup}>
+                <h3>{group.merchantName}</h3>
+                {group.items.map(item => (
+                  <div key={item.cartKey || item.id} className={styles.summaryItem}>
+                    <span className={styles.summaryItemQty}>{item.quantity}x</span>
+                    <span className={styles.summaryItemName}>
+                      {item.name}
+                      {(item.selectedOptions?.size || item.selectedOptions?.topping || item.selectedOptions?.taste) && (
+                        <small>
+                          {[item.selectedOptions?.size, item.selectedOptions?.topping, item.selectedOptions?.taste].filter(Boolean).join(' · ')}
+                        </small>
+                      )}
+                      {item.itemNote && <small>Ghi chú: {item.itemNote}</small>}
+                    </span>
+                    <span>{item.price}</span>
+                  </div>
+                ))}
               </div>
             ))}
 
@@ -174,6 +189,12 @@ export default function CheckoutPage() {
               <span className={styles.summaryItemName}>Phí giao hàng</span>
               <span>{deliveryFee.toLocaleString('vi-VN')}đ</span>
             </div>
+            {voucher && (
+              <div className={styles.summaryItem}>
+                <span className={styles.summaryItemName}>Mã {voucher.code}</span>
+                <span>-{discount.toLocaleString('vi-VN')}đ</span>
+              </div>
+            )}
 
             <div className={styles.divider}></div>
 

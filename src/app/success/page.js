@@ -6,11 +6,10 @@ import { useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 
 export default function SuccessPage() {
-  const { removeFromCart, cart } = useCart();
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    // Clear cart upon successful order
-    cart.forEach(item => removeFromCart(item.id));
+    clearCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

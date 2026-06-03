@@ -1,22 +1,70 @@
 import styles from "./page.module.css";
+import Link from "next/link";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import { getDemoStore, isDemoMode } from "@/lib/demo/store";
+import {
+  PRICE_FILTERS,
+  getStoreDistanceKm,
+  hasActiveFilters,
+  normalizeSearchParams,
+  productMatchesFilters,
+  sortTrendingProducts,
+  storeMatchesFilters
+} from "@/lib/search";
 
+function attachDemoRelations(products, merchantProfiles, categories) {
+  const profileByOwnerId = new Map(merchantProfiles.map((profile) => [profile.ownerId, profile]));
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
 
-export default async function Home() {
+  return products.map((product) => ({
+    ...product,
+    category: categoryById.get(product.categoryId) || null,
+    owner: {
+      id: product.ownerId,
+      displayName: profileByOwnerId.get(product.ownerId)?.owner?.displayName || 'Người bán HustFood',
+      merchantProfile: profileByOwnerId.get(product.ownerId) || null
+    }
+  }));
+}
+
+export default async function Home({ searchParams }) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const filters = normalizeSearchParams(resolvedSearchParams);
+  const hasFilters = hasActiveFilters(filters);
   let products = [];
   let merchantProfiles = [];
+  let visibleProducts = [];
+  let visibleStores = [];
+  let suggestedProducts = [];
   try {
     if (isDemoMode()) {
       const store = getDemoStore();
-      products = store.products;
       merchantProfiles = store.merchantProfiles.filter((profile) => profile.status === 'active');
+      products = attachDemoRelations(
+        store.products.filter((product) => product.isAvailable !== false && product.isHidden !== true),
+        merchantProfiles,
+        store.menuCategories || []
+      );
     } else {
       const { prisma } = await import('@/lib/prisma');
       const [productData, profileData] = await Promise.all([
         prisma.product.findMany({
+          where: {
+            isAvailable: true,
+            isHidden: false
+          },
+          include: {
+            category: true,
+            owner: {
+              select: {
+                id: true,
+                displayName: true,
+                merchantProfile: true
+              }
+            }
+          },
           orderBy: { createdAt: 'desc' }
         }),
         prisma.merchantProfile.findMany({
@@ -34,6 +82,10 @@ export default async function Home() {
       products = productData;
       merchantProfiles = profileData;
     }
+
+    visibleProducts = products.filter((product) => productMatchesFilters(product, filters));
+    visibleStores = merchantProfiles.filter((profile) => storeMatchesFilters(profile, filters));
+    suggestedProducts = sortTrendingProducts(products).slice(0, 4);
   } catch (e) {
     console.error("Error fetching home data:", e);
   }
@@ -63,16 +115,61 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className={styles.storeSection}>
+      <section id="stores" className={styles.storeSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
             <div className={styles.sectionSubtitle}>Gian Hàng HustFood</div>
-            <h2 className={styles.sectionTitle}>Cửa Hàng Đang Mở</h2>
+            <h2 className={styles.sectionTitle}>Tìm món và cửa hàng</h2>
+          </div>
+
+          <form action="/" className={styles.searchPanel}>
+            <div className={styles.searchField}>
+              <label htmlFor="q">Từ khóa</label>
+              <input id="q" name="q" type="search" defaultValue={filters.q} placeholder="Tên món, quán, địa chỉ" />
+            </div>
+            <div className={styles.searchField}>
+              <label htmlFor="price">Giá</label>
+              <select id="price" name="price" defaultValue={filters.price}>
+                <option value="">Tất cả</option>
+                {Object.entries(PRICE_FILTERS).map(([key, item]) => (
+                  <option key={key} value={key}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.searchField}>
+              <label htmlFor="distance">Khoảng cách</label>
+              <select id="distance" name="distance" defaultValue={filters.distance || ''}>
+                <option value="">Tất cả</option>
+                <option value="1">Trong 1 km</option>
+                <option value="3">Trong 3 km</option>
+                <option value="5">Trong 5 km</option>
+              </select>
+            </div>
+            <div className={styles.searchField}>
+              <label htmlFor="rating">Đánh giá</label>
+              <select id="rating" name="rating" defaultValue={filters.rating || ''}>
+                <option value="">Tất cả</option>
+                <option value="4">Từ 4.0 sao</option>
+                <option value="4.5">Từ 4.5 sao</option>
+              </select>
+            </div>
+            <div className={styles.searchActions}>
+              <button type="submit" className="btn btn-primary">Tìm kiếm</button>
+              {hasFilters && <Link href="/" className={styles.clearFilter}>Xóa lọc</Link>}
+            </div>
+          </form>
+
+          <div className={styles.resultSummary}>
+            <span>{visibleStores.length} cửa hàng</span>
+            <span>{visibleProducts.length} món phù hợp</span>
           </div>
 
           <div className={styles.storeGrid}>
-            {merchantProfiles.map((profile) => (
-              <article key={profile.id} className={styles.storeCard}>
+            {visibleStores.map((profile) => {
+              const distance = getStoreDistanceKm(profile);
+
+              return (
+              <Link key={profile.id} href={`/stores/${profile.id}`} className={styles.storeCard}>
                 <img src={profile.image || '/images/burger.png'} alt={profile.shopName} className={styles.storeImage} />
                 <div className={styles.storeInfo}>
                   <div className={styles.storeOwner}>{profile.owner?.displayName || 'Người bán HustFood'}</div>
@@ -80,14 +177,16 @@ export default async function Home() {
                   <p className={styles.storeAddress}>{profile.address}</p>
                   <div className={styles.storeMeta}>
                     <span>{profile.openTime} - {profile.closeTime}</span>
-                    <span>{profile.phone}</span>
+                    <span>{Number(profile.rating || 0).toFixed(1)} sao</span>
+                    {distance !== null && <span>{distance.toFixed(1)} km</span>}
                   </div>
                 </div>
-              </article>
-            ))}
-            {merchantProfiles.length === 0 && (
+              </Link>
+              );
+            })}
+            {visibleStores.length === 0 && (
               <p style={{ textAlign: 'center', width: '100%', color: 'var(--text-muted)' }}>
-                Chưa có cửa hàng đang hoạt động.
+                Không tìm thấy cửa hàng phù hợp.
               </p>
             )}
           </div>
@@ -99,15 +198,33 @@ export default async function Home() {
         <div className="container">
           <div className={styles.sectionHeader}>
             <div className={styles.sectionSubtitle}>Khám Phá Hương Vị</div>
-            <h2 className={styles.sectionTitle}>Món Ngon Nổi Bật</h2>
+            <h2 className={styles.sectionTitle}>{hasFilters ? 'Kết quả món ăn' : 'Món Ngon Nổi Bật'}</h2>
           </div>
           
           <div className={styles.productGrid}>
-            {products.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-            {products.length === 0 && <p style={{textAlign: 'center', width: '100%'}}>Thực đơn đang trống, vui lòng chờ Quản trị viên cập nhật!</p>}
+            {visibleProducts.length === 0 && (
+              <div className={styles.emptyResults}>
+                <p>Không có món phù hợp với bộ lọc hiện tại.</p>
+              </div>
+            )}
           </div>
+
+          {visibleProducts.length === 0 && suggestedProducts.length > 0 && (
+            <div className={styles.suggestionBlock}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.sectionSubtitle}>Gợi ý thay thế</div>
+                <h2 className={styles.sectionTitle}>Món đang nổi bật</h2>
+              </div>
+              <div className={styles.productGrid}>
+                {suggestedProducts.map((product) => (
+                  <ProductCard key={`suggest-${product.id}`} product={product} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

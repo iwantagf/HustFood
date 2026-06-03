@@ -22,6 +22,19 @@
   gap: 1.5rem;
 }
 
+.cartGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.groupTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-main);
+  padding: 0 0.25rem;
+}
+
 .emptyCart {
   text-align: center;
   padding: 3rem;
@@ -62,6 +75,31 @@
 .itemPrice {
   color: var(--primary);
   font-weight: 600;
+}
+
+.itemOptions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.itemOptions span {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.itemNote {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.65rem;
+  background: var(--bg-color);
 }
 
 .itemActions {
@@ -129,6 +167,50 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   font-size: 1.1rem;
+}
+
+.voucherForm {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.voucherForm input {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.75rem;
+}
+
+.voucherForm button,
+.voucherApplied button {
+  border: none;
+  border-radius: 8px;
+  background: var(--text-main);
+  color: white;
+  padding: 0 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.voucherApplied {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-weight: 800;
+}
+
+.voucherError {
+  color: #ef4444;
+  font-weight: 700;
+  margin-bottom: 1rem;
 }
 
 .summaryTotal {

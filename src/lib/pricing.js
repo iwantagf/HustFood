@@ -23,12 +23,27 @@ export function calculateFinalTotal(totalPrice, deliveryFee = DEMO_DELIVERY_FEE)
   return safeTotalPrice + safeDeliveryFee;
 }
 
-export function calculateOrderTotals(items = []) {
+export function calculateVoucherDiscount(subtotal, voucher) {
+  if (!voucher) return 0;
+
+  const safeSubtotal = Number.isFinite(Number(subtotal)) ? Number(subtotal) : 0;
+  if (safeSubtotal <= 0) return 0;
+
+  if (voucher.discountType === 'percent') {
+    const percent = Math.min(Math.max(Number(voucher.discountValue || 0), 0), 100);
+    return Math.floor(safeSubtotal * percent / 100);
+  }
+
+  return Math.min(Math.max(Number(voucher.discountValue || 0), 0), safeSubtotal);
+}
+
+export function calculateOrderTotals(items = [], voucher = null) {
   const totalPrice = calculateItemsSubtotal(items);
   const deliveryFee = DEMO_DELIVERY_FEE;
-  const finalTotal = calculateFinalTotal(totalPrice, deliveryFee);
+  const discount = calculateVoucherDiscount(totalPrice, voucher);
+  const finalTotal = calculateFinalTotal(totalPrice - discount, deliveryFee);
 
-  return { totalPrice, deliveryFee, finalTotal };
+  return { totalPrice, deliveryFee, discount, finalTotal };
 }
 
 export function getOrderFinalTotal(order) {
