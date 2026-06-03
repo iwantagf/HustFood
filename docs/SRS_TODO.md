@@ -162,17 +162,17 @@
 #### 3.7.1 Đã làm
 
 - [x] Dashboard `Người bán` đọc danh sách đơn.
-- [x] Cập nhật trạng thái `pending` -> `processing` -> `completed`.
+- [x] Cập nhật workflow status theo SRS: `Chờ xác nhận`, `Đã nhận đơn`, `Đang chuẩn bị`, `Chờ giao hàng`, `Đang giao`, `Hoàn thành`, `Từ chối`.
 - [x] Có polling 5 giây để làm mới dữ liệu.
 - [x] Có thông báo đề xuất món mới.
 - [x] Tách đơn theo cửa hàng của từng `Người bán`.
+- [x] Pop-up/chuông âm thanh khi có đơn mới.
+- [x] Nút `Từ chối đơn` kèm lý do.
+- [x] Broadcast đơn `Chờ giao hàng` cho `Người giao hàng` qua danh sách đơn sẵn sàng nhận.
 
 #### 3.7.2 Chưa làm
 
-- [ ] P0: Đổi workflow status theo SRS: `Đã nhận đơn`, `Đang chuẩn bị`, `Chờ giao hàng`, `Đang giao`, `Hoàn thành`, `Từ chối`.
-- [ ] P1: Pop-up/chuông âm thanh khi có đơn mới.
-- [ ] P1: Nút `Từ chối đơn` kèm lý do.
-- [ ] P1: Broadcast đơn cho `Người giao hàng` gần khu vực.
+- Không còn mục thiếu trong phạm vi FR-07 demo hiện tại.
 
 ### 3.8 FR-08: Người giao hàng nhận đơn và cập nhật giao hàng
 
@@ -286,14 +286,14 @@
 - [x] Hồ sơ cửa hàng.
 - [x] Danh sách đơn hàng.
 - [x] Cập nhật trạng thái đơn cơ bản.
+- [x] UI nhận đơn, chuẩn bị, chờ giao và từ chối đơn kèm lý do.
+- [x] Pop-up đơn mới.
 - [x] Đề xuất món mới.
 - [x] Quản lý menu riêng của cửa hàng.
 - [x] Thống kê doanh thu cơ bản.
 
 #### 4.2.2 Chưa làm
 
-- [ ] P0: UI nhận/từ chối đơn đầy đủ.
-- [ ] P1: Pop-up đơn mới.
 - [ ] P1: Dashboard sentiment.
 - [ ] P1: Biểu đồ doanh thu.
 

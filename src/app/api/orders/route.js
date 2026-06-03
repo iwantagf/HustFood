@@ -5,9 +5,10 @@ import { DEMO_DELIVERY_FEE, calculateItemsSubtotal, calculateVoucherDiscount } f
 import { normalizeVoucherCode, serializeVoucher, validateVoucher } from '@/lib/vouchers';
 import { getInitialPaymentState, isOnlinePayment, normalizePaymentMethod, verifyPaymentChecksum } from '@/lib/payments';
 
-const SELLER_STATUSES = ['pending', 'payment_retry', 'ready_for_pickup', 'rejected'];
+const SELLER_STATUSES = ['accepted', 'preparing', 'ready_for_pickup', 'rejected', 'payment_retry'];
 const SHIPPER_STATUSES = ['picked_up', 'delivering', 'completed'];
 const LEGACY_SHIPPER_READY_STATUSES = ['processing'];
+const SHIPPER_READY_STATUSES = ['ready_for_pickup', ...LEGACY_SHIPPER_READY_STATUSES];
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -244,12 +245,13 @@ async function notifySellerNewOrders(orders) {
   });
 }
 
-function buildOrderUpdate({ order, status, action, user }) {
+function buildOrderUpdate({ order, status, action, rejectionReason, user }) {
   const update = {};
   const now = new Date();
+  const reason = String(rejectionReason || '').trim();
 
   if (action === 'accept') {
-    if (!['ready_for_pickup', ...LEGACY_SHIPPER_READY_STATUSES].includes(order.status)) {
+    if (!SHIPPER_READY_STATUSES.includes(order.status)) {
       return { error: 'Đơn hàng chưa sẵn sàng để nhận giao' };
     }
 
@@ -276,6 +278,44 @@ function buildOrderUpdate({ order, status, action, user }) {
 
     if (!SELLER_STATUSES.includes(status) && !(user.role === 'admin' && status === 'completed')) {
       return { error: 'Trạng thái này không thuộc luồng xử lý của người bán' };
+    }
+
+    const allowedTransitions = {
+      pending: ['accepted', 'rejected'],
+      payment_retry: ['payment_retry'],
+      accepted: ['preparing', 'rejected'],
+      preparing: ['ready_for_pickup'],
+      ready_for_pickup: [],
+      processing: [],
+      picked_up: [],
+      delivering: [],
+      completed: [],
+      rejected: []
+    };
+
+    if (user.role !== 'admin' && !(allowedTransitions[order.status] || []).includes(status)) {
+      return { error: 'Không thể chuyển đơn từ trạng thái hiện tại sang trạng thái này' };
+    }
+
+    if (status === 'rejected') {
+      if (!['pending', 'accepted'].includes(order.status) && user.role !== 'admin') {
+        return { error: 'Chỉ có thể từ chối đơn trước khi bắt đầu chuẩn bị' };
+      }
+
+      if (!reason) {
+        return { error: 'Vui lòng nhập lý do từ chối đơn' };
+      }
+
+      update.rejectionReason = reason;
+      update.rejectedAt = now;
+    }
+
+    if (status === 'accepted' && !order.sellerAcceptedAt) {
+      update.sellerAcceptedAt = now;
+    }
+
+    if (status === 'ready_for_pickup' && !order.readyForPickupAt) {
+      update.readyForPickupAt = now;
     }
 
     update.status = status;
@@ -309,6 +349,10 @@ function buildOrderUpdate({ order, status, action, user }) {
   return { error: 'Tài khoản không có quyền cập nhật đơn hàng' };
 }
 
+function sellerOwnsOrder(order, user) {
+  return user.role !== 'seller' || order.merchantId === user.id;
+}
+
 export async function GET(request) {
   try {
     const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
@@ -318,12 +362,28 @@ export async function GET(request) {
       const store = getDemoStore();
       const orders = auth.user.role === 'seller'
         ? store.orders.filter((order) => order.merchantId === auth.user.id)
+        : auth.user.role === 'shipper'
+          ? store.orders.filter((order) => (
+            (SHIPPER_READY_STATUSES.includes(order.status) && !order.shipperId)
+            || order.shipperId === auth.user.id
+          ))
         : store.orders;
       return json(orders);
     }
 
+    const where = auth.user.role === 'seller'
+      ? { merchantId: auth.user.id }
+      : auth.user.role === 'shipper'
+        ? {
+          OR: [
+            { status: { in: SHIPPER_READY_STATUSES }, shipperId: null },
+            { shipperId: auth.user.id }
+          ]
+        }
+        : undefined;
+
     const orders = await prisma.order.findMany({
-      where: auth.user.role === 'seller' ? { merchantId: auth.user.id } : undefined,
+      where,
       orderBy: { createdAt: 'desc' }
     });
     return json(orders);
@@ -390,6 +450,10 @@ export async function POST(request) {
         id: '#HF' + Math.floor(1000 + Math.random() * 9000),
         shipperId: null,
         shipperName: null,
+        rejectionReason: null,
+        sellerAcceptedAt: null,
+        readyForPickupAt: null,
+        rejectedAt: null,
         acceptedAt: null,
         pickedUpAt: null,
         deliveredAt: null,
@@ -425,7 +489,7 @@ export async function PUT(request) {
     const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
     if (auth.response) return auth.response;
 
-    const { id, status, action } = await request.json();
+    const { id, status, action, rejectionReason } = await request.json();
 
     if (!id) {
       return json({ error: 'Thiếu mã đơn hàng' }, 400);
@@ -438,7 +502,11 @@ export async function PUT(request) {
         return json({ error: 'Order not found' }, 404);
       }
 
-      const result = buildOrderUpdate({ order, status, action, user: auth.user });
+      if (!sellerOwnsOrder(order, auth.user)) {
+        return json({ error: 'Bạn không được xử lý đơn của cửa hàng khác' }, 403);
+      }
+
+      const result = buildOrderUpdate({ order, status, action, rejectionReason, user: auth.user });
       if (result.error) return json({ error: result.error }, 400);
 
       Object.assign(order, result.update);
@@ -448,7 +516,11 @@ export async function PUT(request) {
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return json({ error: 'Order not found' }, 404);
 
-    const result = buildOrderUpdate({ order, status, action, user: auth.user });
+    if (!sellerOwnsOrder(order, auth.user)) {
+      return json({ error: 'Bạn không được xử lý đơn của cửa hàng khác' }, 403);
+    }
+
+    const result = buildOrderUpdate({ order, status, action, rejectionReason, user: auth.user });
     if (result.error) return json({ error: result.error }, 400);
     
     const updatedOrder = await prisma.order.update({
@@ -471,9 +543,21 @@ export async function DELETE(request) {
 
     if (isDemoMode()) {
       const store = getDemoStore();
+      const order = store.orders.find((item) => item.id === id);
+      if (!order) return json({ error: 'Order not found' }, 404);
+      if (!sellerOwnsOrder(order, auth.user)) {
+        return json({ error: 'Bạn không được xóa đơn của cửa hàng khác' }, 403);
+      }
+
       store.orders = store.orders.filter((order) => order.id !== id);
 
       return json({ success: true });
+    }
+
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return json({ error: 'Order not found' }, 404);
+    if (!sellerOwnsOrder(order, auth.user)) {
+      return json({ error: 'Bạn không được xóa đơn của cửa hàng khác' }, 403);
     }
     
     await prisma.order.delete({

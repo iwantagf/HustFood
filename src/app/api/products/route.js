@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 
-const ACTIVE_ORDER_STATUSES = ['pending', 'ready_for_pickup', 'processing', 'picked_up', 'delivering'];
+const ACTIVE_ORDER_STATUSES = ['pending', 'payment_retry', 'accepted', 'preparing', 'ready_for_pickup', 'processing', 'picked_up', 'delivering'];
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {

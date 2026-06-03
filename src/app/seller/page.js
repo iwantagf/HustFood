@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from '../admin/admin.module.css';
 import Link from 'next/link';
 import { getOrderFinalTotal } from '@/lib/pricing';
@@ -17,6 +17,35 @@ const DEFAULT_MENU_FORM = {
   isAvailable: true,
   isHidden: false
 };
+
+const IN_PROGRESS_STATUSES = ['accepted', 'preparing', 'ready_for_pickup', 'processing', 'picked_up', 'delivering'];
+
+function playNewOrderSound() {
+  if (typeof window === 'undefined') return;
+
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+
+  try {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(660, audioContext.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.28);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    // Browser autoplay policy can block audio until the seller interacts with the page.
+  }
+}
 
 function optionArrayToText(value) {
   return Array.isArray(value) ? value.join(', ') : '';
@@ -82,6 +111,10 @@ export default function SellerPage() {
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [orderMessage, setOrderMessage] = useState('');
+  const [newOrderAlert, setNewOrderAlert] = useState(null);
+  const knownOrderIdsRef = useRef(new Set());
+  const hasLoadedOrdersRef = useRef(false);
 
   const fetchData = async () => {
     try {
@@ -99,7 +132,22 @@ export default function SellerPage() {
         profileRes.json(),
         categoriesRes.json()
       ]);
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      const nextOrders = Array.isArray(ordersData) ? ordersData : [];
+      const incomingOrders = nextOrders.filter((order) => (
+        order.status === 'pending' && !knownOrderIdsRef.current.has(order.id)
+      ));
+
+      if (hasLoadedOrdersRef.current && incomingOrders.length > 0) {
+        setNewOrderAlert({
+          count: incomingOrders.length,
+          latest: incomingOrders[0]
+        });
+        playNewOrderSound();
+      }
+
+      knownOrderIdsRef.current = new Set(nextOrders.map((order) => order.id));
+      hasLoadedOrdersRef.current = true;
+      setOrders(nextOrders);
       setProducts(Array.isArray(productsData) ? productsData : []);
       setNotifications(Array.isArray(notifData) ? notifData : []);
       setMerchantProfile(profileData);
@@ -120,17 +168,32 @@ export default function SellerPage() {
     };
   }, []);
 
-  const updateStatus = async (id, nextStatus) => {
+  const updateStatus = async (id, nextStatus, extraData = {}) => {
+    setOrderMessage('');
     try {
-      await fetch('/api/orders', {
+      const res = await fetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: nextStatus })
+        body: JSON.stringify({ id, status: nextStatus, ...extraData })
       });
-      setOrders((prev) => prev.map((order) => order.id === id ? { ...order, status: nextStatus } : order));
+      const data = await res.json();
+
+      if (!res.ok) {
+        setOrderMessage(data.error || 'Không cập nhật được trạng thái đơn.');
+        return;
+      }
+
+      setOrders((prev) => prev.map((order) => order.id === id ? data : order));
     } catch (error) {
       console.error('Không cập nhật được trạng thái đơn:', error);
+      setOrderMessage('Không cập nhật được trạng thái đơn.');
     }
+  };
+
+  const rejectOrder = (order) => {
+    const reason = prompt(`Nhập lý do từ chối đơn ${order.id}`);
+    if (!reason || !reason.trim()) return;
+    updateStatus(order.id, 'rejected', { rejectionReason: reason.trim() });
   };
 
   const handleDeleteOrder = async (id) => {
@@ -152,6 +215,8 @@ export default function SellerPage() {
     switch (status) {
       case 'pending': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ xác nhận</span>;
       case 'payment_retry': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Chờ thanh toán lại</span>;
+      case 'accepted': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã nhận đơn</span>;
+      case 'preparing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang chuẩn bị</span>;
       case 'ready_for_pickup': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'picked_up': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã lấy hàng</span>;
@@ -167,7 +232,7 @@ export default function SellerPage() {
     .reduce((acc, order) => acc + getOrderFinalTotal(order), 0);
 
   const pendingCount = orders.filter(order => order.status === 'pending').length;
-  const processingCount = orders.filter(order => ['ready_for_pickup', 'processing', 'picked_up', 'delivering'].includes(order.status)).length;
+  const processingCount = orders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
   const completedCount = orders.filter(order => order.status === 'completed').length;
 
   const productSales = orders.reduce((acc, order) => {
@@ -471,6 +536,26 @@ export default function SellerPage() {
         Trang dành cho người bán: cập nhật trạng thái đơn và theo dõi doanh thu.
       </p>
 
+      {newOrderAlert && (
+        <div style={{ marginBottom: '1rem', padding: '1rem 1.1rem', borderRadius: '8px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <strong>Có {newOrderAlert.count} đơn mới</strong>
+            <div style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>
+              Đơn gần nhất: {newOrderAlert.latest?.id} · {newOrderAlert.latest?.customer?.name || 'Khách ẩn'}
+            </div>
+          </div>
+          <button type="button" className={styles.actionBtn} onClick={() => setNewOrderAlert(null)} style={{ background: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' }}>
+            Đã xem
+          </button>
+        </div>
+      )}
+
+      {orderMessage && (
+        <div style={{ marginBottom: '1rem', padding: '0.9rem 1rem', borderRadius: '8px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+          {orderMessage}
+        </div>
+      )}
+
       <div className={styles.tableContainer} style={{ padding: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <div>
@@ -554,7 +639,7 @@ export default function SellerPage() {
         <div className={styles.statCard}>
           <div className={`${styles.statIcon} ${styles.iconGreen}`}>🚚</div>
           <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Đơn Đang Giao</div>
+            <div className={styles.statLabel}>Đơn Đang Xử Lý</div>
             <div className={styles.statValue}>{processingCount}</div>
           </div>
         </div>
@@ -601,8 +686,28 @@ export default function SellerPage() {
                     <td>{getStatusBadge(order.status)}</td>
                     <td>
                       {order.status === 'pending' && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'accepted')}>
+                            Nhận đơn
+                          </button>
+                          <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+                            Từ chối
+                          </button>
+                        </div>
+                      )}
+                      {order.status === 'accepted' && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'preparing')}>
+                            Bắt đầu chuẩn bị
+                          </button>
+                          <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+                            Từ chối
+                          </button>
+                        </div>
+                      )}
+                      {order.status === 'preparing' && (
                         <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>
-                          Sẵn sàng giao
+                          Chờ giao hàng
                         </button>
                       )}
                       {order.status === 'payment_retry' && (
@@ -620,6 +725,11 @@ export default function SellerPage() {
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
                           <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Xóa</button>
+                        </div>
+                      )}
+                      {order.status === 'rejected' && (
+                        <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                          {order.rejectionReason || 'Đã từ chối'}
                         </div>
                       )}
                     </td>
