@@ -100,9 +100,13 @@ model Order {
   paymentTransactionId String?
   paymentChecksum      String?
   paymentFailureReason String?
-  status               String    @default("pending") // pending, payment_retry, ready_for_pickup, picked_up, delivering, completed
+  status               String    @default("pending") // pending, payment_retry, accepted, preparing, ready_for_pickup, picked_up, delivering, completed, rejected
+  rejectionReason      String?   @db.Text
   shipperId            String?
   shipperName          String?
+  sellerAcceptedAt     DateTime?
+  readyForPickupAt     DateTime?
+  rejectedAt           DateTime?
   acceptedAt           DateTime?
   pickedUpAt           DateTime?
   deliveredAt          DateTime?

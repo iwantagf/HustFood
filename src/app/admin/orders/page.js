@@ -47,6 +47,8 @@ export default function OrdersPage() {
     switch (status) {
       case 'pending': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ xác nhận</span>;
       case 'payment_retry': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Chờ thanh toán lại</span>;
+      case 'accepted': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã nhận đơn</span>;
+      case 'preparing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang chuẩn bị</span>;
       case 'ready_for_pickup': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'picked_up': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã lấy hàng</span>;
@@ -101,7 +103,13 @@ export default function OrdersPage() {
                 <td>{getStatusBadge(order.status)}</td>
                 <td>
                   {order.status === 'pending' && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>Sẵn sàng giao</button>
+                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'accepted')}>Nhận đơn</button>
+                  )}
+                  {order.status === 'accepted' && (
+                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'preparing')}>Bắt đầu chuẩn bị</button>
+                  )}
+                  {order.status === 'preparing' && (
+                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>Chờ giao hàng</button>
                   )}
                   {order.status === 'payment_retry' && (
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
