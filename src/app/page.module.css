@@ -443,7 +443,7 @@
   margin-bottom: 0.5rem;
 }
 
-.productReviewMeta {
+.productSoldMeta {
   display: flex;
   justify-content: center;
   gap: 0.5rem;
@@ -454,7 +454,7 @@
   font-weight: 800;
 }
 
-.productReviewMeta span {
+.productSoldMeta span {
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
   background: var(--surface);
@@ -466,17 +466,6 @@
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
   flex-grow: 1;
-}
-
-.productReviewSnippet {
-  width: 100%;
-  border-left: 3px solid var(--primary);
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.5;
-  margin: 0 0 1rem;
-  padding-left: 0.8rem;
-  text-align: left;
 }
 
 .optionControls {

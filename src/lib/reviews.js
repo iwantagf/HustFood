@@ -14,7 +14,6 @@ export function serializeReview(review) {
     customerName: review.customer?.displayName || 'Khách hàng HustFood',
     merchantId: review.merchantId || null,
     productId: review.productId || null,
-    productName: review.product?.name || review.productName || '',
     shipperId: review.shipperId || null,
     foodRating: Number(review.foodRating || 0),
     shipperRating: review.shipperRating ? Number(review.shipperRating) : null,
@@ -31,14 +30,12 @@ export function getVisibleReviews(reviews = []) {
   return reviews.filter((review) => review?.status === 'visible');
 }
 
-export function hydrateDemoReviews(reviews = [], { users = [], products = [] } = {}) {
+export function hydrateDemoReviews(reviews = [], { users = [] } = {}) {
   const userById = new Map(users.map((user) => [user.id, user]));
-  const productById = new Map(products.map((product) => [product.id, product]));
 
   return getVisibleReviews(reviews).map((review) => serializeReview({
     ...review,
-    customer: userById.get(review.customerId) || null,
-    product: productById.get(review.productId) || null
+    customer: userById.get(review.customerId) || null
   }));
 }
 
@@ -61,26 +58,4 @@ export function createReviewStats(reviews = []) {
     averageShipperRating: getAverage(visibleReviews.map((review) => review.shipperRating)),
     imageCount: visibleReviews.reduce((total, review) => total + normalizeReviewImages(review.images).length, 0)
   };
-}
-
-export function attachProductReviewStats(products = [], reviews = []) {
-  const visibleReviews = getVisibleReviews(reviews);
-  const reviewsByProductId = new Map();
-
-  visibleReviews.forEach((review) => {
-    if (!review.productId) return;
-    const productReviews = reviewsByProductId.get(review.productId) || [];
-    productReviews.push(review);
-    reviewsByProductId.set(review.productId, productReviews);
-  });
-
-  return products.map((product) => {
-    const productReviews = reviewsByProductId.get(product.id) || [];
-
-    return {
-      ...product,
-      reviewStats: createReviewStats(productReviews),
-      recentReviews: productReviews.slice(0, 2)
-    };
-  });
 }

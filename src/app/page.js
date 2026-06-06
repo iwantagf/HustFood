@@ -5,11 +5,11 @@ import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import { getDemoStore, isDemoMode } from "@/lib/demo/store";
 import {
-  attachProductReviewStats,
   createReviewStats,
   hydrateDemoReviews,
   serializeReview
 } from "@/lib/reviews";
+import { attachProductSalesStats } from "@/lib/sales";
 import {
   PRICE_FILTERS,
   getStoreDistanceKm,
@@ -36,10 +36,16 @@ function attachDemoRelations(products, merchantProfiles, categories) {
 }
 
 function attachStoreReviewStats(profiles, reviews) {
-  return profiles.map((profile) => ({
-    ...profile,
-    reviewStats: createReviewStats(reviews.filter((review) => review.merchantId === profile.ownerId))
-  }));
+  return profiles.map((profile) => {
+    const reviewStats = createReviewStats(reviews.filter((review) => review.merchantId === profile.ownerId));
+
+    return {
+      ...profile,
+      rating: reviewStats.count ? reviewStats.averageFoodRating : profile.rating,
+      reviewCount: reviewStats.count ? reviewStats.count : profile.reviewCount,
+      reviewStats
+    };
+  });
 }
 
 export default async function Home({ searchParams }) {
@@ -60,8 +66,8 @@ export default async function Home({ searchParams }) {
         merchantProfiles,
         store.menuCategories || []
       );
-      const reviews = hydrateDemoReviews(store.reviews, { users: store.users, products: store.products });
-      products = attachProductReviewStats(products, reviews);
+      const reviews = hydrateDemoReviews(store.reviews, { users: store.users });
+      products = attachProductSalesStats(products, store.orders);
       merchantProfiles = attachStoreReviewStats(merchantProfiles, reviews);
     } else {
       const { prisma } = await import('@/lib/prisma');
@@ -95,43 +101,39 @@ export default async function Home({ searchParams }) {
           orderBy: { updatedAt: 'desc' }
         })
       ]);
-      const productIds = productData.map((product) => product.id);
       const merchantIds = profileData.map((profile) => profile.ownerId).filter(Boolean);
-      const reviewFilters = [];
 
-      if (productIds.length) {
-        reviewFilters.push({ productId: { in: productIds } });
-      }
-
-      if (merchantIds.length) {
-        reviewFilters.push({ merchantId: { in: merchantIds } });
-      }
-
-      const rawReviews = reviewFilters.length
-        ? await prisma.review.findMany({
-          where: {
-            status: 'visible',
-            OR: reviewFilters
-          },
-          include: {
-            customer: {
-              select: {
-                displayName: true
+      const [rawReviews, completedOrders] = merchantIds.length
+        ? await Promise.all([
+          prisma.review.findMany({
+            where: {
+              status: 'visible',
+              merchantId: { in: merchantIds }
+            },
+            include: {
+              customer: {
+                select: {
+                  displayName: true
+                }
               }
             },
-            product: {
-              select: {
-                id: true,
-                name: true
-              }
+            orderBy: { createdAt: 'desc' }
+          }),
+          prisma.order.findMany({
+            where: {
+              status: 'completed',
+              merchantId: { in: merchantIds }
+            },
+            select: {
+              status: true,
+              items: true
             }
-          },
-          orderBy: { createdAt: 'desc' }
-        })
-        : [];
+          })
+        ])
+        : [[], []];
       const reviews = rawReviews.map(serializeReview);
 
-      products = attachProductReviewStats(productData, reviews);
+      products = attachProductSalesStats(productData, completedOrders);
       merchantProfiles = attachStoreReviewStats(profileData, reviews);
     }
 

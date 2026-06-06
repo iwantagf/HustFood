@@ -7,11 +7,11 @@ import ProductCard from '@/components/ProductCard';
 import styles from '@/app/page.module.css';
 import { getDemoStore, isDemoMode } from '@/lib/demo/store';
 import {
-  attachProductReviewStats,
   createReviewStats,
   hydrateDemoReviews,
   serializeReview
 } from '@/lib/reviews';
+import { attachProductSalesStats } from '@/lib/sales';
 import { getStoreDistanceKm } from '@/lib/search';
 
 function attachDemoProductRelations(products, profile, categories) {
@@ -28,12 +28,8 @@ function attachDemoProductRelations(products, profile, categories) {
   }));
 }
 
-function getProfileReviews(profile, reviews, products) {
-  const productIds = new Set(products.map((product) => product.id));
-
-  return reviews.filter((review) => (
-    review.merchantId === profile.ownerId || productIds.has(review.productId)
-  ));
+function getProfileReviews(profile, reviews) {
+  return reviews.filter((review) => review.merchantId === profile.ownerId);
 }
 
 function formatReviewDate(value) {
@@ -57,18 +53,14 @@ async function getStoreData(id) {
       profile,
       store.menuCategories || []
     );
-    const reviews = getProfileReviews(
-      profile,
-      hydrateDemoReviews(store.reviews, { users: store.users, products: store.products }),
-      products
-    );
+    const reviews = getProfileReviews(profile, hydrateDemoReviews(store.reviews, { users: store.users }));
 
     return {
       profile: {
         ...profile,
         reviewStats: createReviewStats(reviews)
       },
-      products: attachProductReviewStats(products, reviews),
+      products: attachProductSalesStats(products, store.orders),
       reviews
     };
   }
@@ -91,7 +83,7 @@ async function getStoreData(id) {
 
   if (!profile) return null;
 
-  const [products, rawReviews] = await Promise.all([
+  const [products, rawReviews, completedOrders] = await Promise.all([
     prisma.product.findMany({
       where: {
         ownerId: profile.ownerId,
@@ -120,15 +112,19 @@ async function getStoreData(id) {
           select: {
             displayName: true
           }
-        },
-        product: {
-          select: {
-            id: true,
-            name: true
-          }
         }
       },
       orderBy: { createdAt: 'desc' }
+    }),
+    prisma.order.findMany({
+      where: {
+        merchantId: profile.ownerId,
+        status: 'completed'
+      },
+      select: {
+        status: true,
+        items: true
+      }
     })
   ]);
   const reviews = rawReviews.map(serializeReview);
@@ -138,7 +134,7 @@ async function getStoreData(id) {
       ...profile,
       reviewStats: createReviewStats(reviews)
     },
-    products: attachProductReviewStats(products, reviews),
+    products: attachProductSalesStats(products, completedOrders),
     reviews
   };
 }
@@ -207,22 +203,21 @@ export default async function StoreDetailPage({ params }) {
       <section className={styles.reviewSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <div className={styles.sectionSubtitle}>Đánh giá từ khách hàng</div>
-            <h2 className={styles.sectionTitle}>Review cửa hàng và món ăn</h2>
+            <h2 className={styles.sectionTitle}>Đánh giá từ khách hàng</h2>
           </div>
 
           <div className={styles.reviewOverview}>
             <div>
               <span className={styles.reviewOverviewValue}>{reviewStats.count ? reviewStats.averageFoodRating.toFixed(1) : '0.0'}</span>
-              <span className={styles.reviewOverviewLabel}>Điểm món ăn</span>
+              <span className={styles.reviewOverviewLabel}>Điểm trung bình</span>
             </div>
             <div>
               <span className={styles.reviewOverviewValue}>{reviewStats.count.toLocaleString('vi-VN')}</span>
-              <span className={styles.reviewOverviewLabel}>Đánh giá hiển thị</span>
+              <span className={styles.reviewOverviewLabel}>Tổng lượt đánh giá</span>
             </div>
             <div>
               <span className={styles.reviewOverviewValue}>{reviewStats.imageCount.toLocaleString('vi-VN')}</span>
-              <span className={styles.reviewOverviewLabel}>Ảnh review</span>
+              <span className={styles.reviewOverviewLabel}>Kèm hình ảnh</span>
             </div>
           </div>
 
@@ -233,7 +228,7 @@ export default async function StoreDetailPage({ params }) {
                   <div className={styles.reviewCardHeader}>
                     <div>
                       <h3>{review.customerName}</h3>
-                      <p>{review.productName || profile.shopName}</p>
+                      <p>{review.orderId ? `Đơn hàng ${review.orderId}` : profile.shopName}</p>
                     </div>
                     <div className={styles.reviewRating}>
                       <span>{review.foodRating}/5 sao</span>

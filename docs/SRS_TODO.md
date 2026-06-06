@@ -220,7 +220,7 @@
 - [x] Chấm sao món ăn và `Người giao hàng`.
 - [x] Bình luận text.
 - [x] Upload ảnh review.
-- [x] Hiển thị review trên cửa hàng/món.
+- [x] Hiển thị review trên cửa hàng; món hiển thị số lượt đã bán.
 
 #### 3.10.2 Chưa làm
 

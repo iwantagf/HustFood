@@ -48,11 +48,6 @@ function normalizeImages(value) {
   return { images };
 }
 
-function getFirstProductId(order) {
-  const items = Array.isArray(order?.items) ? order.items : [];
-  return items[0]?.id || null;
-}
-
 function sanitizeReview(review) {
   if (!review) return null;
 
@@ -172,7 +167,7 @@ export async function POST(request) {
       orderId: order.id,
       customerId: auth.user.id,
       merchantId: order.merchantId || null,
-      productId: getFirstProductId(order),
+      productId: null,
       shipperId: order.shipperId || null,
       foodRating,
       shipperRating,
