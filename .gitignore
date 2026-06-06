@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 .clinerules
+public/uploads/
 
 # debug
 npm-debug.log*

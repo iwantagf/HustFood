@@ -5,6 +5,12 @@ import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import { getDemoStore, isDemoMode } from "@/lib/demo/store";
 import {
+  createReviewStats,
+  hydrateDemoReviews,
+  serializeReview
+} from "@/lib/reviews";
+import { attachProductSalesStats } from "@/lib/sales";
+import {
   PRICE_FILTERS,
   getStoreDistanceKm,
   hasActiveFilters,
@@ -29,6 +35,19 @@ function attachDemoRelations(products, merchantProfiles, categories) {
   }));
 }
 
+function attachStoreReviewStats(profiles, reviews) {
+  return profiles.map((profile) => {
+    const reviewStats = createReviewStats(reviews.filter((review) => review.merchantId === profile.ownerId));
+
+    return {
+      ...profile,
+      rating: reviewStats.count ? reviewStats.averageFoodRating : profile.rating,
+      reviewCount: reviewStats.count ? reviewStats.count : profile.reviewCount,
+      reviewStats
+    };
+  });
+}
+
 export default async function Home({ searchParams }) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const filters = normalizeSearchParams(resolvedSearchParams);
@@ -47,6 +66,9 @@ export default async function Home({ searchParams }) {
         merchantProfiles,
         store.menuCategories || []
       );
+      const reviews = hydrateDemoReviews(store.reviews, { users: store.users });
+      products = attachProductSalesStats(products, store.orders);
+      merchantProfiles = attachStoreReviewStats(merchantProfiles, reviews);
     } else {
       const { prisma } = await import('@/lib/prisma');
       const [productData, profileData] = await Promise.all([
@@ -79,8 +101,40 @@ export default async function Home({ searchParams }) {
           orderBy: { updatedAt: 'desc' }
         })
       ]);
-      products = productData;
-      merchantProfiles = profileData;
+      const merchantIds = profileData.map((profile) => profile.ownerId).filter(Boolean);
+
+      const [rawReviews, completedOrders] = merchantIds.length
+        ? await Promise.all([
+          prisma.review.findMany({
+            where: {
+              status: 'visible',
+              merchantId: { in: merchantIds }
+            },
+            include: {
+              customer: {
+                select: {
+                  displayName: true
+                }
+              }
+            },
+            orderBy: { createdAt: 'desc' }
+          }),
+          prisma.order.findMany({
+            where: {
+              status: 'completed',
+              merchantId: { in: merchantIds }
+            },
+            select: {
+              status: true,
+              items: true
+            }
+          })
+        ])
+        : [[], []];
+      const reviews = rawReviews.map(serializeReview);
+
+      products = attachProductSalesStats(productData, completedOrders);
+      merchantProfiles = attachStoreReviewStats(profileData, reviews);
     }
 
     visibleProducts = products.filter((product) => productMatchesFilters(product, filters));
@@ -167,6 +221,9 @@ export default async function Home({ searchParams }) {
           <div className={styles.storeGrid}>
             {visibleStores.map((profile) => {
               const distance = getStoreDistanceKm(profile);
+              const reviewStats = profile.reviewStats;
+              const rating = reviewStats?.count ? reviewStats.averageFoodRating : Number(profile.rating || 0);
+              const reviewCount = reviewStats?.count || Number(profile.reviewCount || 0);
 
               return (
               <Link key={profile.id} href={`/stores/${profile.id}`} className={styles.storeCard}>
@@ -177,7 +234,8 @@ export default async function Home({ searchParams }) {
                   <p className={styles.storeAddress}>{profile.address}</p>
                   <div className={styles.storeMeta}>
                     <span>{profile.openTime} - {profile.closeTime}</span>
-                    <span>{Number(profile.rating || 0).toFixed(1)} sao</span>
+                    <span>{rating.toFixed(1)} sao</span>
+                    {reviewCount > 0 && <span>{reviewCount.toLocaleString('vi-VN')} đánh giá</span>}
                     {distance !== null && <span>{distance.toFixed(1)} km</span>}
                   </div>
                 </div>

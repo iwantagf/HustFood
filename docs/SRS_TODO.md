@@ -215,16 +215,15 @@
 
 #### 3.10.1 Đã làm
 
-- [ ] Chưa có module đánh giá.
+- [x] Thêm model `Review`.
+- [x] Form đánh giá sau khi đơn `completed`.
+- [x] Chấm sao món ăn và `Người giao hàng`.
+- [x] Bình luận text.
+- [x] Upload ảnh review.
+- [x] Hiển thị review trên cửa hàng; món hiển thị số lượt đã bán.
 
 #### 3.10.2 Chưa làm
 
-- [ ] P0: Thêm model `Review`.
-- [ ] P0: Form đánh giá sau khi đơn `completed`.
-- [ ] P0: Chấm sao món ăn và `Người giao hàng`.
-- [ ] P1: Bình luận text.
-- [ ] P1: Upload ảnh review.
-- [ ] P1: Hiển thị review trên cửa hàng/món.
 - [ ] P1: Lọc từ ngữ thô tục và ẩn review vi phạm.
 
 ### 3.11 FR-11: AI phân tích cảm xúc phản hồi
@@ -367,7 +366,7 @@
 
 ### 5.2 Chưa làm
 
-- [ ] P0: `Review`.
+- [x] P0: `Review`.
 - [ ] P1: `Transaction`/`Payment`.
 - [ ] P1: `SentimentAnalysis`.
 

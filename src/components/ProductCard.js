@@ -11,6 +11,7 @@ export default function ProductCard({ product }) {
   const { role } = useAuth();
   const router = useRouter();
   const canOrder = !role || role === 'customer';
+  const soldCount = Number(product.soldCount || 0);
   const [selection, setSelection] = useState({
     size: product.options?.sizes?.[0] || '',
     topping: product.options?.toppings?.[0] || '',
@@ -36,6 +37,11 @@ export default function ProductCard({ product }) {
         <img src={product.image} alt={product.name} className={styles.productImage} />
       </div>
       <h3 className={styles.productName}>{product.name}</h3>
+      {soldCount > 0 && (
+        <div className={styles.productSoldMeta}>
+          <span>Đã bán {soldCount.toLocaleString('vi-VN')}</span>
+        </div>
+      )}
       <p className={styles.productDesc}>{product.desc}</p>
       {canOrder && (
         <div className={styles.optionControls}>
