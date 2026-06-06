@@ -22,6 +22,7 @@ model Product {
   isHidden    Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  reviews     Review[]
 }
 
 model MenuCategory {
@@ -51,6 +52,9 @@ model User {
   proposals         Proposal[]
   menuCategories    MenuCategory[]
   savedCart         SavedCart?
+  customerReviews   Review[]         @relation("CustomerReviews")
+  merchantReviews   Review[]         @relation("MerchantReviews")
+  shipperReviews    Review[]         @relation("ShipperReviews")
 
   @@unique([provider, providerAccountId])
 }
@@ -121,6 +125,34 @@ model Order {
   shipperLongitude     Float?
   shipperLocationAt    DateTime?
   createdAt            DateTime  @default(now())
+  reviews              Review[]
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  orderId       String?
+  customerId    String?
+  merchantId    String?
+  productId     String?
+  shipperId     String?
+  foodRating    Int
+  shipperRating Int?
+  comment       String?  @db.Text
+  images        Json?
+  status        String   @default("visible") // visible, hidden, flagged
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  customer      User?    @relation("CustomerReviews", fields: [customerId], references: [id], onDelete: SetNull)
+  merchant      User?    @relation("MerchantReviews", fields: [merchantId], references: [id], onDelete: SetNull)
+  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  shipper       User?    @relation("ShipperReviews", fields: [shipperId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([customerId])
+  @@index([merchantId])
+  @@index([productId])
+  @@index([shipperId])
 }
 
 model Voucher {
