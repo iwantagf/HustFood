@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
@@ -18,6 +19,19 @@ import styles from '../page.module.css';
 
 function formatMoney(value) {
   return `${Number(value || 0).toLocaleString('vi-VN')}đ`;
+}
+
+const MAX_REVIEW_IMAGES = 5;
+const MAX_REVIEW_IMAGE_BYTES = 5 * 1024 * 1024;
+const REVIEW_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
 }
 
 function statusClass(status) {
@@ -60,8 +74,11 @@ export default function OrderTrackingPage() {
   const [reviewMessage, setReviewMessage] = useState('');
   const [reviewForm, setReviewForm] = useState({
     foodRating: 5,
-    shipperRating: 5
+    shipperRating: 5,
+    comment: ''
   });
+  const [reviewImages, setReviewImages] = useState([]);
+  const [isUploadingReviewImages, setIsUploadingReviewImages] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const fetchOrder = useCallback(async () => {
@@ -160,22 +177,92 @@ export default function OrderTrackingPage() {
     setReviewForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleReviewCommentChange = (event) => {
+    setReviewForm(prev => ({ ...prev, comment: event.target.value }));
+  };
+
+  const handleReviewImageChange = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+
+    if (!files.length) return;
+
+    const remainingSlots = MAX_REVIEW_IMAGES - reviewImages.length;
+    if (remainingSlots <= 0) {
+      setReviewMessage('Mỗi đánh giá chỉ được tải tối đa 5 ảnh.');
+      return;
+    }
+
+    const invalidFile = files.find((file) => !REVIEW_IMAGE_TYPES.has(file.type));
+    if (invalidFile) {
+      setReviewMessage('Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.');
+      return;
+    }
+
+    const oversizedFile = files.find((file) => file.size > MAX_REVIEW_IMAGE_BYTES);
+    if (oversizedFile) {
+      setReviewMessage('Mỗi ảnh đánh giá không được vượt quá 5MB.');
+      return;
+    }
+
+    const selectedFiles = files.slice(0, remainingSlots);
+    const nextImages = await Promise.all(selectedFiles.map(async (file, index) => ({
+      id: `${file.name}-${file.lastModified}-${index}-${Date.now()}`,
+      file,
+      previewUrl: await readFileAsDataUrl(file)
+    })));
+
+    setReviewImages(prev => [...prev, ...nextImages]);
+    setReviewMessage(files.length > remainingSlots ? 'Hệ thống chỉ nhận tối đa 5 ảnh cho mỗi đánh giá.' : '');
+  };
+
+  const handleRemoveReviewImage = (imageId) => {
+    setReviewImages(prev => prev.filter((image) => image.id !== imageId));
+  };
+
+  const uploadReviewImages = async () => {
+    const uploadedUrls = [];
+
+    for (const image of reviewImages) {
+      const uploadData = new FormData();
+      uploadData.append('file', image.file);
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadData
+      });
+      const uploadResult = await uploadRes.json();
+
+      if (!uploadRes.ok || !uploadResult.success) {
+        throw new Error(uploadResult.error || 'Không tải được ảnh đánh giá.');
+      }
+
+      uploadedUrls.push(uploadResult.url);
+    }
+
+    return uploadedUrls;
+  };
+
   const handleReviewSubmit = async (event) => {
     event.preventDefault();
     if (!order || order.status !== 'completed') return;
 
     setIsSubmittingReview(true);
+    setIsUploadingReviewImages(Boolean(reviewImages.length));
     setReviewMessage('');
 
     try {
       const hasShipper = Boolean(order.shipperId || order.shipperName);
+      const imageUrls = await uploadReviewImages();
       const res = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: order.id,
           foodRating: reviewForm.foodRating,
-          shipperRating: hasShipper ? reviewForm.shipperRating : null
+          shipperRating: hasShipper ? reviewForm.shipperRating : null,
+          comment: reviewForm.comment,
+          images: imageUrls
         })
       });
       const data = await res.json();
@@ -186,10 +273,12 @@ export default function OrderTrackingPage() {
       }
 
       setReview(data.review);
+      setReviewImages([]);
       setReviewMessage('Đã gửi đánh giá. Cảm ơn bạn đã phản hồi.');
     } catch (error) {
-      setReviewMessage('Không gửi được đánh giá.');
+      setReviewMessage(error.message || 'Không gửi được đánh giá.');
     } finally {
+      setIsUploadingReviewImages(false);
       setIsSubmittingReview(false);
     }
   };
@@ -324,6 +413,22 @@ export default function OrderTrackingPage() {
                       <span>Món ăn: {review.foodRating}/5 sao</span>
                       {review.shipperRating && <span>Người giao hàng: {review.shipperRating}/5 sao</span>}
                     </div>
+                    {review.comment && <p className={styles.reviewComment}>{review.comment}</p>}
+                    {Array.isArray(review.images) && review.images.length > 0 && (
+                      <div className={styles.reviewImageGrid}>
+                        {review.images.map((image, index) => (
+                          <Image
+                            key={image}
+                            src={image}
+                            alt={`Ảnh đánh giá ${index + 1}`}
+                            className={styles.reviewImage}
+                            width={160}
+                            height={160}
+                            unoptimized
+                          />
+                        ))}
+                      </div>
+                    )}
                     {reviewMessage && <p className={styles.reviewSuccess}>{reviewMessage}</p>}
                   </div>
                 ) : (
@@ -340,9 +445,52 @@ export default function OrderTrackingPage() {
                         onChange={(value) => handleReviewRatingChange('shipperRating', value)}
                       />
                     )}
+                    <label className={styles.reviewTextGroup}>
+                      <span>Bình luận</span>
+                      <textarea
+                        value={reviewForm.comment}
+                        onChange={handleReviewCommentChange}
+                        maxLength={1000}
+                        rows={4}
+                        placeholder="Chia sẻ cảm nhận về món ăn, đóng gói hoặc trải nghiệm giao hàng"
+                      />
+                      <small>{reviewForm.comment.length}/1000 ký tự</small>
+                    </label>
+                    <div className={styles.reviewUploadGroup}>
+                      <label className={styles.reviewUploadButton}>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          multiple
+                          onChange={handleReviewImageChange}
+                          disabled={reviewImages.length >= MAX_REVIEW_IMAGES || isSubmittingReview}
+                        />
+                        Chọn ảnh
+                      </label>
+                      <span className={styles.reviewUploadHint}>Tối đa 5 ảnh, mỗi ảnh không quá 5MB.</span>
+                    </div>
+                    {reviewImages.length > 0 && (
+                      <div className={styles.reviewImageGrid}>
+                        {reviewImages.map((image) => (
+                          <div key={image.id} className={styles.reviewImagePreview}>
+                            <Image
+                              src={image.previewUrl}
+                              alt={image.file.name || 'Ảnh đánh giá'}
+                              className={styles.reviewImage}
+                              width={160}
+                              height={160}
+                              unoptimized
+                            />
+                            <button type="button" onClick={() => handleRemoveReviewImage(image.id)}>
+                              Xóa
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {reviewMessage && <p className={styles.reviewError}>{reviewMessage}</p>}
                     <button type="submit" className="btn btn-primary" disabled={isSubmittingReview}>
-                      {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                      {isUploadingReviewImages ? 'Đang tải ảnh...' : isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
                     </button>
                   </form>
                 )}

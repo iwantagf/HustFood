@@ -22,6 +22,32 @@ function normalizeRating(value, { required = true } = {}) {
   return rating;
 }
 
+function normalizeComment(value) {
+  const comment = String(value || '').trim();
+
+  if (comment.length > 1000) {
+    return { error: 'Bình luận không được vượt quá 1000 ký tự' };
+  }
+
+  return { comment };
+}
+
+function normalizeImages(value) {
+  const rawImages = Array.isArray(value) ? value : [];
+  const images = [...new Set(rawImages.map((image) => String(image || '').trim()).filter(Boolean))];
+
+  if (images.length > 5) {
+    return { error: 'Mỗi đánh giá chỉ được tải tối đa 5 ảnh' };
+  }
+
+  const hasInvalidImage = images.some((image) => !/^\/uploads\/[a-zA-Z0-9._-]+$/.test(image));
+  if (hasInvalidImage) {
+    return { error: 'Danh sách ảnh đánh giá không hợp lệ' };
+  }
+
+  return { images };
+}
+
 function getFirstProductId(order) {
   const items = Array.isArray(order?.items) ? order.items : [];
   return items[0]?.id || null;
@@ -40,6 +66,7 @@ function sanitizeReview(review) {
     foodRating: review.foodRating,
     shipperRating: review.shipperRating,
     comment: review.comment || '',
+    images: Array.isArray(review.images) ? review.images : [],
     status: review.status,
     createdAt: review.createdAt
   };
@@ -109,7 +136,8 @@ export async function POST(request) {
     const orderId = String(body.orderId || '').trim();
     const foodRating = normalizeRating(body.foodRating);
     const shipperRating = normalizeRating(body.shipperRating, { required: false });
-    const comment = String(body.comment || '').trim();
+    const commentResult = normalizeComment(body.comment);
+    const imageResult = normalizeImages(body.images);
 
     if (!orderId) {
       return json({ error: 'Thiếu mã đơn hàng' }, 400);
@@ -117,6 +145,14 @@ export async function POST(request) {
 
     if (!foodRating) {
       return json({ error: 'Vui lòng chọn điểm đánh giá món ăn từ 1 đến 5 sao' }, 400);
+    }
+
+    if (commentResult.error) {
+      return json({ error: commentResult.error }, 400);
+    }
+
+    if (imageResult.error) {
+      return json({ error: imageResult.error }, 400);
     }
 
     const order = await findCustomerOrder(orderId, auth.user.id);
@@ -140,8 +176,8 @@ export async function POST(request) {
       shipperId: order.shipperId || null,
       foodRating,
       shipperRating,
-      comment: comment || null,
-      images: null,
+      comment: commentResult.comment || null,
+      images: imageResult.images.length ? imageResult.images : null,
       status: 'visible'
     };
 

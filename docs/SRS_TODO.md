@@ -218,11 +218,11 @@
 - [x] Thêm model `Review`.
 - [x] Form đánh giá sau khi đơn `completed`.
 - [x] Chấm sao món ăn và `Người giao hàng`.
+- [x] Bình luận text.
+- [x] Upload ảnh review.
 
 #### 3.10.2 Chưa làm
 
-- [ ] P1: Bình luận text.
-- [ ] P1: Upload ảnh review.
 - [ ] P1: Hiển thị review trên cửa hàng/món.
 - [ ] P1: Lọc từ ngữ thô tục và ẩn review vi phạm.
 

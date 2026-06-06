@@ -267,6 +267,120 @@
   font-weight: 700;
 }
 
+.reviewComment {
+  margin: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-main);
+  line-height: 1.6;
+  padding: 0.85rem;
+  white-space: pre-wrap;
+}
+
+.reviewTextGroup {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.reviewTextGroup span {
+  color: var(--text-main);
+  font-weight: 800;
+}
+
+.reviewTextGroup textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-main);
+  font: inherit;
+  line-height: 1.5;
+  padding: 0.85rem;
+}
+
+.reviewTextGroup textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.14);
+}
+
+.reviewTextGroup small,
+.reviewUploadHint {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.reviewTextGroup small {
+  justify-self: end;
+}
+
+.reviewUploadGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.reviewUploadButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 1px dashed var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--primary-light);
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.65rem 0.95rem;
+  overflow: hidden;
+}
+
+.reviewUploadButton input {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.reviewImageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.75rem;
+}
+
+.reviewImagePreview {
+  position: relative;
+  min-width: 0;
+}
+
+.reviewImage {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-color);
+}
+
+.reviewImagePreview button {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(17, 24, 39, 0.78);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.35rem 0.55rem;
+}
+
 .reviewSuccess,
 .reviewError {
   margin: 0;
