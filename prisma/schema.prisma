@@ -153,6 +153,7 @@ model Review {
   @@index([merchantId])
   @@index([productId])
   @@index([shipperId])
+  @@unique([orderId, customerId])
 }
 
 model Voucher {

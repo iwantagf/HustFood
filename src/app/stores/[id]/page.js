@@ -228,7 +228,6 @@ export default async function StoreDetailPage({ params }) {
                   <div className={styles.reviewCardHeader}>
                     <div>
                       <h3>{review.customerName}</h3>
-                      <p>{review.orderId ? `Đơn hàng ${review.orderId}` : profile.shopName}</p>
                     </div>
                     <div className={styles.reviewRating}>
                       <span>{review.foodRating}/5 sao</span>
