@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { getImageUploadError, removeUploadedImages, saveUploadedImage } from '@/lib/uploads';
+
+const MAX_REVIEW_IMAGES = 5;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -32,22 +35,6 @@ function normalizeComment(value) {
   return { comment };
 }
 
-function normalizeImages(value) {
-  const rawImages = Array.isArray(value) ? value : [];
-  const images = [...new Set(rawImages.map((image) => String(image || '').trim()).filter(Boolean))];
-
-  if (images.length > 5) {
-    return { error: 'Mỗi đánh giá chỉ được tải tối đa 5 ảnh' };
-  }
-
-  const hasInvalidImage = images.some((image) => !/^\/uploads\/[a-zA-Z0-9._-]+$/.test(image));
-  if (hasInvalidImage) {
-    return { error: 'Danh sách ảnh đánh giá không hợp lệ' };
-  }
-
-  return { images };
-}
-
 function sanitizeReview(review) {
   if (!review) return null;
 
@@ -63,8 +50,84 @@ function sanitizeReview(review) {
     comment: review.comment || '',
     images: Array.isArray(review.images) ? review.images : [],
     status: review.status,
-    createdAt: review.createdAt
+    createdAt: review.createdAt instanceof Date ? review.createdAt.toISOString() : review.createdAt
   };
+}
+
+async function readReviewPayload(request) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.toLowerCase().includes('multipart/form-data')) {
+    const formData = await request.formData();
+    const imageEntries = formData.getAll('images');
+    const hasInvalidImageEntry = imageEntries.some((entry) => entry && typeof entry.arrayBuffer !== 'function');
+
+    return {
+      orderId: formData.get('orderId'),
+      foodRating: formData.get('foodRating'),
+      shipperRating: formData.get('shipperRating'),
+      comment: formData.get('comment'),
+      imageFiles: imageEntries.filter((entry) => entry && typeof entry.arrayBuffer === 'function'),
+      hasInvalidImageEntry,
+      hasDetachedImageUrls: false
+    };
+  }
+
+  const body = await request.json();
+
+  return {
+    orderId: body.orderId,
+    foodRating: body.foodRating,
+    shipperRating: body.shipperRating,
+    comment: body.comment,
+    imageFiles: [],
+    hasInvalidImageEntry: false,
+    hasDetachedImageUrls: Array.isArray(body.images) && body.images.length > 0
+  };
+}
+
+function validateReviewImages(imageFiles, hasInvalidImageEntry, hasDetachedImageUrls) {
+  if (hasDetachedImageUrls) {
+    return 'Ảnh đánh giá phải được gửi cùng form đánh giá';
+  }
+
+  if (hasInvalidImageEntry) {
+    return 'Danh sách ảnh đánh giá không hợp lệ';
+  }
+
+  if (imageFiles.length > MAX_REVIEW_IMAGES) {
+    return 'Mỗi đánh giá chỉ được tải tối đa 5 ảnh';
+  }
+
+  const invalidFile = imageFiles.find((file) => getImageUploadError(file));
+  if (invalidFile) {
+    return getImageUploadError(invalidFile);
+  }
+
+  return '';
+}
+
+async function saveReviewImages(imageFiles) {
+  const savedImages = [];
+
+  try {
+    for (const file of imageFiles) {
+      const savedImage = await saveUploadedImage(file);
+      if (savedImage.error) {
+        throw new Error(savedImage.error);
+      }
+      savedImages.push(savedImage);
+    }
+
+    return savedImages;
+  } catch (error) {
+    await removeUploadedImages(savedImages);
+    throw error;
+  }
+}
+
+function isDuplicateReviewError(error) {
+  return error?.code === 'P2002';
 }
 
 async function findCustomerOrder(orderId, customerId) {
@@ -123,16 +186,22 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  let savedImages = [];
+
   try {
     const auth = await requireRole(request, ['customer']);
     if (auth.response) return auth.response;
 
-    const body = await request.json();
-    const orderId = String(body.orderId || '').trim();
-    const foodRating = normalizeRating(body.foodRating);
-    const shipperRating = normalizeRating(body.shipperRating, { required: false });
-    const commentResult = normalizeComment(body.comment);
-    const imageResult = normalizeImages(body.images);
+    const payload = await readReviewPayload(request);
+    const orderId = String(payload.orderId || '').trim();
+    const foodRating = normalizeRating(payload.foodRating);
+    const shipperRating = normalizeRating(payload.shipperRating, { required: false });
+    const commentResult = normalizeComment(payload.comment);
+    const imageError = validateReviewImages(
+      payload.imageFiles,
+      payload.hasInvalidImageEntry,
+      payload.hasDetachedImageUrls
+    );
 
     if (!orderId) {
       return json({ error: 'Thiếu mã đơn hàng' }, 400);
@@ -146,8 +215,8 @@ export async function POST(request) {
       return json({ error: commentResult.error }, 400);
     }
 
-    if (imageResult.error) {
-      return json({ error: imageResult.error }, 400);
+    if (imageError) {
+      return json({ error: imageError }, 400);
     }
 
     const order = await findCustomerOrder(orderId, auth.user.id);
@@ -163,6 +232,8 @@ export async function POST(request) {
       return json({ error: 'Bạn đã gửi đánh giá cho đơn hàng này' }, 409);
     }
 
+    savedImages = await saveReviewImages(payload.imageFiles);
+    const imageUrls = savedImages.map((image) => image.url);
     const reviewData = {
       orderId: order.id,
       customerId: auth.user.id,
@@ -172,7 +243,7 @@ export async function POST(request) {
       foodRating,
       shipperRating,
       comment: commentResult.comment || null,
-      images: imageResult.images.length ? imageResult.images : null,
+      images: imageUrls.length ? imageUrls : null,
       status: 'visible'
     };
 
@@ -194,6 +265,12 @@ export async function POST(request) {
 
     return json({ review: sanitizeReview(review) }, 201);
   } catch (error) {
+    await removeUploadedImages(savedImages);
+
+    if (isDuplicateReviewError(error)) {
+      return json({ error: 'Bạn đã gửi đánh giá cho đơn hàng này' }, 409);
+    }
+
     return json({ error: 'Không gửi được đánh giá đơn hàng' }, 500);
   }
 }

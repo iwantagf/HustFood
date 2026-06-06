@@ -78,7 +78,6 @@ export default function OrderTrackingPage() {
     comment: ''
   });
   const [reviewImages, setReviewImages] = useState([]);
-  const [isUploadingReviewImages, setIsUploadingReviewImages] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const fetchOrder = useCallback(async () => {
@@ -220,50 +219,27 @@ export default function OrderTrackingPage() {
     setReviewImages(prev => prev.filter((image) => image.id !== imageId));
   };
 
-  const uploadReviewImages = async () => {
-    const uploadedUrls = [];
-
-    for (const image of reviewImages) {
-      const uploadData = new FormData();
-      uploadData.append('file', image.file);
-
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: uploadData
-      });
-      const uploadResult = await uploadRes.json();
-
-      if (!uploadRes.ok || !uploadResult.success) {
-        throw new Error(uploadResult.error || 'Không tải được ảnh đánh giá.');
-      }
-
-      uploadedUrls.push(uploadResult.url);
-    }
-
-    return uploadedUrls;
-  };
-
   const handleReviewSubmit = async (event) => {
     event.preventDefault();
     if (!order || order.status !== 'completed') return;
 
     setIsSubmittingReview(true);
-    setIsUploadingReviewImages(Boolean(reviewImages.length));
     setReviewMessage('');
 
     try {
       const hasShipper = Boolean(order.shipperId || order.shipperName);
-      const imageUrls = await uploadReviewImages();
+      const reviewData = new FormData();
+      reviewData.append('orderId', order.id);
+      reviewData.append('foodRating', String(reviewForm.foodRating));
+      reviewData.append('shipperRating', hasShipper ? String(reviewForm.shipperRating) : '');
+      reviewData.append('comment', reviewForm.comment);
+      reviewImages.forEach((image) => {
+        reviewData.append('images', image.file);
+      });
+
       const res = await fetch('/api/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: order.id,
-          foodRating: reviewForm.foodRating,
-          shipperRating: hasShipper ? reviewForm.shipperRating : null,
-          comment: reviewForm.comment,
-          images: imageUrls
-        })
+        body: reviewData
       });
       const data = await res.json();
 
@@ -278,7 +254,6 @@ export default function OrderTrackingPage() {
     } catch (error) {
       setReviewMessage(error.message || 'Không gửi được đánh giá.');
     } finally {
-      setIsUploadingReviewImages(false);
       setIsSubmittingReview(false);
     }
   };
@@ -490,7 +465,7 @@ export default function OrderTrackingPage() {
                     )}
                     {reviewMessage && <p className={styles.reviewError}>{reviewMessage}</p>}
                     <button type="submit" className="btn btn-primary" disabled={isSubmittingReview}>
-                      {isUploadingReviewImages ? 'Đang tải ảnh...' : isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                      {isSubmittingReview && reviewImages.length ? 'Đang gửi ảnh...' : isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
                     </button>
                   </form>
                 )}
