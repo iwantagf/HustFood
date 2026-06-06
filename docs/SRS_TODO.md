@@ -220,10 +220,10 @@
 - [x] Chấm sao món ăn và `Người giao hàng`.
 - [x] Bình luận text.
 - [x] Upload ảnh review.
+- [x] Hiển thị review trên cửa hàng/món.
 
 #### 3.10.2 Chưa làm
 
-- [ ] P1: Hiển thị review trên cửa hàng/món.
 - [ ] P1: Lọc từ ngữ thô tục và ẩn review vi phạm.
 
 ### 3.11 FR-11: AI phân tích cảm xúc phản hồi

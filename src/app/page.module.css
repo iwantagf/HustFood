@@ -443,11 +443,40 @@
   margin-bottom: 0.5rem;
 }
 
+.productReviewMeta {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  color: var(--text-main);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.productReviewMeta span {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  padding: 0.32rem 0.58rem;
+}
+
 .productDesc {
   color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
   flex-grow: 1;
+}
+
+.productReviewSnippet {
+  width: 100%;
+  border-left: 3px solid var(--primary);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  padding-left: 0.8rem;
+  text-align: left;
 }
 
 .optionControls {
@@ -516,6 +545,114 @@
   margin-top: 4rem;
 }
 
+.reviewSection {
+  padding: 5rem 0;
+  background: var(--bg-color);
+}
+
+.reviewOverview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.reviewOverview > div {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.reviewOverviewValue {
+  display: block;
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.45rem;
+}
+
+.reviewOverviewLabel {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.reviewList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.reviewCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.reviewCardHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.reviewCardHeader h3 {
+  color: var(--text-main);
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+}
+
+.reviewCardHeader p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.reviewRating {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: end;
+  color: var(--primary);
+  font-size: 0.86rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.reviewText {
+  color: var(--text-main);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.reviewPhotoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.5rem;
+}
+
+.reviewPhoto {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-color);
+}
+
+.reviewDate {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .hero {
@@ -555,5 +692,17 @@
 
   .storeDetailInfo .heroTitle {
     font-size: 2.5rem;
+  }
+
+  .reviewOverview {
+    grid-template-columns: 1fr;
+  }
+
+  .reviewCardHeader {
+    flex-direction: column;
+  }
+
+  .reviewRating {
+    justify-items: start;
   }
 }

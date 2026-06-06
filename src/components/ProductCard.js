@@ -6,11 +6,22 @@ import { useAuth } from '@/context/AuthContext';
 
 import { useRouter } from 'next/navigation';
 
+function shortenReviewText(value) {
+  const text = String(value || '').trim();
+  if (text.length <= 90) return text;
+  return `${text.slice(0, 87)}...`;
+}
+
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { role } = useAuth();
   const router = useRouter();
   const canOrder = !role || role === 'customer';
+  const reviewStats = product.reviewStats || null;
+  const reviewCount = Number(reviewStats?.count || 0);
+  const latestReview = Array.isArray(product.recentReviews)
+    ? product.recentReviews.find((review) => review.comment)
+    : null;
   const [selection, setSelection] = useState({
     size: product.options?.sizes?.[0] || '',
     topping: product.options?.toppings?.[0] || '',
@@ -36,7 +47,18 @@ export default function ProductCard({ product }) {
         <img src={product.image} alt={product.name} className={styles.productImage} />
       </div>
       <h3 className={styles.productName}>{product.name}</h3>
+      {reviewCount > 0 && (
+        <div className={styles.productReviewMeta}>
+          <span>{Number(reviewStats.averageFoodRating || 0).toFixed(1)} sao</span>
+          <span>{reviewCount.toLocaleString('vi-VN')} đánh giá</span>
+        </div>
+      )}
       <p className={styles.productDesc}>{product.desc}</p>
+      {latestReview?.comment && (
+        <p className={styles.productReviewSnippet}>
+          &quot;{shortenReviewText(latestReview.comment)}&quot;
+        </p>
+      )}
       {canOrder && (
         <div className={styles.optionControls}>
           {product.options?.sizes?.length > 0 && (
