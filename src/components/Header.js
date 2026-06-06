@@ -18,6 +18,7 @@ export default function Header() {
           {role === 'seller' && <Link href="/seller" className={styles.navLink}>Người bán</Link>}
           {role === 'shipper' && <Link href="/shipper" className={styles.navLink}>Người giao hàng</Link>}
           {role === 'admin' && <Link href="/admin" className={styles.navLink}>Quản trị viên</Link>}
+          {role === 'customer' && <Link href="/orders" className={styles.navLink}>Đơn hàng</Link>}
           <Link href="/#menu" className={styles.navLink}>Thực Đơn</Link>
         </nav>
         <div className={styles.headerActions}>

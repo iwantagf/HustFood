@@ -182,6 +182,7 @@ async function getOrderProducts(productIds) {
 function buildOrderRecord(orderData, extraData = {}) {
   return {
     ...extraData,
+    customerId: orderData.customerId || extraData.customerId || null,
     merchantId: orderData.merchantId,
     merchantName: orderData.merchantName,
     pickupAddress: orderData.pickupAddress,
@@ -433,13 +434,15 @@ function sellerOwnsOrder(order, user) {
 
 export async function GET(request) {
   try {
-    const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
+    const auth = await requireRole(request, ['customer', 'seller', 'shipper', 'admin']);
     if (auth.response) return auth.response;
 
     if (isDemoMode()) {
       const store = getDemoStore();
       const orders = auth.user.role === 'seller'
         ? store.orders.filter((order) => order.merchantId === auth.user.id)
+        : auth.user.role === 'customer'
+          ? store.orders.filter((order) => order.customerId === auth.user.id)
         : auth.user.role === 'shipper'
           ? store.orders.filter((order) => (
             (SHIPPER_READY_STATUSES.includes(order.status) && !order.shipperId)
@@ -451,6 +454,8 @@ export async function GET(request) {
 
     const where = auth.user.role === 'seller'
       ? { merchantId: auth.user.id }
+      : auth.user.role === 'customer'
+        ? { customerId: auth.user.id }
       : auth.user.role === 'shipper'
         ? {
           OR: [
@@ -526,6 +531,7 @@ export async function POST(request) {
       const store = getDemoStore();
       const newOrders = orderGroups.map((orderData, index) => buildOrderRecord(orderData, {
         id: '#HF' + Math.floor(1000 + Math.random() * 9000),
+        customerId: auth.user.id,
         shipperId: null,
         shipperName: null,
         rejectionReason: null,
@@ -554,7 +560,8 @@ export async function POST(request) {
     for (const [index, orderData] of orderGroups.entries()) {
       const newOrder = await prisma.order.create({
         data: buildOrderRecord(orderData, {
-          id: '#HF' + Math.floor(1000 + Math.random() * 9000 + index)
+          id: '#HF' + Math.floor(1000 + Math.random() * 9000 + index),
+          customerId: auth.user.id
         })
       });
       newOrders.push(newOrder);
