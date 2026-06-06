@@ -8,10 +8,17 @@ import { useCart } from '@/context/CartContext';
 export default function SuccessPage() {
   const { clearCart } = useCart();
   const [isPaymentRetry, setIsPaymentRetry] = useState(false);
+  const [lastOrders, setLastOrders] = useState([]);
 
   useEffect(() => {
     const initialLoad = setTimeout(() => {
       setIsPaymentRetry(new URLSearchParams(window.location.search).get('payment') === 'retry');
+      try {
+        const parsedOrders = JSON.parse(window.sessionStorage.getItem('hustfood_last_orders') || '[]');
+        setLastOrders(Array.isArray(parsedOrders) ? parsedOrders : []);
+      } catch (error) {
+        setLastOrders([]);
+      }
       clearCart();
     }, 0);
     return () => clearTimeout(initialLoad);
@@ -33,9 +40,16 @@ export default function SuccessPage() {
             ? 'Thanh toán online chưa hoàn tất. Đơn hàng đã được lưu ở trạng thái chờ thanh toán lại để bạn có thể xử lý tiếp với bộ phận hỗ trợ.'
             : 'Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng của bạn đã được tiếp nhận và đang được bếp chuẩn bị. Người giao hàng sẽ liên hệ với bạn trong thời gian sớm nhất. Chúc bạn có một bữa ăn ngon miệng!'}
         </p>
-        <Link href="/" className={`btn btn-primary ${styles.homeBtn}`}>
-          Quay Về Trang Chủ
-        </Link>
+        <div className={styles.actionRow}>
+          {lastOrders[0] && (
+            <Link href={`/orders/${encodeURIComponent(lastOrders[0].id)}`} className={`btn btn-primary ${styles.homeBtn}`}>
+              Theo Dõi Đơn Hàng
+            </Link>
+          )}
+          <Link href="/" className={`btn btn-outline ${styles.homeBtn}`}>
+            Quay Về Trang Chủ
+          </Link>
+        </div>
       </div>
     </main>
   );

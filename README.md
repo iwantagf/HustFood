@@ -277,6 +277,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 │   │   ├── cart/
 │   │   ├── checkout/
 │   │   ├── login/
+│   │   ├── orders/
 │   │   ├── seller/
 │   │   ├── shipper/
 │   │   ├── success/
@@ -313,6 +314,8 @@ curl -X POST http://localhost:3000/api/auth/register \
 - `/cart`: shopping cart.
 - `/checkout`: checkout, allowed for `customer`.
 - `/success`: order success page.
+- `/orders`: danh sách đơn của khách hàng, cập nhật realtime bằng SSE.
+- `/orders/[id]`: chi tiết theo dõi đơn với progress, ETA và vị trí người giao hàng.
 - `/login`: credential login, Gmail registration, demo social login.
 
 ### 7.2 Người bán
@@ -480,7 +483,18 @@ Body:
 
 #### `GET /api/orders`
 
-Lấy danh sách đơn hàng theo role. `Người bán` chỉ thấy đơn của cửa hàng mình. `Người giao hàng` thấy đơn `ready_for_pickup` chưa ai nhận và các đơn đã gán cho chính họ.
+Lấy danh sách đơn hàng theo role. `Khách hàng` chỉ thấy đơn của chính mình. `Người bán` chỉ thấy đơn của cửa hàng mình. `Người giao hàng` thấy đơn `ready_for_pickup` chưa ai nhận và các đơn đã gán cho chính họ.
+
+#### `GET /api/orders/stream`
+
+SSE stream cập nhật đơn hàng theo quyền truy cập hiện tại. Có thể truyền `id` để theo dõi một đơn cụ thể.
+
+```text
+GET /api/orders/stream
+GET /api/orders/stream?id=%23HF1234
+```
+
+Stream trả event `orders` mỗi 5 giây, dùng cho trang `/orders` và `/orders/[id]`.
 
 #### `POST /api/orders`
 
@@ -750,7 +764,7 @@ Lưu danh mục món theo cửa hàng người bán.
 
 ### 9.5 `Order`
 
-Lưu đơn hàng. `merchantId`/`merchantName` dùng để tách đơn theo cửa hàng; `deliveryFee`, `discount`, `finalTotal`, `paymentMethod`, `paymentStatus`, `paymentProvider`, `paymentTransactionId`, `paymentChecksum` lưu trạng thái chốt đơn/thanh toán. `customer` và `items` vẫn là JSON để demo nhanh.
+Lưu đơn hàng. `customerId` gắn đơn với khách hàng để giới hạn quyền xem tracking. `merchantId`/`merchantName` dùng để tách đơn theo cửa hàng; `deliveryFee`, `discount`, `finalTotal`, `paymentMethod`, `paymentStatus`, `paymentProvider`, `paymentTransactionId`, `paymentChecksum` lưu trạng thái chốt đơn/thanh toán. `shipperId`, thông tin COD, issue và tọa độ shipper cuối cùng phục vụ luồng giao hàng/tracking. `customer` và `items` vẫn là JSON để demo nhanh.
 
 ### 9.6 `SavedCart`
 
@@ -778,6 +792,7 @@ Lưu thông báo nội bộ cho dashboard.
 - Customer product menu, cart, voucher, checkout.
 - Seller dashboard, merchant profile, order status update.
 - Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
+- Customer order tracking realtime bằng SSE, progress bar, ETA và vị trí shipper cuối cùng.
 - Admin dashboard, order/menu/proposal management.
 - Prisma schema for current demo models.
 
@@ -791,13 +806,9 @@ docs/SRS_TODO.md
 
 Các phần lớn còn thiếu:
 
-- Voucher và phí giao hàng.
-- Order tracking cho khách hàng.
 - Review/rating.
 - Sentiment analysis.
-- API authorization server-side.
-- JWT/cookie auth thay cho `localStorage`.
-- Realtime WebSocket/SSE.
+- Dashboard báo cáo nâng cao và biểu đồ.
 
 ## 11. Hướng dẫn đóng góp
 
@@ -852,8 +863,6 @@ Trong PR nên ghi:
 
 ## 12. Vấn đề đã biết
 
-- `npm run lint` toàn repo có thể fail do một số lỗi legacy ở page cũ với rule `react-hooks/set-state-in-effect`.
-- Auth hiện vẫn lưu session demo ở `localStorage`; SRS yêu cầu JWT/cookie và RBAC server-side.
 - `npx prisma db push` cần DB reachable. Nếu DNS/host Aiven không resolve, cần kiểm tra network, host, port và SSL.
 - Social login hiện là demo endpoint, chưa tích hợp OAuth thật.
 - Một số UI còn dùng `<img>` nên ESLint có thể cảnh báo về tối ưu ảnh Next.js.

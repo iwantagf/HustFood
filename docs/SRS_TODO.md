@@ -12,7 +12,7 @@
 
 ### 1.2 Trạng thái code hiện tại
 
-- Branch đang làm: `feature/srs-fr06-payment`.
+- Branch đang làm: `feature/srs-fr09-order-tracking`.
 - Các module đã có code chính:
   - Trang chủ, thực đơn, giỏ hàng, checkout, success.
   - Login/register demo qua database.
@@ -197,18 +197,19 @@
 
 #### 3.9.1 Đã làm
 
-- [~] Có trang success sau khi đặt đơn.
-- [~] Có status đơn trong DB.
-- [~] Admin/Người bán có thể xem status.
+- [x] Có trang success sau khi đặt đơn.
+- [x] Có status đơn trong DB.
+- [x] Admin/Người bán có thể xem status.
+- [x] Trang danh sách/chi tiết theo dõi đơn cho `Khách hàng`.
+- [x] Progress bar theo trạng thái đơn.
+- [x] Cập nhật realtime bằng SSE.
+- [x] Bản đồ vị trí `Người giao hàng`.
+- [x] ETA dự kiến theo trạng thái.
+- [x] Hiển thị vị trí cập nhật cuối cùng khi mất GPS/live location.
 
 #### 3.9.2 Chưa làm
 
-- [ ] P0: Trang chi tiết/theo dõi đơn cho `Khách hàng`.
-- [ ] P0: Progress bar theo trạng thái đơn.
-- [ ] P1: Cập nhật realtime bằng WebSocket/SSE.
-- [ ] P1: Bản đồ vị trí `Người giao hàng`.
-- [ ] P1: ETA dự kiến.
-- [ ] P2: Hiển thị vị trí cập nhật cuối cùng khi mất GPS.
+- Không còn mục thiếu trong phạm vi FR-09 demo hiện tại.
 
 ### 3.10 FR-10: Đánh giá sao, bình luận và tải ảnh
 
@@ -273,10 +274,10 @@
 - [x] Trang tìm kiếm/lọc.
 - [x] Trang chi tiết cửa hàng.
 - [x] UI voucher và phí giao hàng.
+- [x] Trang theo dõi đơn.
 
 #### 4.1.2 Chưa làm
 
-- [ ] P0: Trang theo dõi đơn.
 - [ ] P0: Trang đánh giá sau đơn.
 
 ### 4.2 Người bán
@@ -342,6 +343,7 @@
 - [x] `MerchantProfile`.
 - [x] `Product`.
 - [x] `Order`.
+- [x] `Order.customerId` để giới hạn quyền xem tracking theo khách hàng.
 - [x] Trường gắn shipper vào `Order`.
 - [x] `Proposal`.
 - [x] `Notification`.
@@ -355,6 +357,7 @@
 - [x] API merchant profile.
 - [x] API products.
 - [x] API orders.
+- [x] API order stream SSE.
 - [x] API proposals.
 - [x] API notifications.
 - [x] API upload.
@@ -408,11 +411,9 @@
 
 ### 7.1 P0 nên làm trước
 
-1. Order tracking cho `Khách hàng`.
-2. Review + sentiment mock.
+1. Review + sentiment mock.
 
 ### 7.2 P1 sau khi demo P0 ổn định
 
-1. Realtime bằng WebSocket/SSE.
-2. Dashboard biểu đồ và lọc thời gian.
-3. OAuth thật.
+1. Dashboard biểu đồ và lọc thời gian.
+2. OAuth thật.

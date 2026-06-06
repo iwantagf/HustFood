@@ -85,6 +85,7 @@ model MerchantProfile {
 
 model Order {
   id                   String    @id @default(cuid())
+  customerId           String?
   merchantId           String?
   merchantName         String?
   pickupAddress        String?

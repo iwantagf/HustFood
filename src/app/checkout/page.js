@@ -67,6 +67,13 @@ export default function CheckoutPage() {
       });
 
       if (res.ok) {
+        const createdOrders = await res.json();
+        if (Array.isArray(createdOrders)) {
+          window.sessionStorage.setItem('hustfood_last_orders', JSON.stringify(createdOrders.map((order) => ({
+            id: order.id,
+            merchantName: order.merchantName
+          }))));
+        }
         router.push(payment?.status === 'failed' ? '/success?payment=retry' : '/success');
       } else {
         const data = await res.json();
