@@ -5,7 +5,7 @@ import { sanitizeUser } from '@/lib/auth/users';
 import { isDemoMode } from '@/lib/demo/store';
 
 export const SESSION_COOKIE = 'hustfood_session';
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+const SESSION_MAX_AGE = 60 * 60 * 24;
 const SESSION_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'hustfood-dev-session-secret';
 
 function base64UrlEncode(value) {
@@ -138,4 +138,42 @@ export async function requireRole(request, allowedRoles) {
   }
 
   return { user };
+}
+
+export function createTempSessionToken(payload) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64UrlEncode({ alg: 'HS256', typ: 'JWT' });
+  const jwtPayload = base64UrlEncode({
+    ...payload,
+    iat: now,
+    exp: now + 15 * 60 // 15 minutes expiration
+  });
+  const unsignedToken = `${header}.${jwtPayload}`;
+  return `${unsignedToken}.${sign(unsignedToken)}`;
+}
+
+export function verifyTempSessionToken(token) {
+  if (!token || typeof token !== 'string') return null;
+
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  const [header, payload, signature] = parts;
+  const expectedSignature = sign(`${header}.${payload}`);
+  const actual = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+    return null;
+  }
+
+  try {
+    const decodedPayload = base64UrlDecode(payload);
+    if (decodedPayload.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    return decodedPayload;
+  } catch (error) {
+    return null;
+  }
 }

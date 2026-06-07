@@ -443,12 +443,12 @@ export async function GET(request) {
         ? store.orders.filter((order) => order.merchantId === auth.user.id)
         : auth.user.role === 'customer'
           ? store.orders.filter((order) => order.customerId === auth.user.id)
-        : auth.user.role === 'shipper'
-          ? store.orders.filter((order) => (
-            (SHIPPER_READY_STATUSES.includes(order.status) && !order.shipperId)
-            || order.shipperId === auth.user.id
-          ))
-        : store.orders;
+          : auth.user.role === 'shipper'
+            ? store.orders.filter((order) => (
+              (SHIPPER_READY_STATUSES.includes(order.status) && !order.shipperId)
+              || order.shipperId === auth.user.id
+            ))
+            : store.orders;
       return json(orders);
     }
 
@@ -456,14 +456,14 @@ export async function GET(request) {
       ? { merchantId: auth.user.id }
       : auth.user.role === 'customer'
         ? { customerId: auth.user.id }
-      : auth.user.role === 'shipper'
-        ? {
-          OR: [
-            { status: { in: SHIPPER_READY_STATUSES }, shipperId: null },
-            { shipperId: auth.user.id }
-          ]
-        }
-        : undefined;
+        : auth.user.role === 'shipper'
+          ? {
+            OR: [
+              { status: { in: SHIPPER_READY_STATUSES }, shipperId: null },
+              { shipperId: auth.user.id }
+            ]
+          }
+          : undefined;
 
     const orders = await prisma.order.findMany({
       where,
@@ -555,7 +555,7 @@ export async function POST(request) {
 
       return json(newOrders, 201);
     }
-    
+
     const newOrders = [];
     for (const [index, orderData] of orderGroups.entries()) {
       const newOrder = await prisma.order.create({
@@ -568,7 +568,7 @@ export async function POST(request) {
     }
     await markVoucherUsed(voucher);
     await notifySellerNewOrders(newOrders);
-    
+
     return json(newOrders, 201);
   } catch (error) {
     return json({ error: 'Failed to create order' }, 500);
@@ -613,12 +613,12 @@ export async function PUT(request) {
 
     const result = buildOrderUpdate({ order, status, action, rejectionReason, issue, location, user: auth.user });
     if (result.error) return json({ error: result.error }, 400);
-    
+
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: result.update
     });
-    
+
     return json(updatedOrder);
   } catch (error) {
     return json({ error: 'Order not found or failed to update' }, 404);
@@ -650,11 +650,11 @@ export async function DELETE(request) {
     if (!sellerOwnsOrder(order, auth.user)) {
       return json({ error: 'Bạn không được xóa đơn của cửa hàng khác' }, 403);
     }
-    
+
     await prisma.order.delete({
       where: { id }
     });
-    
+
     return json({ success: true });
   } catch (error) {
     return json({ error: 'Failed to delete order' }, 500);

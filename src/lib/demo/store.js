@@ -229,57 +229,22 @@ export function findDemoUserByCredentials(identifier, password) {
   return sanitizeDemoUser(user);
 }
 
-export function createDemoUser({ email, password, displayName, role }) {
+export function addDemoUser(userData) {
   const store = getDemoStore();
-  const existingUser = store.users.find((item) => item.email?.toLowerCase() === email);
-
-  if (existingUser) return { error: 'Tài khoản Gmail này đã tồn tại' };
-
-  const user = {
-    id: createDemoId('demo-user'),
-    email,
-    username: null,
-    displayName: displayName || email.split('@')[0],
-    role,
-    status: 'active',
-    provider: 'credentials',
-    password
-  };
-
-  store.users.push(user);
-
-  if (role === 'seller') {
-    store.merchantProfiles.push({
-      ...DEFAULT_PROFILE,
-      id: createDemoId('demo-profile'),
-      ownerId: user.id,
-      shopName: `${user.displayName} Store`,
-      status: 'pending_review',
-      owner: sanitizeDemoUser(user),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  const exists = store.users.find(
+    (u) => (u.email && u.email === userData.email) || (u.providerAccountId && u.providerAccountId === userData.providerAccountId)
+  );
+  if (!exists) {
+    store.users.push({
+      id: `demo-user-${Date.now()}`,
+      ...userData,
+      createdAt: new Date().toISOString()
     });
   }
-
-  return { user: sanitizeDemoUser(user) };
 }
 
-export function getOrCreateDemoSocialUser({ provider, email, displayName }) {
+export function findDemoUserByProviderId(providerAccountId) {
   const store = getDemoStore();
-  let user = store.users.find((item) => item.email?.toLowerCase() === email);
-
-  if (!user) {
-    user = {
-      id: createDemoId('demo-social'),
-      email,
-      username: null,
-      displayName: displayName || email.split('@')[0],
-      role: 'customer',
-      status: 'active',
-      provider
-    };
-    store.users.push(user);
-  }
-
+  const user = store.users.find((u) => u.providerAccountId === providerAccountId);
   return sanitizeDemoUser(user);
 }
