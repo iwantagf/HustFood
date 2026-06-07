@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { analyzeReviewSentiment, inspectReviewModeration } from '@/lib/reviews';
 import { getImageUploadError, removeUploadedImages, saveUploadedImage } from '@/lib/uploads';
 
 const MAX_REVIEW_IMAGES = 5;
@@ -50,8 +51,20 @@ function sanitizeReview(review) {
     comment: review.comment || '',
     images: Array.isArray(review.images) ? review.images : [],
     status: review.status,
+    sentiment: review.sentiment || 'neutral',
+    sentimentScore: Number(review.sentimentScore || 0),
+    sentimentReason: review.sentimentReason || '',
+    customerName: review.customer?.displayName || 'Khách hàng HustFood',
     createdAt: review.createdAt instanceof Date ? review.createdAt.toISOString() : review.createdAt
   };
+}
+
+function getModerationMessage(review) {
+  if (review?.status === 'hidden') {
+    return 'Đánh giá đã được ghi nhận nhưng đang bị ẩn vì nội dung không phù hợp.';
+  }
+
+  return 'Đã gửi đánh giá. Cảm ơn bạn đã phản hồi.';
 }
 
 async function readReviewPayload(request) {
@@ -161,25 +174,78 @@ async function findExistingReview(orderId, customerId) {
   });
 }
 
+function enrichDemoReview(review) {
+  if (!review || !isDemoMode()) return review;
+
+  const store = getDemoStore();
+  const customer = store.users.find((user) => user.id === review.customerId);
+
+  return {
+    ...review,
+    customer: customer ? { displayName: customer.displayName } : null
+  };
+}
+
+async function findReadableReviews(user, { orderId, sentiment } = {}) {
+  if (isDemoMode()) {
+    const store = getDemoStore();
+    return store.reviews
+      .filter((review) => {
+        if (user.role === 'admin') return true;
+        if (user.role === 'seller') return review.merchantId === user.id;
+        return review.customerId === user.id;
+      })
+      .filter((review) => !orderId || review.orderId === orderId)
+      .filter((review) => !sentiment || review.sentiment === sentiment)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map(enrichDemoReview);
+  }
+
+  const where = {
+    ...(user.role === 'seller' ? { merchantId: user.id } : {}),
+    ...(user.role === 'customer' ? { customerId: user.id } : {}),
+    ...(orderId ? { orderId } : {}),
+    ...(sentiment ? { sentiment } : {})
+  };
+
+  return prisma.review.findMany({
+    where,
+    include: {
+      customer: {
+        select: {
+          displayName: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
 export async function GET(request) {
   try {
-    const auth = await requireRole(request, ['customer']);
+    const auth = await requireRole(request, ['customer', 'seller', 'admin']);
     if (auth.response) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const orderId = String(searchParams.get('orderId') || '').trim();
+    const sentiment = String(searchParams.get('sentiment') || '').trim();
 
-    if (!orderId) {
+    if (auth.user.role === 'customer' && !orderId) {
       return json({ error: 'Thiếu mã đơn hàng' }, 400);
     }
 
-    const order = await findCustomerOrder(orderId, auth.user.id);
-    if (!order) {
-      return json({ error: 'Không tìm thấy đơn hàng hoặc bạn không có quyền xem đơn này' }, 404);
+    if (auth.user.role === 'customer') {
+      const order = await findCustomerOrder(orderId, auth.user.id);
+      if (!order) {
+        return json({ error: 'Không tìm thấy đơn hàng hoặc bạn không có quyền xem đơn này' }, 404);
+      }
+
+      const review = await findExistingReview(orderId, auth.user.id);
+      return json({ review: sanitizeReview(enrichDemoReview(review)) });
     }
 
-    const review = await findExistingReview(orderId, auth.user.id);
-    return json({ review: sanitizeReview(review) });
+    const reviews = await findReadableReviews(auth.user, { orderId, sentiment });
+    return json({ reviews: reviews.map(sanitizeReview) });
   } catch (error) {
     return json({ error: 'Không tải được đánh giá đơn hàng' }, 500);
   }
@@ -219,6 +285,13 @@ export async function POST(request) {
       return json({ error: imageError }, 400);
     }
 
+    const moderation = inspectReviewModeration(commentResult.comment);
+    const sentiment = analyzeReviewSentiment({
+      comment: commentResult.comment,
+      foodRating,
+      shipperRating
+    });
+
     const order = await findCustomerOrder(orderId, auth.user.id);
     if (!order) {
       return json({ error: 'Không tìm thấy đơn hàng hoặc bạn không có quyền đánh giá đơn này' }, 404);
@@ -244,7 +317,10 @@ export async function POST(request) {
       shipperRating,
       comment: commentResult.comment || null,
       images: imageUrls.length ? imageUrls : null,
-      status: 'visible'
+      status: moderation.status,
+      sentiment: sentiment.sentiment,
+      sentimentScore: sentiment.sentimentScore,
+      sentimentReason: sentiment.sentimentReason
     };
 
     if (isDemoMode()) {
@@ -256,14 +332,26 @@ export async function POST(request) {
         updatedAt: new Date().toISOString()
       };
       store.reviews.unshift(review);
-      return json({ review: sanitizeReview(review) }, 201);
+      return json({
+        review: sanitizeReview(review),
+        moderation: {
+          hidden: moderation.isViolation,
+          message: getModerationMessage(review)
+        }
+      }, 201);
     }
 
     const review = await prisma.review.create({
       data: reviewData
     });
 
-    return json({ review: sanitizeReview(review) }, 201);
+    return json({
+      review: sanitizeReview(review),
+      moderation: {
+        hidden: moderation.isViolation,
+        message: getModerationMessage(review)
+      }
+    }, 201);
   } catch (error) {
     await removeUploadedImages(savedImages);
 

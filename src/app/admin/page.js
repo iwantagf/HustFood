@@ -8,26 +8,30 @@ export default function DashboardPage() {
   const [proposals, setProposals] = useState([]);
   const [products, setProducts] = useState([]);
   const [merchantProfiles, setMerchantProfiles] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, proposalsRes, productsRes, profilesRes] = await Promise.all([
+      const [ordersRes, proposalsRes, productsRes, profilesRes, reviewsRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/proposals'),
         fetch('/api/products'),
-        fetch('/api/merchant-profile')
+        fetch('/api/merchant-profile'),
+        fetch('/api/reviews?sentiment=negative')
       ]);
-      const [ordersData, proposalsData, productsData, profilesData] = await Promise.all([
+      const [ordersData, proposalsData, productsData, profilesData, reviewsData] = await Promise.all([
         ordersRes.json(),
         proposalsRes.json(),
         productsRes.json(),
-        profilesRes.json()
+        profilesRes.json(),
+        reviewsRes.json()
       ]);
       setOrders(ordersData);
       setProposals(proposalsData);
       setProducts(productsData);
       setMerchantProfiles(Array.isArray(profilesData) ? profilesData : []);
+      setReviews(Array.isArray(reviewsData.reviews) ? reviewsData.reviews : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -50,6 +54,10 @@ export default function DashboardPage() {
   
   const pendingCount = orders.filter(o => o.status === 'pending').length;
   const completedCount = orders.filter(o => o.status === 'completed').length;
+  const criticalReviews = reviews.filter(review => (
+    review.sentiment === 'negative'
+    && (Number(review.foodRating) <= 1 || Number(review.shipperRating) <= 1)
+  ));
   
   const getStatusBadge = (status) => {
     switch (status) {
@@ -181,7 +189,36 @@ export default function DashboardPage() {
             <div className={styles.statValue}>{pendingProfiles}</div>
           </div>
         </div>
+
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconRed}`}>!</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Review Tiêu Cực 1 Sao</div>
+            <div className={styles.statValue}>{criticalReviews.length}</div>
+          </div>
+        </div>
       </div>
+
+      {criticalReviews.length > 0 && (
+        <>
+          <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem' }}>Cảnh Báo Sentiment</h2>
+          <div className={styles.alertList}>
+            {criticalReviews.slice(0, 5).map((review) => (
+              <article key={review.id} className={styles.alertCard}>
+                <div className={styles.alertHeader}>
+                  <strong>Đơn {review.orderId}</strong>
+                  <span className={`${styles.statusBadge} ${styles.statusRejected}`}>negative</span>
+                </div>
+                <p>{review.comment || 'Khách không để lại bình luận.'}</p>
+                <div className={styles.alertMeta}>
+                  {review.customerName} · Món ăn {review.foodRating}/5
+                  {review.shipperRating ? ` · Shipper ${review.shipperRating}/5` : ''}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem' }}>Đơn Hàng Mới Nhất</h2>
       <div className={styles.tableContainer}>

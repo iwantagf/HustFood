@@ -221,22 +221,23 @@
 - [x] Bình luận text.
 - [x] Upload ảnh review.
 - [x] Hiển thị review trên cửa hàng; món hiển thị số lượt đã bán.
+- [x] Lọc từ ngữ thô tục và ẩn review vi phạm.
 
 #### 3.10.2 Chưa làm
 
-- [ ] P1: Lọc từ ngữ thô tục và ẩn review vi phạm.
+- Không còn mục thiếu trong phạm vi FR-10 demo hiện tại.
 
 ### 3.11 FR-11: AI phân tích cảm xúc phản hồi
 
 #### 3.11.1 Đã làm
 
-- [ ] Chưa có module AI sentiment.
+- [x] Thêm sentiment mock theo rule để demo: positive/neutral/negative.
+- [x] Lưu sentiment vào DB theo review.
+- [x] Cảnh báo review tiêu cực 1 sao trên dashboard `Quản trị viên` và `Người bán`.
+- [x] Lưu lý do/điểm sentiment để truy vết rule demo.
 
 #### 3.11.2 Chưa làm
 
-- [ ] P0: Thêm sentiment mock theo rule để demo: positive/neutral/negative.
-- [ ] P1: Lưu sentiment vào DB theo review.
-- [ ] P1: Cảnh báo review tiêu cực 1 sao trên dashboard `Quản trị viên` và `Người bán`.
 - [ ] P2: Hàng đợi xử lý review.
 - [ ] P2: Tích hợp model NLP/AI thật.
 
@@ -274,10 +275,11 @@
 - [x] Trang chi tiết cửa hàng.
 - [x] UI voucher và phí giao hàng.
 - [x] Trang theo dõi đơn.
+- [x] Trang đánh giá sau đơn.
 
 #### 4.1.2 Chưa làm
 
-- [ ] P0: Trang đánh giá sau đơn.
+- Không còn mục thiếu trong phạm vi khách hàng demo hiện tại.
 
 ### 4.2 Người bán
 
@@ -349,6 +351,7 @@
 - [x] `SavedCart`.
 - [x] `Voucher`.
 - [x] `MenuCategory`.
+- [x] `Review`.
 - [x] `Shop`/`MerchantProfile` liên kết với `User`.
 - [x] Tùy chọn món bằng `Product.options`.
 - [x] Thêm trường payment/delivery vào `Order`.
@@ -360,13 +363,13 @@
 - [x] API proposals.
 - [x] API notifications.
 - [x] API upload.
+- [x] API reviews.
 - [x] API authorization theo role.
 - [x] Push schema lên Aiven MySQL.
 - [x] Seed dữ liệu demo trên Aiven MySQL.
 
 ### 5.2 Chưa làm
 
-- [x] P0: `Review`.
 - [ ] P1: `Transaction`/`Payment`.
 - [ ] P1: `SentimentAnalysis`.
 
@@ -410,9 +413,8 @@
 
 ### 7.1 P0 nên làm trước
 
-1. Review + sentiment mock.
+1. Dashboard biểu đồ và lọc thời gian.
 
 ### 7.2 P1 sau khi demo P0 ổn định
 
-1. Dashboard biểu đồ và lọc thời gian.
-2. OAuth thật.
+1. OAuth thật.

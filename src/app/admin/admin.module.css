@@ -210,6 +210,40 @@
   background: var(--primary-hover);
 }
 
+.alertList {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.alertCard {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.alertHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.alertCard p {
+  margin: 0.75rem 0;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.alertMeta {
+  color: #9a3412;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .menuLayout {
   display: flex;
   gap: 2rem;

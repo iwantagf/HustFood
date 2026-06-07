@@ -250,7 +250,7 @@ export default function OrderTrackingPage() {
 
       setReview(data.review);
       setReviewImages([]);
-      setReviewMessage('Đã gửi đánh giá. Cảm ơn bạn đã phản hồi.');
+      setReviewMessage(data.moderation?.message || 'Đã gửi đánh giá. Cảm ơn bạn đã phản hồi.');
     } catch (error) {
       setReviewMessage(error.message || 'Không gửi được đánh giá.');
     } finally {
@@ -263,6 +263,7 @@ export default function OrderTrackingPage() {
   const latestLocation = getLatestShipperLocation(order);
   const items = Array.isArray(order?.items) ? order.items : [];
   const hasShipper = Boolean(order?.shipperId || order?.shipperName);
+  const isReviewHidden = review?.status === 'hidden';
 
   if (isLoading || role !== 'customer') return null;
 
@@ -382,14 +383,19 @@ export default function OrderTrackingPage() {
                 {loadingReview ? (
                   <div className={styles.emptyState}>Đang tải đánh giá...</div>
                 ) : review ? (
-                  <div className={styles.reviewSubmitted}>
-                    <strong>Đã gửi đánh giá</strong>
+                  <div className={`${styles.reviewSubmitted} ${isReviewHidden ? styles.reviewSubmittedHidden : ''}`}>
+                    <strong>{isReviewHidden ? 'Đánh giá đang bị ẩn' : 'Đã gửi đánh giá'}</strong>
                     <div className={styles.reviewSummary}>
                       <span>Món ăn: {review.foodRating}/5 sao</span>
                       {review.shipperRating && <span>Người giao hàng: {review.shipperRating}/5 sao</span>}
                     </div>
-                    {review.comment && <p className={styles.reviewComment}>{review.comment}</p>}
-                    {Array.isArray(review.images) && review.images.length > 0 && (
+                    {isReviewHidden && (
+                      <p className={styles.reviewWarning}>
+                        Nội dung đánh giá không phù hợp nên không hiển thị công khai trên trang cửa hàng.
+                      </p>
+                    )}
+                    {!isReviewHidden && review.comment && <p className={styles.reviewComment}>{review.comment}</p>}
+                    {!isReviewHidden && Array.isArray(review.images) && review.images.length > 0 && (
                       <div className={styles.reviewImageGrid}>
                         {review.images.map((image, index) => (
                           <Image
@@ -404,7 +410,11 @@ export default function OrderTrackingPage() {
                         ))}
                       </div>
                     )}
-                    {reviewMessage && <p className={styles.reviewSuccess}>{reviewMessage}</p>}
+                    {reviewMessage && (
+                      <p className={isReviewHidden ? styles.reviewWarning : styles.reviewSuccess}>
+                        {reviewMessage}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <form className={styles.reviewForm} onSubmit={handleReviewSubmit}>

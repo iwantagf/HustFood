@@ -90,6 +90,7 @@ export default function SellerPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [merchantProfile, setMerchantProfile] = useState({
     shopName: '',
     address: '',
@@ -118,19 +119,21 @@ export default function SellerPage() {
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, notificationsRes, profileRes, categoriesRes] = await Promise.all([
+      const [ordersRes, productsRes, notificationsRes, profileRes, categoriesRes, reviewsRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/products?scope=mine'),
         fetch('/api/notifications'),
         fetch('/api/merchant-profile'),
-        fetch('/api/menu-categories?scope=mine')
+        fetch('/api/menu-categories?scope=mine'),
+        fetch('/api/reviews?sentiment=negative')
       ]);
-      const [ordersData, productsData, notifData, profileData, categoriesData] = await Promise.all([
+      const [ordersData, productsData, notifData, profileData, categoriesData, reviewsData] = await Promise.all([
         ordersRes.json(),
         productsRes.json(),
         notificationsRes.json(),
         profileRes.json(),
-        categoriesRes.json()
+        categoriesRes.json(),
+        reviewsRes.json()
       ]);
       const nextOrders = Array.isArray(ordersData) ? ordersData : [];
       const incomingOrders = nextOrders.filter((order) => (
@@ -152,6 +155,7 @@ export default function SellerPage() {
       setNotifications(Array.isArray(notifData) ? notifData : []);
       setMerchantProfile(profileData);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      setReviews(Array.isArray(reviewsData.reviews) ? reviewsData.reviews : []);
     } catch (error) {
       console.error('Không tải được dữ liệu seller:', error);
     } finally {
@@ -234,6 +238,10 @@ export default function SellerPage() {
   const pendingCount = orders.filter(order => order.status === 'pending').length;
   const processingCount = orders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
   const completedCount = orders.filter(order => order.status === 'completed').length;
+  const criticalReviews = reviews.filter(review => (
+    review.sentiment === 'negative'
+    && (Number(review.foodRating) <= 1 || Number(review.shipperRating) <= 1)
+  ));
 
   const productSales = orders.reduce((acc, order) => {
     order.items?.forEach(item => {
@@ -556,6 +564,24 @@ export default function SellerPage() {
         </div>
       )}
 
+      {criticalReviews.length > 0 && (
+        <div className={styles.alertList} style={{ marginBottom: '1.5rem' }}>
+          {criticalReviews.slice(0, 3).map((review) => (
+            <article key={review.id} className={styles.alertCard}>
+              <div className={styles.alertHeader}>
+                <strong>Review tiêu cực từ đơn {review.orderId}</strong>
+                <span className={`${styles.statusBadge} ${styles.statusRejected}`}>negative</span>
+              </div>
+              <p>{review.comment || 'Khách không để lại bình luận.'}</p>
+              <div className={styles.alertMeta}>
+                {review.customerName} · Món ăn {review.foodRating}/5
+                {review.shipperRating ? ` · Shipper ${review.shipperRating}/5` : ''}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
       <div className={styles.tableContainer} style={{ padding: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <div>
@@ -648,6 +674,13 @@ export default function SellerPage() {
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Đơn Hoàn Thành</div>
             <div className={styles.statValue}>{completedCount}</div>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconRed}`}>!</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Review Tiêu Cực 1 Sao</div>
+            <div className={styles.statValue}>{criticalReviews.length}</div>
           </div>
         </div>
       </div>

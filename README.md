@@ -732,7 +732,35 @@ Body:
 
 Mã seed/demo có sẵn: `HUSTFOOD10`, `SV20`.
 
-### 8.10 Upload API
+### 8.10 Review APIs
+
+#### `POST /api/reviews`
+
+Khách hàng gửi đánh giá sau khi đơn đã `completed`. API nhận form-data để upload ảnh review, kiểm tra mỗi khách chỉ đánh giá một lần cho một đơn và tự ẩn review nếu bình luận có nội dung thô tục.
+
+Form fields:
+
+```text
+orderId
+foodRating
+shipperRating
+comment
+images
+```
+
+Khi tạo review, API phân tích sentiment mock theo rule và lưu `positive`, `neutral` hoặc `negative` vào DB.
+
+#### `GET /api/reviews?orderId=...`
+
+Khách hàng lấy lại đánh giá đã gửi cho đơn của chính mình.
+
+`Người bán` và `Quản trị viên` có thể lấy danh sách review theo quyền truy cập. Có thể lọc cảnh báo bằng:
+
+```text
+GET /api/reviews?sentiment=negative
+```
+
+### 8.11 Upload API
 
 #### `POST /api/upload`
 
@@ -782,6 +810,10 @@ Lưu đề xuất món mới từ người bán.
 
 Lưu thông báo nội bộ cho dashboard.
 
+### 9.10 `Review`
+
+Lưu đánh giá sau đơn hoàn thành: `orderId`, `customerId`, `merchantId`, `shipperId`, điểm món ăn, điểm người giao hàng, bình luận, ảnh và `status`. Review có nội dung vi phạm được lưu `hidden` để không hiển thị công khai trên trang cửa hàng. Các trường `sentiment`, `sentimentScore`, `sentimentReason` lưu kết quả phân tích cảm xúc mock theo rule.
+
 ## 10. Trạng thái tính năng hiện tại
 
 ### 10.1 Đã làm hoặc đã làm một phần
@@ -793,6 +825,8 @@ Lưu thông báo nội bộ cho dashboard.
 - Seller dashboard, merchant profile, order status update.
 - Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
 - Customer order tracking realtime bằng SSE, progress bar, ETA và vị trí shipper cuối cùng.
+- Review/rating sau đơn hoàn thành, upload ảnh và ẩn review vi phạm.
+- Sentiment analysis mock cho review và cảnh báo review tiêu cực 1 sao trên dashboard.
 - Admin dashboard, order/menu/proposal management.
 - Prisma schema for current demo models.
 
@@ -806,8 +840,6 @@ docs/SRS_TODO.md
 
 Các phần lớn còn thiếu:
 
-- Review/rating.
-- Sentiment analysis.
 - Dashboard báo cáo nâng cao và biểu đồ.
 
 ## 11. Hướng dẫn đóng góp

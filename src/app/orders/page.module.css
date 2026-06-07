@@ -259,6 +259,12 @@
   padding: 1rem;
 }
 
+.reviewSubmittedHidden {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
 .reviewSummary {
   display: flex;
   gap: 0.75rem;
@@ -382,7 +388,8 @@
 }
 
 .reviewSuccess,
-.reviewError {
+.reviewError,
+.reviewWarning {
   margin: 0;
   font-weight: 700;
 }
@@ -393,6 +400,10 @@
 
 .reviewError {
   color: #b91c1c;
+}
+
+.reviewWarning {
+  color: #c2410c;
 }
 
 @media (max-width: 820px) {

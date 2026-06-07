@@ -8,21 +8,24 @@ datasource db {
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  ownerId     String?
-  owner       User?         @relation(fields: [ownerId], references: [id])
-  categoryId  String?
-  category    MenuCategory? @relation(fields: [categoryId], references: [id])
-  name        String
-  desc        String        @db.Text
-  price       String
-  image       String
-  options     Json?
-  isAvailable Boolean       @default(true)
-  isHidden    Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  reviews     Review[]
+  id             String          @id @default(cuid())
+  ownerId        String?
+  owner          User?           @relation(fields: [ownerId], references: [id])
+  categoryId     String?
+  category       MenuCategory?   @relation(fields: [categoryId], references: [id])
+  name           String
+  desc           String          @db.Text
+  price          String
+  image          String
+  options        Json?
+  isAvailable    Boolean         @default(true)
+  isHidden       Boolean         @default(false)
+  rating         Float           @default(0)
+  reviewCount    Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  reviews        Review[]
+  productReviews ProductReview[]
 }
 
 model MenuCategory {
@@ -55,6 +58,7 @@ model User {
   customerReviews   Review[]         @relation("CustomerReviews")
   merchantReviews   Review[]         @relation("MerchantReviews")
   shipperReviews    Review[]         @relation("ShipperReviews")
+  productReviews    ProductReview[]
 
   @@unique([provider, providerAccountId])
 }
@@ -129,31 +133,34 @@ model Order {
 }
 
 model Review {
-  id            String   @id @default(cuid())
-  orderId       String?
-  customerId    String?
-  merchantId    String?
-  productId     String?
-  shipperId     String?
-  foodRating    Int
-  shipperRating Int?
-  comment       String?  @db.Text
-  images        Json?
-  status        String   @default("visible") // visible, hidden, flagged
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  order         Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  customer      User?    @relation("CustomerReviews", fields: [customerId], references: [id], onDelete: SetNull)
-  merchant      User?    @relation("MerchantReviews", fields: [merchantId], references: [id], onDelete: SetNull)
-  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  shipper       User?    @relation("ShipperReviews", fields: [shipperId], references: [id], onDelete: SetNull)
+  id              String   @id @default(cuid())
+  orderId         String?
+  customerId      String?
+  merchantId      String?
+  productId       String?
+  shipperId       String?
+  foodRating      Int
+  shipperRating   Int?
+  comment         String?  @db.Text
+  images          Json?
+  status          String   @default("visible") // visible, hidden, flagged
+  sentiment       String   @default("neutral") // positive, neutral, negative
+  sentimentScore  Float    @default(0)
+  sentimentReason String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  order           Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  customer        User?    @relation("CustomerReviews", fields: [customerId], references: [id], onDelete: SetNull)
+  merchant        User?    @relation("MerchantReviews", fields: [merchantId], references: [id], onDelete: SetNull)
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  shipper         User?    @relation("ShipperReviews", fields: [shipperId], references: [id], onDelete: SetNull)
 
+  @@unique([orderId, customerId])
   @@index([orderId])
   @@index([customerId])
   @@index([merchantId])
   @@index([productId])
   @@index([shipperId])
-  @@unique([orderId, customerId])
 }
 
 model Voucher {
@@ -188,4 +195,19 @@ model Notification {
   message   String   @db.Text
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model ProductReview {
+  id        String   @id
+  productId String
+  userId    String
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId], map: "ProductReview_userId_fkey")
 }
