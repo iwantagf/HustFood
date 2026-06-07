@@ -192,6 +192,7 @@ export default function SellerPage() {
       case 'delivering': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
       case 'completed': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Hoàn thành</span>;
       case 'rejected': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Từ chối</span>;
+      case 'cancelled': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Khách hủy</span>;
       default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
@@ -585,7 +586,12 @@ export default function SellerPage() {
                     )}
                     {order.status === 'rejected' && (
                       <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
-                        {order.rejectionReason || 'Đã từ chối'}
+                        Bạn đã từ chối: {order.rejectionReason || 'Không có lý do'}
+                      </div>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                        Khách hủy: {order.rejectionReason || 'Không có lý do'}
                       </div>
                     )}
                   </td>

@@ -32,8 +32,14 @@ export default function AdminLayout({ children }) {
           <Link href="/admin/orders" className={pathname === '/admin/orders' ? styles.activeLink : styles.navLink}>
             Quản lý Đơn Hàng
           </Link>
+          <Link href="/admin/shops" className={pathname === '/admin/shops' ? styles.activeLink : styles.navLink}>
+            Quản lý Cửa Hàng
+          </Link>
           <Link href="/admin/menu" className={pathname === '/admin/menu' ? styles.activeLink : styles.navLink}>
             Quản lý Thực Đơn
+          </Link>
+          <Link href="/admin/finance" className={pathname === '/admin/finance' ? styles.activeLink : styles.navLink}>
+            Thống kê tài chính
           </Link>
           <Link href="/" className={styles.navLink} style={{ marginTop: 'auto' }}>
             ← Quay Lại Cửa Hàng

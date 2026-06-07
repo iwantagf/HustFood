@@ -3,27 +3,50 @@ import { useState, useEffect } from 'react';
 import styles from './admin.module.css';
 import { getOrderFinalTotal } from '@/lib/pricing';
 
+function formatFacebookTime(dateString) {
+  if (!dateString) return { exactDate: '', relativeTime: '' };
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const exactDate = `${day}/${month}/${year}`;
+  
+  let relativeTime = '';
+  if (diffInSeconds < 60) {
+    relativeTime = 'Vài giây trước';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    relativeTime = `${minutes} phút trước`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    relativeTime = `${hours} giờ trước`;
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400);
+    relativeTime = `${days} ngày trước`;
+  } else if (diffInSeconds < 31536000) {
+    const months = Math.floor(diffInSeconds / 2592000);
+    relativeTime = `${months} tháng trước`;
+  } else {
+    const years = Math.floor(diffInSeconds / 31536000);
+    relativeTime = `${years} năm trước`;
+  }
+  
+  return { exactDate, relativeTime };
+}
+
 export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [merchantProfiles, setMerchantProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, profilesRes] = await Promise.all([
-        fetch('/api/orders'),
-        fetch('/api/products'),
-        fetch('/api/merchant-profile')
-      ]);
-      const [ordersData, productsData, profilesData] = await Promise.all([
-        ordersRes.json(),
-        productsRes.json(),
-        profilesRes.json()
-      ]);
+      const ordersRes = await fetch('/api/orders');
+      const ordersData = await ordersRes.json();
       setOrders(ordersData);
-      setProducts(productsData);
-      setMerchantProfiles(Array.isArray(profilesData) ? profilesData : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -57,23 +80,13 @@ export default function DashboardPage() {
       case 'processing': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Chờ giao hàng</span>;
       case 'picked_up': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đã lấy hàng</span>;
       case 'delivering': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
+      case 'delivering': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
       case 'completed': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Hoàn thành</span>;
       case 'rejected': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Từ chối</span>;
-      default: return null;
-    }
-  };
-
-  const getMerchantStatusBadge = (status) => {
-    switch (status) {
-      case 'active': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Đã duyệt</span>;
-      case 'paused': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Tạm dừng</span>;
-      case 'blocked': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Đã khóa</span>;
-      case 'pending_review': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ duyệt</span>;
+      case 'cancelled': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Khách hủy</span>;
       default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
-
-
 
   const handleDeleteOrder = async (id) => {
     if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
@@ -89,44 +102,6 @@ export default function DashboardPage() {
       alert('Có lỗi xảy ra khi xóa đơn hàng.');
     }
   };
-
-  const handleDeleteProduct = async (id) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa món này khỏi thực đơn?')) return;
-    try {
-      await fetch('/api/products', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      setProducts(prev => prev.filter(p => p.id !== id));
-    } catch (e) {
-      console.error(e);
-      alert('Có lỗi xảy ra khi xóa món.');
-    }
-  };
-
-  const handleMerchantStatus = async (id, status) => {
-    try {
-      const res = await fetch('/api/merchant-profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Không cập nhật được cửa hàng.');
-        return;
-      }
-
-      setMerchantProfiles(prev => prev.map(profile => profile.id === id ? data : profile));
-    } catch (e) {
-      console.error(e);
-      alert('Có lỗi xảy ra khi cập nhật cửa hàng.');
-    }
-  };
-
-  const pendingProfiles = merchantProfiles.filter(profile => profile.status === 'pending_review').length;
 
   return (
     <>
@@ -156,14 +131,6 @@ export default function DashboardPage() {
             <div className={styles.statValue}>{completedCount} Đơn</div>
           </div>
         </div>
-
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.iconYellow}`}>🏪</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Cửa Hàng Chờ Duyệt</div>
-            <div className={styles.statValue}>{pendingProfiles}</div>
-          </div>
-        </div>
       </div>
 
       <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem' }}>Đơn Hàng Mới Nhất</h2>
@@ -172,110 +139,66 @@ export default function DashboardPage() {
           <thead>
             <tr>
               <th>Mã ĐH</th>
-              <th>Khách Hàng</th>
-              <th>Tổng Tiền</th>
-              <th>Trạng Thái</th>
-              <th>Thời Gian</th>
-              <th>Hành Động</th>
+              <th>Thời gian</th>
+              <th>Khách</th>
+              <th>Giá trị</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {orders.slice(0, 5).map(order => (
-              <tr key={order.id}>
-                <td>{order.id}</td>
-                <td>{order.customer?.name}</td>
-                <td style={{ fontWeight: '600' }}>{getOrderFinalTotal(order).toLocaleString('vi-VN')}đ</td>
-                <td>{getStatusBadge(order.status)}</td>
-                <td>{new Date(order.createdAt).toLocaleTimeString('vi-VN')}</td>
-                <td>
-                  {order.status === 'completed' && (
-                    <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Xóa</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {orders.length === 0 && (
-              <tr><td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>Chưa có đơn hàng nào</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Duyệt Cửa Hàng Người Bán</h2>
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Cửa Hàng</th>
-              <th>Người Bán</th>
-              <th>Liên Hệ</th>
-              <th>Trạng Thái</th>
-              <th>Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {merchantProfiles.map(profile => (
-              <tr key={profile.id}>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    {profile.image ? <img src={profile.image} alt={profile.shopName} style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }} /> : null}
-                    <div>
-                      <div style={{ fontWeight: '700' }}>{profile.shopName}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{profile.address}</div>
+            {orders.length === 0 ? (
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Chưa có đơn hàng nào.</td></tr>
+            ) : (
+              orders.slice(0, 15).map(order => {
+                const { exactDate, relativeTime } = formatFacebookTime(order.createdAt);
+                return (
+                <tr key={order.id}>
+                  <td>{order.id}</td>
+                  <td>
+                    <div>{exactDate}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relativeTime}</div>
+                  </td>
+                  <td>{order.customer?.name || 'Khách ẩn'}</td>
+                  <td style={{ fontWeight: '700' }}>
+                    {getOrderFinalTotal(order).toLocaleString('vi-VN')}đ
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                      {order.paymentMethod?.toUpperCase() || 'COD'} · {order.paymentStatus || 'pending'}
                     </div>
-                  </div>
-                </td>
-                <td>{profile.owner?.displayName || profile.owner?.email || 'Chưa gắn user'}</td>
-                <td>{profile.phone}</td>
-                <td>{getMerchantStatusBadge(profile.status)}</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {profile.status !== 'active' && (
-                      <button onClick={() => handleMerchantStatus(profile.id, 'active')} className={styles.actionBtn}>Duyệt</button>
+                  </td>
+                  <td>{getStatusBadge(order.status)}</td>
+                  <td>
+                    {order.status === 'completed' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
+                        <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Xóa</button>
+                      </div>
                     )}
-                    {profile.status !== 'blocked' && (
-                      <button onClick={() => handleMerchantStatus(profile.id, 'blocked')} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.85rem' }}>Khóa</button>
+                    {['payment_retry'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
                     )}
-                    {profile.status === 'blocked' && (
-                      <button onClick={() => handleMerchantStatus(profile.id, 'pending_review')} style={{ background: '#f3f4f6', color: '#111', border: '1px solid #ddd', padding: '0.6rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.85rem' }}>Mở xét duyệt</button>
+                    {['ready_for_pickup', 'processing'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Đang chờ shipper</span>
                     )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {merchantProfiles.length === 0 && (
-              <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Chưa có hồ sơ cửa hàng nào.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Quản Lý Thực Đơn</h2>
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Hình Ảnh</th>
-              <th>Tên Món</th>
-              <th>Giá</th>
-              <th>Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(product => (
-              <tr key={product.id}>
-                <td>
-                  {product.image ? <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} /> : 'Không có'}
-                </td>
-                <td style={{ fontWeight: '600' }}>{product.name}</td>
-                <td>{product.price}</td>
-                <td>
-                  <button onClick={() => handleDeleteProduct(product.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Xóa</button>
-                </td>
-              </tr>
-            ))}
-            {products.length === 0 && (
-              <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Không có món nào trong thực đơn.</td></tr>
+                    {['picked_up', 'delivering'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        {order.shipperName ? `Shipper: ${order.shipperName}` : 'Shipper đang xử lý'}
+                      </span>
+                    )}
+                    {order.status === 'rejected' && (
+                      <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                        Bạn đã từ chối: {order.rejectionReason || 'Không có lý do'}
+                      </div>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                        Khách hủy: {order.rejectionReason || 'Không có lý do'}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -56,7 +56,7 @@
 - [x] Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
 - [x] Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
 - [x] Bảo vệ API theo role, không chỉ bảo vệ UI.
-- [x] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
+- [x] OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
 
@@ -195,13 +195,13 @@
 - [x] `Người bán` có đếm đơn cho, đang giao, hoàn thành.
 - [x] `Người bán` có top sản phẩm bán chạy.
 - [x] `Quản trị viên` có dashboard tổng quan đơn, sản phẩm, đề xuất món.
+- [x] Bộ lọc thời gian: hôm nay, tuần này, tháng này.
 
 #### 3.12.2 Chưa làm
 
-- [ ] P1: Bộ lọc thời gian: hôm nay, tuần này, tháng này.
-- [ ] P1: Doanh thu theo từng cửa hàng.
-- [ ] P1: Thống kê đơn hủy/từ chối.
-- [ ] P1: Biểu đồ trực quan.
+- [x] P1: Doanh thu theo từng cửa hàng.
+- [x] P1: Thống kê đơn hủy/từ chối.
+- [x] P1: Biểu đồ trực quan.
 - [ ] P1: Báo cáo tỷ lệ sentiment.
 - [ ] P2: Export CSV/PDF.
 
@@ -237,7 +237,7 @@
 #### 4.2.2 Chưa làm
 
 - [ ] P1: Dashboard sentiment.
-- [ ] P1: Biểu đồ doanh thu.
+- [x] P1: Biểu đồ doanh thu.
 
 ### 4.3 Người giao hàng
 

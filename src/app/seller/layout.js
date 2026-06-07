@@ -32,6 +32,9 @@ export default function SellerLayout({ children }) {
           <Link href="/seller/menu" className={pathname === '/seller/menu' ? styles.activeLink : styles.navLink}>
             Quản lý Thực Đơn
           </Link>
+          <Link href="/seller/finance" className={pathname === '/seller/finance' ? styles.activeLink : styles.navLink}>
+            Thống kê tài chính
+          </Link>
           <Link href="/" className={styles.navLink} style={{ marginTop: 'auto' }}>
             ← Quay Lại Trang Chủ
           </Link>

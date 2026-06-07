@@ -20,6 +20,7 @@ export function getOrderStatusLabel(status) {
     case 'delivering': return 'Đang giao';
     case 'completed': return 'Hoàn thành';
     case 'rejected': return 'Từ chối';
+    case 'cancelled': return 'Đã hủy';
     default: return status || 'Chưa rõ';
   }
 }
@@ -32,7 +33,7 @@ export function getOrderStepIndex(status) {
 }
 
 export function getOrderProgress(status) {
-  if (status === 'rejected') return 100;
+  if (status === 'rejected' || status === 'cancelled') return 100;
   const index = getOrderStepIndex(status);
   return Math.round(index / Math.max(ORDER_TRACKING_STEPS.length - 1, 1) * 100);
 }
@@ -49,6 +50,7 @@ export function getEtaText(order) {
     case 'delivering': return 'Khoảng 5-15 phút';
     case 'completed': return 'Đã giao xong';
     case 'rejected': return 'Đơn đã bị từ chối';
+    case 'cancelled': return 'Khách hàng đã hủy đơn';
     default: return 'Đang cập nhật';
   }
 }

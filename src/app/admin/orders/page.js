@@ -3,6 +3,41 @@ import { useState, useEffect } from 'react';
 import styles from '../admin.module.css';
 import { getOrderFinalTotal } from '@/lib/pricing';
 
+function formatFacebookTime(dateString) {
+  if (!dateString) return { exactDate: '', relativeTime: '' };
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const exactDate = `${day}/${month}/${year}`;
+  
+  let relativeTime = '';
+  if (diffInSeconds < 60) {
+    relativeTime = 'Vài giây trước';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    relativeTime = `${minutes} phút trước`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    relativeTime = `${hours} giờ trước`;
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400);
+    relativeTime = `${days} ngày trước`;
+  } else if (diffInSeconds < 31536000) {
+    const months = Math.floor(diffInSeconds / 2592000);
+    relativeTime = `${months} tháng trước`;
+  } else {
+    const years = Math.floor(diffInSeconds / 31536000);
+    relativeTime = `${years} năm trước`;
+  }
+  
+  return { exactDate, relativeTime };
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +78,27 @@ export default function OrdersPage() {
     }
   };
 
+  const rejectOrder = (order) => {
+    const reason = prompt(`Nhập lý do từ chối đơn ${order.id}`);
+    if (!reason || !reason.trim()) return;
+    updateStatus(order.id, 'rejected', { rejectionReason: reason.trim() });
+  };
+
+  const handleDeleteOrder = async (id) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
+    try {
+      await fetch('/api/orders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      setOrders(prev => prev.filter(o => o.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('Có lỗi xảy ra khi xóa đơn hàng.');
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Chờ xác nhận</span>;
@@ -55,6 +111,7 @@ export default function OrdersPage() {
       case 'delivering': return <span className={`${styles.statusBadge} ${styles.statusProcessing}`}>Đang giao</span>;
       case 'completed': return <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Hoàn thành</span>;
       case 'rejected': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Từ chối</span>;
+      case 'cancelled': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Khách hủy</span>;
       default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
@@ -67,62 +124,92 @@ export default function OrdersPage() {
           <thead>
             <tr>
               <th>Mã ĐH</th>
-              <th>Khách Hàng</th>
-              <th>Chi Tiết</th>
-              <th>Tổng Tiền</th>
-              <th>Trạng Thái</th>
-              <th>Hành Động</th>
+              <th>Thời gian</th>
+              <th>Khách</th>
+              <th>Giá trị</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {orders.length === 0 ? (
-              <tr><td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>Chưa có đơn hàng nào</td></tr>
-            ) : orders.map(order => (
-              <tr key={order.id}>
-                <td>{order.id}</td>
-                <td>
-                  <strong>{order.customer?.name}</strong>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    SĐT: {order.customer?.phone}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {new Date(order.createdAt).toLocaleTimeString('vi-VN')}
-                  </div>
-                </td>
-                <td style={{ color: 'var(--text-muted)' }}>
-                  {order.items?.map(item => (
-                    <div key={item.id}>{item.quantity}x {item.name}</div>
-                  ))}
-                </td>
-                <td style={{ fontWeight: '600' }}>
-                  {getOrderFinalTotal(order).toLocaleString('vi-VN')}đ
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                    {order.paymentMethod?.toUpperCase() || 'COD'} · {order.paymentStatus || 'pending'}
-                  </div>
-                </td>
-                <td>{getStatusBadge(order.status)}</td>
-                <td>
-                  {order.status === 'pending' && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'accepted')}>Nhận đơn</button>
-                  )}
-                  {order.status === 'accepted' && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'preparing')}>Bắt đầu chuẩn bị</button>
-                  )}
-                  {order.status === 'preparing' && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>Chờ giao hàng</button>
-                  )}
-                  {order.status === 'payment_retry' && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
-                  )}
-                  {['ready_for_pickup', 'processing', 'picked_up', 'delivering'].includes(order.status) && (
-                    <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'completed')}>Hoàn thành</button>
-                  )}
-                  {order.status === 'completed' && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Không có</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Chưa có đơn hàng nào.</td></tr>
+            ) : (
+              orders.map(order => {
+                const { exactDate, relativeTime } = formatFacebookTime(order.createdAt);
+                return (
+                <tr key={order.id}>
+                  <td>{order.id}</td>
+                  <td>
+                    <div>{exactDate}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relativeTime}</div>
+                  </td>
+                  <td>{order.customer?.name || 'Khách ẩn'}</td>
+                  <td style={{ fontWeight: '700' }}>
+                    {getOrderFinalTotal(order).toLocaleString('vi-VN')}đ
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                      {order.paymentMethod?.toUpperCase() || 'COD'} · {order.paymentStatus || 'pending'}
+                    </div>
+                  </td>
+                  <td>{getStatusBadge(order.status)}</td>
+                  <td>
+                    {order.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'accepted')}>
+                          Nhận đơn
+                        </button>
+                        <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+                          Từ chối
+                        </button>
+                      </div>
+                    )}
+                    {order.status === 'accepted' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'preparing')}>
+                          Bắt đầu chuẩn bị
+                        </button>
+                        <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+                          Từ chối
+                        </button>
+                      </div>
+                    )}
+                    {order.status === 'preparing' && (
+                      <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>
+                        Chờ giao hàng
+                      </button>
+                    )}
+                    {order.status === 'payment_retry' && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
+                    )}
+                    {['ready_for_pickup', 'processing'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Đang chờ shipper</span>
+                    )}
+                    {['picked_up', 'delivering'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        {order.shipperName ? `Shipper: ${order.shipperName}` : 'Shipper đang xử lý'}
+                      </span>
+                    )}
+                    {order.status === 'completed' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
+                        <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Xóa</button>
+                      </div>
+                    )}
+                    {order.status === 'rejected' && (
+                      <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                        Bạn đã từ chối: {order.rejectionReason || 'Không có lý do'}
+                      </div>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                        Khách hủy: {order.rejectionReason || 'Không có lý do'}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

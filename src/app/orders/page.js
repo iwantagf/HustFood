@@ -14,7 +14,7 @@ function formatMoney(value) {
 
 function getStatusClass(status) {
   if (status === 'completed') return `${styles.statusBadge} ${styles.statusDone}`;
-  if (['rejected', 'payment_retry'].includes(status)) return `${styles.statusBadge} ${styles.statusProblem}`;
+  if (['rejected', 'cancelled', 'payment_retry'].includes(status)) return `${styles.statusBadge} ${styles.statusProblem}`;
   return styles.statusBadge;
 }
 
@@ -42,6 +42,27 @@ export default function OrdersPage() {
       setLoadingOrders(false);
     }
   }, []);
+
+  const handleCancelOrder = async (id) => {
+    const reason = prompt('Vui lòng nhập lý do hủy đơn hàng:');
+    if (!reason || !reason.trim()) return;
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'cancel', rejectionReason: reason.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Có lỗi xảy ra khi hủy đơn.');
+        return;
+      }
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'cancelled', rejectionReason: reason.trim() } : o));
+    } catch (e) {
+      alert('Có lỗi xảy ra khi hủy đơn.');
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && role !== 'customer') {
@@ -144,9 +165,20 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <Link href={`/orders/${encodeURIComponent(order.id)}`} className="btn btn-primary">
-                    Xem chi tiết
-                  </Link>
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                    <Link href={`/orders/${encodeURIComponent(order.id)}`} className="btn btn-primary" style={{ flex: 1, textAlign: 'center' }}>
+                      Xem chi tiết
+                    </Link>
+                    {['pending', 'payment_retry'].includes(order.status) && (
+                      <button 
+                        className="btn btn-outline" 
+                        style={{ flex: 1, color: '#ef4444', borderColor: '#ef4444' }}
+                        onClick={() => handleCancelOrder(order.id)}
+                      >
+                        Hủy đơn
+                      </button>
+                    )}
+                  </div>
                 </article>
               );
             })}

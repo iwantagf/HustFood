@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
-import { getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 
 export async function GET(request) {
   try {
@@ -93,5 +93,47 @@ export async function PUT(request) {
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Failed to update notification' }), { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  try {
+    const auth = await requireRole(request, ['admin']);
+    if (auth.response) return auth.response;
+
+    const { ownerId, message } = await request.json();
+
+    if (!ownerId || !message) {
+      return new Response(JSON.stringify({ error: 'Thiếu thông tin người nhận hoặc nội dung' }), { status: 400 });
+    }
+
+    if (isDemoMode()) {
+      const store = getDemoStore();
+      const newNotification = {
+        id: createDemoId('demo-notification'),
+        ownerId,
+        message,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      store.notifications.unshift(newNotification);
+
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    await prisma.notification.create({
+      data: {
+        ownerId,
+        message,
+        read: false
+      }
+    });
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to create notification' }), { status: 500 });
   }
 }

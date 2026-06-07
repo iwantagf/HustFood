@@ -268,6 +268,29 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
   const reason = String(rejectionReason || '').trim();
   const issueText = String(issue || '').trim();
 
+  if (action === 'cancel') {
+    if (user.role !== 'customer') {
+      return { error: 'Chỉ khách hàng mới có thể hủy đơn qua chức năng này' };
+    }
+
+    if (order.customerId !== user.id) {
+      return { error: 'Bạn không có quyền hủy đơn này' };
+    }
+
+    if (!['pending', 'payment_retry'].includes(order.status)) {
+      return { error: 'Chỉ có thể hủy đơn khi đang chờ xác nhận' };
+    }
+
+    if (!reason) {
+      return { error: 'Vui lòng nhập lý do hủy đơn' };
+    }
+
+    update.status = 'cancelled';
+    update.rejectionReason = reason;
+    update.rejectedAt = now;
+    return { update };
+  }
+
   if (action === 'update_location') {
     if (user.role !== 'shipper') {
       return { error: 'Chỉ người giao hàng được cập nhật vị trí' };
@@ -577,7 +600,7 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    const auth = await requireRole(request, ['seller', 'shipper', 'admin']);
+    const auth = await requireRole(request, ['customer', 'seller', 'shipper', 'admin']);
     if (auth.response) return auth.response;
 
     const { id, status, action, rejectionReason, issue, location } = await request.json();
