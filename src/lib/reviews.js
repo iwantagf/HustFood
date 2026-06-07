@@ -122,7 +122,7 @@ export function inspectReviewModeration(comment) {
   };
 }
 
-export function analyzeReviewSentiment({ comment = '', foodRating = 0, shipperRating = null } = {}) {
+export function analyzeReviewSentimentByRule({ comment = '', foodRating = 0, shipperRating = null } = {}) {
   const normalized = normalizeModerationText(comment);
   const compact = normalized.replace(/\s+/g, '');
   const tokens = normalized ? normalized.split(' ') : [];
@@ -165,6 +165,8 @@ export function analyzeReviewSentiment({ comment = '', foodRating = 0, shipperRa
     ].filter(Boolean).join(' | ') || 'rule:neutral'
   };
 }
+
+export const analyzeReviewSentiment = analyzeReviewSentimentByRule;
 
 export function serializeReview(review) {
   return {

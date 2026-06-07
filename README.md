@@ -748,7 +748,7 @@ comment
 images
 ```
 
-Khi tạo review, API phân tích sentiment mock theo rule và lưu `positive`, `neutral` hoặc `negative` vào DB.
+Khi tạo review, API phân tích sentiment bằng model ONNX nhẹ và lưu `positive`, `neutral` hoặc `negative` vào DB. Model nằm tại `public/models/sentiment/tfidf-logreg-sentiment.onnx`, checksum lưu cùng file `.sha256`; nếu ONNX Runtime không load được model thì API fallback về rule local.
 
 #### `GET /api/reviews?orderId=...`
 
@@ -812,7 +812,7 @@ Lưu thông báo nội bộ cho dashboard.
 
 ### 9.10 `Review`
 
-Lưu đánh giá sau đơn hoàn thành: `orderId`, `customerId`, `merchantId`, `shipperId`, điểm món ăn, điểm người giao hàng, bình luận, ảnh và `status`. Review có nội dung vi phạm được lưu `hidden` để không hiển thị công khai trên trang cửa hàng. Các trường `sentiment`, `sentimentScore`, `sentimentReason` lưu kết quả phân tích cảm xúc mock theo rule.
+Lưu đánh giá sau đơn hoàn thành: `orderId`, `customerId`, `merchantId`, `shipperId`, điểm món ăn, điểm người giao hàng, bình luận, ảnh và `status`. Review có nội dung vi phạm được lưu `hidden` để không hiển thị công khai trên trang cửa hàng. Các trường `sentiment`, `sentimentScore`, `sentimentReason` lưu kết quả phân tích cảm xúc từ ONNX model hoặc fallback rule.
 
 ## 10. Trạng thái tính năng hiện tại
 
@@ -826,7 +826,7 @@ Lưu đánh giá sau đơn hoàn thành: `orderId`, `customerId`, `merchantId`, 
 - Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
 - Customer order tracking realtime bằng SSE, progress bar, ETA và vị trí shipper cuối cùng.
 - Review/rating sau đơn hoàn thành, upload ảnh và ẩn review vi phạm.
-- Sentiment analysis mock cho review và cảnh báo review tiêu cực 1 sao trên dashboard.
+- Sentiment analysis bằng ONNX model nhẹ cho review và cảnh báo review tiêu cực 1 sao trên dashboard.
 - Admin dashboard, order/menu/proposal management.
 - Prisma schema for current demo models.
 

@@ -231,15 +231,16 @@
 
 #### 3.11.1 Đã làm
 
-- [x] Thêm sentiment mock theo rule để demo: positive/neutral/negative.
+- [x] Thêm sentiment bằng model ONNX nhẹ để demo: positive/neutral/negative.
 - [x] Lưu sentiment vào DB theo review.
 - [x] Cảnh báo review tiêu cực 1 sao trên dashboard `Quản trị viên` và `Người bán`.
-- [x] Lưu lý do/điểm sentiment để truy vết rule demo.
+- [x] Lưu lý do/điểm sentiment để truy vết model/checksum hoặc fallback rule.
+- [x] Kiểm tra package/model: gỡ Transformers.js do audit critical, dùng `onnxruntime-node` và model ONNX 1.07MB kèm SHA-256.
 
 #### 3.11.2 Chưa làm
 
 - [ ] P2: Hàng đợi xử lý review.
-- [ ] P2: Tích hợp model NLP/AI thật.
+- [ ] P2: Fine-tune/thay model production chuyên tiếng Việt nếu cần độ chính xác cao hơn.
 
 ### 3.12 FR-12: Dashboard thống kê tài chính
 

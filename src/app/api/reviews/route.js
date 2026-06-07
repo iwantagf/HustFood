@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
-import { analyzeReviewSentiment, inspectReviewModeration } from '@/lib/reviews';
+import { inspectReviewModeration } from '@/lib/reviews';
+import { analyzeReviewSentiment } from '@/lib/reviewSentimentModel';
 import { getImageUploadError, removeUploadedImages, saveUploadedImage } from '@/lib/uploads';
 
 const MAX_REVIEW_IMAGES = 5;
@@ -286,7 +287,7 @@ export async function POST(request) {
     }
 
     const moderation = inspectReviewModeration(commentResult.comment);
-    const sentiment = analyzeReviewSentiment({
+    const sentiment = await analyzeReviewSentiment({
       comment: commentResult.comment,
       foodRating,
       shipperRating
