@@ -155,7 +155,6 @@ function createDemoStore() {
     savedCarts: [],
     orders: [],
     reviews: [],
-    proposals: [],
     notifications: [],
     merchantProfiles: [{ ...DEFAULT_PROFILE }]
   };

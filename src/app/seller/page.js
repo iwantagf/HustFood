@@ -1,24 +1,44 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import styles from '../admin/admin.module.css';
-import Link from 'next/link';
 import { getOrderFinalTotal } from '@/lib/pricing';
 
-const DEFAULT_MENU_FORM = {
-  name: '',
-  desc: '',
-  price: '',
-  image: '',
-  categoryId: '',
-  sizes: '',
-  toppings: '',
-  tastes: '',
-  allowNote: true,
-  isAvailable: true,
-  isHidden: false
-};
-
 const IN_PROGRESS_STATUSES = ['accepted', 'preparing', 'ready_for_pickup', 'processing', 'picked_up', 'delivering'];
+
+function formatFacebookTime(dateString) {
+  if (!dateString) return { exactDate: '', relativeTime: '' };
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const exactDate = `${day}/${month}/${year}`;
+  
+  let relativeTime = '';
+  if (diffInSeconds < 60) {
+    relativeTime = 'Vài giây trước';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    relativeTime = `${minutes} phút trước`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    relativeTime = `${hours} giờ trước`;
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400);
+    relativeTime = `${days} ngày trước`;
+  } else if (diffInSeconds < 31536000) {
+    const months = Math.floor(diffInSeconds / 2592000);
+    relativeTime = `${months} tháng trước`;
+  } else {
+    const years = Math.floor(diffInSeconds / 31536000);
+    relativeTime = `${years} năm trước`;
+  }
+  
+  return { exactDate, relativeTime };
+}
 
 function playNewOrderSound() {
   if (typeof window === 'undefined') return;
@@ -43,52 +63,12 @@ function playNewOrderSound() {
     oscillator.start();
     oscillator.stop(audioContext.currentTime + 0.3);
   } catch (error) {
-    // Browser autoplay policy can block audio until the seller interacts with the page.
+    // Browser autoplay policy can block audio
   }
-}
-
-function optionArrayToText(value) {
-  return Array.isArray(value) ? value.join(', ') : '';
-}
-
-function productToMenuForm(product) {
-  return {
-    name: product.name || '',
-    desc: product.desc || '',
-    price: product.price || '',
-    image: product.image || '',
-    categoryId: product.categoryId || '',
-    sizes: optionArrayToText(product.options?.sizes),
-    toppings: optionArrayToText(product.options?.toppings),
-    tastes: optionArrayToText(product.options?.tastes),
-    allowNote: product.options?.allowNote !== false,
-    isAvailable: product.isAvailable !== false,
-    isHidden: Boolean(product.isHidden)
-  };
-}
-
-function menuFormToPayload(menuForm, imageUrl) {
-  return {
-    name: menuForm.name,
-    desc: menuForm.desc,
-    price: menuForm.price,
-    image: imageUrl,
-    categoryId: menuForm.categoryId || null,
-    options: {
-      sizes: menuForm.sizes,
-      toppings: menuForm.toppings,
-      tastes: menuForm.tastes,
-      allowNote: menuForm.allowNote
-    },
-    isAvailable: menuForm.isAvailable,
-    isHidden: menuForm.isHidden
-  };
 }
 
 export default function SellerPage() {
   const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [merchantProfile, setMerchantProfile] = useState({
     shopName: '',
@@ -101,36 +81,27 @@ export default function SellerPage() {
     status: 'active'
   });
   const [showNotifications, setShowNotifications] = useState(false);
-  const [proposal, setProposal] = useState({ name: '', desc: '', price: '', image: '' });
-  const [menuForm, setMenuForm] = useState(DEFAULT_MENU_FORM);
-  const [categoryForm, setCategoryForm] = useState('');
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [menuImageFile, setMenuImageFile] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
-  const [isProposing, setIsProposing] = useState(false);
-  const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [orderMessage, setOrderMessage] = useState('');
   const [newOrderAlert, setNewOrderAlert] = useState(null);
+  const [filterType, setFilterType] = useState('all');
+  const [filterValue, setFilterValue] = useState('');
   const knownOrderIdsRef = useRef(new Set());
   const hasLoadedOrdersRef = useRef(false);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, notificationsRes, profileRes, categoriesRes] = await Promise.all([
+      const [ordersRes, notificationsRes, profileRes] = await Promise.all([
         fetch('/api/orders'),
-        fetch('/api/products?scope=mine'),
         fetch('/api/notifications'),
-        fetch('/api/merchant-profile'),
-        fetch('/api/menu-categories?scope=mine')
+        fetch('/api/merchant-profile')
       ]);
-      const [ordersData, productsData, notifData, profileData, categoriesData] = await Promise.all([
+      const [ordersData, notifData, profileData] = await Promise.all([
         ordersRes.json(),
-        productsRes.json(),
         notificationsRes.json(),
-        profileRes.json(),
-        categoriesRes.json()
+        profileRes.json()
       ]);
       const nextOrders = Array.isArray(ordersData) ? ordersData : [];
       const incomingOrders = nextOrders.filter((order) => (
@@ -148,10 +119,8 @@ export default function SellerPage() {
       knownOrderIdsRef.current = new Set(nextOrders.map((order) => order.id));
       hasLoadedOrdersRef.current = true;
       setOrders(nextOrders);
-      setProducts(Array.isArray(productsData) ? productsData : []);
       setNotifications(Array.isArray(notifData) ? notifData : []);
       setMerchantProfile(profileData);
-      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error('Không tải được dữ liệu seller:', error);
     } finally {
@@ -235,38 +204,6 @@ export default function SellerPage() {
   const processingCount = orders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
   const completedCount = orders.filter(order => order.status === 'completed').length;
 
-  const productSales = orders.reduce((acc, order) => {
-    order.items?.forEach(item => {
-      if (!acc[item.id]) {
-        acc[item.id] = { ...item, sold: 0 };
-      }
-      acc[item.id].sold += item.quantity;
-    });
-    return acc;
-  }, {});
-
-  const topProducts = Object.values(productSales)
-    .sort((a, b) => b.sold - a.sold)
-    .slice(0, 4);
-
-  const handlePropose = async (e) => {
-    e.preventDefault();
-    setIsProposing(true);
-    try {
-      await fetch('/api/proposals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(proposal)
-      });
-      alert('Đã gửi đề xuất món mới! Đang chờ Quản trị viên duyệt.');
-      setProposal({ name: '', desc: '', price: '', image: '' });
-    } catch (err) {
-      alert('Có lỗi xảy ra khi gửi đề xuất.');
-    } finally {
-      setIsProposing(false);
-    }
-  };
-
   const handleProfileChange = (field, value) => {
     setMerchantProfile(prev => ({ ...prev, [field]: value }));
   };
@@ -330,150 +267,6 @@ export default function SellerPage() {
     }
   };
 
-  const handleMenuProductChange = (field, value) => {
-    setMenuForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const resetMenuForm = () => {
-    setMenuForm(DEFAULT_MENU_FORM);
-    setEditingProductId(null);
-    setMenuImageFile(null);
-    const fileInput = document.getElementById('seller-menu-file');
-    if (fileInput) fileInput.value = '';
-  };
-
-  const handleCreateCategory = async (e) => {
-    e.preventDefault();
-
-    try {
-      const res = await fetch('/api/menu-categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: categoryForm })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Không tạo được danh mục.');
-        return;
-      }
-
-      setCategories(prev => [...prev, data]);
-      setMenuForm(prev => ({ ...prev, categoryId: data.id }));
-      setCategoryForm('');
-    } catch (error) {
-      console.error('Không tạo được danh mục:', error);
-      alert('Có lỗi xảy ra khi tạo danh mục.');
-    }
-  };
-
-  const handleEditProduct = (product) => {
-    setEditingProductId(product.id);
-    setMenuForm(productToMenuForm(product));
-    setMenuImageFile(null);
-    const fileInput = document.getElementById('seller-menu-file');
-    if (fileInput) fileInput.value = '';
-  };
-
-  const handleCreateProduct = async (e) => {
-    e.preventDefault();
-    setIsSavingProduct(true);
-
-    try {
-      let imageUrl = menuForm.image || '/images/burger.png';
-
-      if (menuImageFile) {
-        const uploadData = new FormData();
-        uploadData.append('file', menuImageFile);
-
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadData
-        });
-        const uploadResult = await uploadRes.json();
-
-        if (!uploadRes.ok || !uploadResult.success) {
-          alert(uploadResult.error || 'Không tải được ảnh món.');
-          return;
-        }
-
-        imageUrl = uploadResult.url;
-      }
-
-      const payload = menuFormToPayload(menuForm, imageUrl);
-      const res = await fetch('/api/products', {
-        method: editingProductId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingProductId ? { id: editingProductId, ...payload } : payload)
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Không lưu được món trong thực đơn.');
-        return;
-      }
-
-      setProducts(prev => editingProductId
-        ? prev.map(product => product.id === editingProductId ? data : product)
-        : [data, ...prev]);
-      resetMenuForm();
-    } catch (error) {
-      console.error('Không lưu được món:', error);
-      alert('Có lỗi xảy ra khi lưu món.');
-    } finally {
-      setIsSavingProduct(false);
-    }
-  };
-
-  const updateProductInline = async (product, patch) => {
-    try {
-      const payload = {
-        ...productToMenuForm(product),
-        ...patch
-      };
-      const imageUrl = payload.image || product.image || '/images/burger.png';
-      const res = await fetch('/api/products', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: product.id, ...menuFormToPayload(payload, imageUrl) })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Không cập nhật được món.');
-        return;
-      }
-
-      setProducts(prev => prev.map(item => item.id === product.id ? data : item));
-    } catch (error) {
-      console.error('Không cập nhật được món:', error);
-      alert('Có lỗi xảy ra khi cập nhật món.');
-    }
-  };
-
-  const handleDeleteProduct = async (id) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa món này khỏi thực đơn cửa hàng?')) return;
-
-    try {
-      const res = await fetch('/api/products', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Không xóa được món khỏi thực đơn.');
-        return;
-      }
-
-      setProducts(prev => prev.filter(product => product.id !== id));
-    } catch (error) {
-      console.error('Không xóa được món:', error);
-      alert('Có lỗi xảy ra khi xóa món.');
-    }
-  };
-
   const markAsRead = async (id) => {
     await fetch('/api/notifications', {
       method: 'PUT',
@@ -485,15 +278,34 @@ export default function SellerPage() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const filteredOrders = orders.filter(order => {
+    if (filterType === 'all' || !filterValue) return true;
+    const orderDate = new Date(order.createdAt);
+    
+    if (filterType === 'date') {
+      const date = orderDate.getDate().toString().padStart(2, '0');
+      const month = (orderDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = orderDate.getFullYear();
+      const orderDateStr = `${year}-${month}-${date}`;
+      return orderDateStr === filterValue;
+    }
+    if (filterType === 'month') {
+      const month = (orderDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = orderDate.getFullYear();
+      const orderMonthStr = `${year}-${month}`;
+      return orderMonthStr === filterValue;
+    }
+    if (filterType === 'year') {
+      const year = orderDate.getFullYear().toString();
+      return year === filterValue;
+    }
+    return true;
+  });
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Người bán Dashboard</h1>
-          <Link href="/" style={{ textDecoration: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', color: '#333', fontWeight: '500', fontSize: '0.9rem', border: '1px solid #ddd' }}>
-            ← Quay lại trang chủ
-          </Link>
-        </div>
+        <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Tổng quan Cửa Hàng</h1>
         
         <div style={{ position: 'relative' }}>
           <button 
@@ -533,7 +345,7 @@ export default function SellerPage() {
         </div>
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-        Trang dành cho người bán: cập nhật trạng thái đơn và theo dõi doanh thu.
+        Cập nhật trạng thái đơn, theo dõi doanh thu và thiết lập hồ sơ.
       </p>
 
       {newOrderAlert && (
@@ -555,6 +367,37 @@ export default function SellerPage() {
           {orderMessage}
         </div>
       )}
+
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconRed}`}>₫</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Doanh Thu Hoàn Thành</div>
+            <div className={styles.statValue}>{revenue.toLocaleString('vi-VN')}đ</div>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconYellow}`}>⏳</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Đơn Đang Chờ</div>
+            <div className={styles.statValue}>{pendingCount}</div>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconGreen}`}>🚚</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Đơn Đang Xử Lý</div>
+            <div className={styles.statValue}>{processingCount}</div>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconGreen}`}>✅</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Đơn Hoàn Thành</div>
+            <div className={styles.statValue}>{completedCount}</div>
+          </div>
+        </div>
+      </div>
 
       <div className={styles.tableContainer} style={{ padding: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -621,291 +464,137 @@ export default function SellerPage() {
         </form>
       </div>
 
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.iconRed}`}>₫</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Doanh Thu Hoàn Thành</div>
-            <div className={styles.statValue}>{revenue.toLocaleString('vi-VN')}đ</div>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.iconYellow}`}>⏳</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Đơn Đang Chờ</div>
-            <div className={styles.statValue}>{pendingCount}</div>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.iconGreen}`}>🚚</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Đơn Đang Xử Lý</div>
-            <div className={styles.statValue}>{processingCount}</div>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.iconGreen}`}>✅</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Đơn Hoàn Thành</div>
-            <div className={styles.statValue}>{completedCount}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.menuLayout} style={{ gap: '1.5rem' }}>
-        <div className={styles.tableContainer} style={{ flex: 2 }}>
-          <div style={{ padding: '1.5rem 1.5rem 0' }}>
-            <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem' }}>Đơn Hàng Gần Đây</h2>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Mã ĐH</th>
-                <th>Khách</th>
-                <th>Giá trị</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Đang tải dữ liệu...</td></tr>
-              ) : orders.length === 0 ? (
-                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Chưa có đơn hàng nào.</td></tr>
-              ) : (
-                orders.slice(0, 8).map(order => (
-                  <tr key={order.id}>
-                    <td>{order.id}</td>
-                    <td>{order.customer?.name || 'Khách ẩn'}</td>
-                    <td style={{ fontWeight: '700' }}>
-                      {getOrderFinalTotal(order).toLocaleString('vi-VN')}đ
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                        {order.paymentMethod?.toUpperCase() || 'COD'} · {order.paymentStatus || 'pending'}
-                      </div>
-                    </td>
-                    <td>{getStatusBadge(order.status)}</td>
-                    <td>
-                      {order.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'accepted')}>
-                            Nhận đơn
-                          </button>
-                          <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
-                            Từ chối
-                          </button>
-                        </div>
-                      )}
-                      {order.status === 'accepted' && (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'preparing')}>
-                            Bắt đầu chuẩn bị
-                          </button>
-                          <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
-                            Từ chối
-                          </button>
-                        </div>
-                      )}
-                      {order.status === 'preparing' && (
-                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>
-                          Chờ giao hàng
-                        </button>
-                      )}
-                      {order.status === 'payment_retry' && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
-                      )}
-                      {['ready_for_pickup', 'processing'].includes(order.status) && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Đang chờ shipper</span>
-                      )}
-                      {['picked_up', 'delivering'].includes(order.status) && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          {order.shipperName ? `Shipper: ${order.shipperName}` : 'Shipper đang xử lý'}
-                        </span>
-                      )}
-                      {order.status === 'completed' && (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
-                          <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Xóa</button>
-                        </div>
-                      )}
-                      {order.status === 'rejected' && (
-                        <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
-                          {order.rejectionReason || 'Đã từ chối'}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className={styles.tableContainer} style={{ flex: 1, padding: '1.5rem' }}>
-          <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>Sản phẩm bán chạy</h2>
-          {topProducts.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)' }}>Chưa có sản phẩm bán chạy.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              {topProducts.map((item) => (
-                <div key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <img src={item.image} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '12px' }} />
-                  <div>
-                    <div style={{ fontWeight: '700' }}>{item.name}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{item.sold} bán</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ marginTop: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: 0 }}>Thực đơn cửa hàng</h2>
-              <span className={styles.statusBadge}>{products.length} món</span>
-            </div>
-
-            <form onSubmit={handleCreateCategory} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', marginBottom: '1rem' }}>
-              <input type="text" value={categoryForm} onChange={e => setCategoryForm(e.target.value)} placeholder="Thêm danh mục mới" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              <button type="submit" className={styles.actionBtn} disabled={!categoryForm.trim()} style={{ padding: '0.75rem 0.9rem', opacity: categoryForm.trim() ? 1 : 0.6 }}>
-                Thêm
-              </button>
-            </form>
-
-            <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.25rem' }}>
-              {editingProductId && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                  <span style={{ fontWeight: '700', color: 'var(--text)' }}>Đang sửa món</span>
-                  <button type="button" onClick={resetMenuForm} className={styles.actionBtn} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.45rem 0.7rem' }}>
-                    Hủy sửa
-                  </button>
-                </div>
-              )}
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Tên món</label>
-                <input required type="text" value={menuForm.name} onChange={e => handleMenuProductChange('name', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Mô tả</label>
-                <textarea required value={menuForm.desc} onChange={e => handleMenuProductChange('desc', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', minHeight: '74px' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Giá (VD: 65.000đ)</label>
-                <input required type="text" value={menuForm.price} onChange={e => handleMenuProductChange('price', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Danh mục</label>
-                <select value={menuForm.categoryId} onChange={e => handleMenuProductChange('categoryId', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
-                  <option value="">Chưa phân loại</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>{category.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Ảnh món</label>
-                <input id="seller-menu-file" type="file" accept="image/*" onChange={e => setMenuImageFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
-                <input type="text" value={menuForm.image} onChange={e => handleMenuProductChange('image', e.target.value)} placeholder="/images/burger.png" style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Kích cỡ</label>
-                  <input type="text" value={menuForm.sizes} onChange={e => handleMenuProductChange('sizes', e.target.value)} placeholder="Nhỏ, Vừa, Lớn" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Topping</label>
-                  <input type="text" value={menuForm.toppings} onChange={e => handleMenuProductChange('toppings', e.target.value)} placeholder="Phô mai, Trứng, Sốt" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>Vị/cấp độ</label>
-                  <input type="text" value={menuForm.tastes} onChange={e => handleMenuProductChange('tastes', e.target.value)} placeholder="Không cay, Cay vừa" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-                </div>
-              </div>
-              <div style={{ display: 'grid', gap: '0.55rem' }}>
-                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
-                  <input type="checkbox" checked={menuForm.allowNote} onChange={e => handleMenuProductChange('allowNote', e.target.checked)} />
-                  Cho khách ghi chú riêng
-                </label>
-                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
-                  <input type="checkbox" checked={menuForm.isAvailable} onChange={e => handleMenuProductChange('isAvailable', e.target.checked)} />
-                  Còn hàng
-                </label>
-                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
-                  <input type="checkbox" checked={menuForm.isHidden} onChange={e => handleMenuProductChange('isHidden', e.target.checked)} />
-                  Ẩn khỏi thực đơn khách hàng
-                </label>
-              </div>
-              <button type="submit" disabled={isSavingProduct} className={styles.actionBtn} style={{ width: '100%', padding: '0.8rem', opacity: isSavingProduct ? 0.7 : 1 }}>
-                {isSavingProduct ? 'Đang lưu...' : editingProductId ? 'Lưu chỉnh sửa món' : 'Thêm món vào thực đơn'}
-              </button>
-            </form>
-
-            {products.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)' }}>Cửa hàng chưa có món nào.</p>
-            ) : (
-              <div style={{ display: 'grid', gap: '0.85rem' }}>
-                {products.map((product) => (
-                  <div key={product.id} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: '0.75rem', alignItems: 'start', padding: '0.75rem', border: '1px solid #eee', borderRadius: '10px', background: product.isHidden ? '#f9fafb' : '#fff' }}>
-                    <img src={product.image || '/images/burger.png'} alt={product.name} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'start' }}>
-                        <div style={{ fontWeight: '700' }}>{product.name}</div>
-                        <span className={`${styles.statusBadge} ${product.isAvailable === false ? styles.statusRejected : styles.statusCompleted}`} style={{ whiteSpace: 'nowrap' }}>
-                          {product.isAvailable === false ? 'Hết hàng' : 'Còn hàng'}
-                        </span>
-                      </div>
-                      <div style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>{product.price}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{product.category?.name || 'Chưa phân loại'}{product.isHidden ? ' · Đang ẩn' : ''}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.desc}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>
-                        {(product.options?.sizes || []).slice(0, 2).map((item) => <span key={`size-${product.id}-${item}`} className={styles.statusBadge}>{item}</span>)}
-                        {(product.options?.toppings || []).slice(0, 2).map((item) => <span key={`top-${product.id}-${item}`} className={styles.statusBadge}>{item}</span>)}
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginTop: '0.65rem' }}>
-                        <button type="button" onClick={() => handleEditProduct(product)} className={styles.actionBtn} style={{ padding: '0.45rem 0.65rem' }}>
-                          Sửa
-                        </button>
-                        <button type="button" onClick={() => updateProductInline(product, { isAvailable: product.isAvailable === false })} className={styles.actionBtn} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.45rem 0.65rem' }}>
-                          {product.isAvailable === false ? 'Bật còn hàng' : 'Đánh dấu hết'}
-                        </button>
-                        <button type="button" onClick={() => updateProductInline(product, { isHidden: !product.isHidden })} className={styles.actionBtn} style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.45rem 0.65rem' }}>
-                          {product.isHidden ? 'Hiện' : 'Ẩn'}
-                        </button>
-                        <button type="button" onClick={() => handleDeleteProduct(product.id)} className={styles.actionBtn} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', padding: '0.45rem 0.65rem' }}>
-                          Xóa
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      <div className={styles.tableContainer}>
+        <div style={{ padding: '1.5rem 1.5rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', margin: 0 }}>Đơn Hàng Gần Đây</h2>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <select 
+              value={filterType} 
+              onChange={(e) => { setFilterType(e.target.value); setFilterValue(''); }}
+              style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
+            >
+              <option value="all">Tất cả thời gian</option>
+              <option value="date">Theo ngày</option>
+              <option value="month">Theo tháng</option>
+              <option value="year">Theo năm</option>
+            </select>
+            
+            {filterType === 'date' && (
+              <input 
+                type="date" 
+                value={filterValue} 
+                onChange={(e) => setFilterValue(e.target.value)} 
+                style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
+              />
+            )}
+            {filterType === 'month' && (
+              <input 
+                type="month" 
+                value={filterValue} 
+                onChange={(e) => setFilterValue(e.target.value)} 
+                style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
+              />
+            )}
+            {filterType === 'year' && (
+              <input 
+                type="number" 
+                placeholder="Năm (VD: 2026)" 
+                value={filterValue} 
+                onChange={(e) => setFilterValue(e.target.value)} 
+                style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', width: '120px' }}
+              />
             )}
           </div>
-          
-          <div style={{ marginTop: '2rem', background: '#fff', padding: '1.5rem', borderRadius: '16px', border: '1px solid #eee' }}>
-            <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>Đề Xuất Món Mới</h2>
-            <form onSubmit={handlePropose} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>Tên món</label>
-                <input required type="text" value={proposal.name} onChange={e => setProposal({...proposal, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>Mô tả</label>
-                <textarea required value={proposal.desc} onChange={e => setProposal({...proposal, desc: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>Giá (VD: 65.000đ)</label>
-                <input required type="text" value={proposal.price} onChange={e => setProposal({...proposal, price: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>URL Hình ảnh (Tùy chọn)</label>
-                <input type="text" value={proposal.image} onChange={e => setProposal({...proposal, image: e.target.value})} placeholder="/images/burger.png" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              </div>
-              <button type="submit" disabled={isProposing} style={{ padding: '0.75rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isProposing ? 'not-allowed' : 'pointer', opacity: isProposing ? 0.7 : 1 }}>
-                {isProposing ? 'Đang gửi...' : 'Gửi Đề Xuất'}
-              </button>
-            </form>
-          </div>
         </div>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Mã ĐH</th>
+              <th>Thời gian</th>
+              <th>Khách</th>
+              <th>Giá trị</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Đang tải dữ liệu...</td></tr>
+            ) : filteredOrders.length === 0 ? (
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Chưa có đơn hàng nào.</td></tr>
+            ) : (
+              filteredOrders.slice(0, 15).map(order => {
+                const { exactDate, relativeTime } = formatFacebookTime(order.createdAt);
+                return (
+                <tr key={order.id}>
+                  <td>{order.id}</td>
+                  <td>
+                    <div>{exactDate}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{relativeTime}</div>
+                  </td>
+                  <td>{order.customer?.name || 'Khách ẩn'}</td>
+                  <td style={{ fontWeight: '700' }}>
+                    {getOrderFinalTotal(order).toLocaleString('vi-VN')}đ
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                      {order.paymentMethod?.toUpperCase() || 'COD'} · {order.paymentStatus || 'pending'}
+                    </div>
+                  </td>
+                  <td>{getStatusBadge(order.status)}</td>
+                  <td>
+                    {order.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'accepted')}>
+                          Nhận đơn
+                        </button>
+                        <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+                          Từ chối
+                        </button>
+                      </div>
+                    )}
+                    {order.status === 'accepted' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'preparing')}>
+                          Bắt đầu chuẩn bị
+                        </button>
+                        <button className={styles.actionBtn} onClick={() => rejectOrder(order)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+                          Từ chối
+                        </button>
+                      </div>
+                    )}
+                    {order.status === 'preparing' && (
+                      <button className={styles.actionBtn} onClick={() => updateStatus(order.id, 'ready_for_pickup')}>
+                        Chờ giao hàng
+                      </button>
+                    )}
+                    {order.status === 'payment_retry' && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Chờ khách thanh toán lại</span>
+                    )}
+                    {['ready_for_pickup', 'processing'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Đang chờ shipper</span>
+                    )}
+                    {['picked_up', 'delivering'].includes(order.status) && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        {order.shipperName ? `Shipper: ${order.shipperName}` : 'Shipper đang xử lý'}
+                      </span>
+                    )}
+                    {order.status === 'completed' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Hoàn thành</span>
+                        <button onClick={() => handleDeleteOrder(order.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Xóa</button>
+                      </div>
+                    )}
+                    {order.status === 'rejected' && (
+                      <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>
+                        {order.rejectionReason || 'Đã từ chối'}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

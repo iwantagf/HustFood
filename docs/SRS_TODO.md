@@ -40,8 +40,6 @@
 
 ### 3.1 FR-01: Đăng nhập và phân quyền RBAC
 
-#### 3.1.1 Đã làm
-
 - [x] Thêm bảng `User` trong Prisma.
 - [x] Đổi tên role hiển thị:
   - `customer` -> `Khách hàng`
@@ -58,14 +56,9 @@
 - [x] Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
 - [x] Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
 - [x] Bảo vệ API theo role, không chỉ bảo vệ UI.
-
-#### 3.1.2 Chưa làm
-
-- [ ] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
+- [x] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
-
-#### 3.2.1 Đã làm
 
 - [x] Thêm model `MerchantProfile`.
 - [x] Thêm API `/api/merchant-profile` với `GET` và `PUT`.1
@@ -78,21 +71,12 @@
 - [x] Hiển thị cửa hàng trên trang tìm kiếm/duyệt của `Khách hàng`.
 - [x] Duyệt/khóa cửa hàng từ `Quản trị viên`.
 
-#### 3.2.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-02 demo hiện tại.
-
 ### 3.3 FR-03: Biên soạn, cập nhật thực đơn và tùy chọn món
-
-#### 3.3.1 Đã làm
 
 - [x] Có model `Product`.
 - [x] Có API `/api/products` để lấy, tạo, xóa món.
 - [x] Có trang `Quản trị viên` quản lý thực đơn.
 - [x] `Người bán` có form đề xuất món mới, `Quản trị viên` duyệt để tạo sản phẩm.
-
-#### 3.3.2 Hoàn thiện quản lý thực đơn theo cửa hàng
-
 - [x] `Người bán` quản lý thực đơn của chính cửa hàng.
 - [x] Sửa món, không chỉ thêm/xóa.
 - [x] Thêm danh mục món `MenuCategory`.
@@ -103,8 +87,6 @@
 
 ### 3.4 FR-04: Tìm kiếm quán ăn và lọc kết quả
 
-#### 3.4.1 Đã làm
-
 - [x] Trang chủ hiển thị danh sách món từ database.
 - [x] Có CTA tới khu vực menu.
 - [x] Có thanh tìm kiếm món/quán.
@@ -114,13 +96,7 @@
 - [x] Trang chi tiết cửa hàng và menu theo cửa hàng.
 - [x] Gợi ý món thịnh hành khi không có kết quả.
 
-#### 3.4.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-04 demo hiện tại.
-
 ### 3.5 FR-05: Giỏ hàng, tính tiền tự động và khuyến mãi
-
-#### 3.5.1 Đã làm
 
 - [x] Có `CartContext`.
 - [x] Giỏ hàng lưu bằng `localStorage`.
@@ -133,13 +109,7 @@
 - [x] Topping/tùy chọn món và ghi chú theo từng item.
 - [x] Lưu giỏ hàng server-side cho user đã đăng nhập.
 
-#### 3.5.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-05 demo hiện tại.
-
 ### 3.6 FR-06: Thanh toán đa hình thức và chốt đơn
-
-#### 3.6.1 Đã làm
 
 - [x] Có trang checkout cho `Khách hàng`.
 - [x] Validate số điện thoại.
@@ -153,13 +123,7 @@
 - [x] Trạng thái `Chờ thanh toán lại` khi thanh toán fail.
 - [x] Tạo notification cho `Người bán` khi có đơn mới.
 
-#### 3.6.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-06 demo hiện tại.
-
 ### 3.7 FR-07: Người bán tiếp nhận và chuyển trạng thái đơn
-
-#### 3.7.1 Đã làm
 
 - [x] Dashboard `Người bán` đọc danh sách đơn.
 - [x] Cập nhật workflow status theo SRS: `Chờ xác nhận`, `Đã nhận đơn`, `Đang chuẩn bị`, `Chờ giao hàng`, `Đang giao`, `Hoàn thành`, `Từ chối`.
@@ -170,13 +134,7 @@
 - [x] Nút `Từ chối đơn` kèm lý do.
 - [x] Broadcast đơn `Chờ giao hàng` cho `Người giao hàng` qua danh sách đơn sẵn sàng nhận.
 
-#### 3.7.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-07 demo hiện tại.
-
 ### 3.8 FR-08: Người giao hàng nhận đơn và cập nhật giao hàng
-
-#### 3.8.1 Đã làm
 
 - [x] Có role `Người giao hàng`.
 - [x] Có route guard `/shipper`.
@@ -189,13 +147,7 @@
 - [x] Báo cáo sự cố khách không nghe máy.
 - [x] GPS/live location mobile-friendly và lưu vị trí cuối vào đơn.
 
-#### 3.8.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-08 demo hiện tại.
-
 ### 3.9 FR-09: Theo dõi tiến độ đơn hàng thời gian thực
-
-#### 3.9.1 Đã làm
 
 - [x] Có trang success sau khi đặt đơn.
 - [x] Có status đơn trong DB.
@@ -206,10 +158,6 @@
 - [x] Bản đồ vị trí `Người giao hàng`.
 - [x] ETA dự kiến theo trạng thái.
 - [x] Hiển thị vị trí cập nhật cuối cùng khi mất GPS/live location.
-
-#### 3.9.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi FR-09 demo hiện tại.
 
 ### 3.10 FR-10: Đánh giá sao, bình luận và tải ảnh
 
@@ -230,10 +178,9 @@
 
 #### 3.11.1 Đã làm
 
-- [ ] Chưa có module AI sentiment.
-
 #### 3.11.2 Chưa làm
 
+- [ ] Chưa có module AI sentiment.
 - [ ] P0: Thêm sentiment mock theo rule để demo: positive/neutral/negative.
 - [ ] P1: Lưu sentiment vào DB theo review.
 - [ ] P1: Cảnh báo review tiêu cực 1 sao trên dashboard `Quản trị viên` và `Người bán`.
@@ -262,8 +209,6 @@
 
 ### 4.1 Khách hàng
 
-#### 4.1.1 Đã làm
-
 - [x] Trang chủ và menu sản phẩm.
 - [x] Product card.
 - [x] Giỏ hàng.
@@ -274,10 +219,6 @@
 - [x] Trang chi tiết cửa hàng.
 - [x] UI voucher và phí giao hàng.
 - [x] Trang theo dõi đơn.
-
-#### 4.1.2 Chưa làm
-
-- [ ] P0: Trang đánh giá sau đơn.
 
 ### 4.2 Người bán
 
@@ -300,8 +241,6 @@
 
 ### 4.3 Người giao hàng
 
-#### 4.3.1 Đã làm
-
 - [x] Route `/shipper`.
 - [x] Guard role `shipper`.
 - [x] Dashboard danh sách đơn chờ nhận.
@@ -310,10 +249,6 @@
 - [x] Màn hình chi tiết lộ trình.
 - [x] UI COD/đối soát.
 - [x] UI báo cáo sự cố.
-
-#### 4.3.2 Chưa làm
-
-- Không còn mục thiếu trong phạm vi shipper demo hiện tại.
 
 ### 4.4 Quản trị viên
 
