@@ -20,27 +20,31 @@ export default function DashboardPage() {
   const [proposals, setProposals] = useState([]);
   const [products, setProducts] = useState([]);
   const [merchantProfiles, setMerchantProfiles] = useState([]);
+  const [users, setUsers] = useState([]);
   const [reportPeriod, setReportPeriod] = useState('month');
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [ordersRes, proposalsRes, productsRes, profilesRes] = await Promise.all([
+      const [ordersRes, proposalsRes, productsRes, profilesRes, usersRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/proposals'),
         fetch('/api/products'),
-        fetch('/api/merchant-profile')
+        fetch('/api/merchant-profile'),
+        fetch('/api/admin/users')
       ]);
-      const [ordersData, proposalsData, productsData, profilesData] = await Promise.all([
+      const [ordersData, proposalsData, productsData, profilesData, usersData] = await Promise.all([
         ordersRes.json(),
         proposalsRes.json(),
         productsRes.json(),
-        profilesRes.json()
+        profilesRes.json(),
+        usersRes.json()
       ]);
       setOrders(ordersData);
       setProposals(proposalsData);
       setProducts(productsData);
       setMerchantProfiles(Array.isArray(profilesData) ? profilesData : []);
+      setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -89,6 +93,22 @@ export default function DashboardPage() {
       default: return <span className={styles.statusBadge}>{status}</span>;
     }
   };
+
+  const getUserRoleLabel = (role) => {
+    switch (role) {
+      case 'customer': return 'Khách hàng';
+      case 'seller': return 'Người bán';
+      case 'shipper': return 'Người giao hàng';
+      case 'admin': return 'Quản trị viên';
+      default: return role || 'Chưa rõ';
+    }
+  };
+
+  const getUserStatusBadge = (status) => (
+    status === 'blocked'
+      ? <span className={`${styles.statusBadge} ${styles.statusRejected}`}>Đã khóa</span>
+      : <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Đang hoạt động</span>
+  );
 
   const handleProposal = async (id, status) => {
     try {
@@ -155,7 +175,56 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUserUpdate = async (id, patch) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...patch })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không cập nhật được tài khoản.');
+        return;
+      }
+
+      setUsers(prev => prev.map(user => user.id === id ? data : user));
+    } catch (error) {
+      console.error('Không cập nhật được tài khoản:', error);
+      alert('Có lỗi xảy ra khi cập nhật tài khoản.');
+    }
+  };
+
+  const handleRefundOrder = async (id) => {
+    if (!confirm(`Đánh dấu đã hoàn tiền cho đơn ${id}?`)) return;
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'refund' })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Không cập nhật được trạng thái hoàn tiền.');
+        return;
+      }
+
+      setOrders(prev => prev.map(order => order.id === id ? data : order));
+    } catch (error) {
+      console.error('Không cập nhật được hoàn tiền:', error);
+      alert('Có lỗi xảy ra khi cập nhật hoàn tiền.');
+    }
+  };
+
   const pendingProposals = proposals.filter(p => p.status === 'pending');
+  const issueOrders = orders.filter(order => (
+    order.rejectionReason
+    || order.shipperIssue
+    || ['failed', 'retry_required', 'refunded'].includes(order.paymentStatus)
+  ));
 
   const exportAdminCsv = () => {
     downloadTextFile(`hustfood-admin-orders-${reportPeriod}.csv`, buildOrdersCsv(reportOrders));
@@ -348,6 +417,110 @@ export default function DashboardPage() {
             ))}
             {merchantProfiles.length === 0 && (
               <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Chưa có hồ sơ cửa hàng nào.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Quản Lý Tài Khoản & RBAC</h2>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Tài khoản</th>
+              <th>Provider</th>
+              <th>Vai trò</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user.id}>
+                <td>
+                  <div style={{ fontWeight: 700 }}>{user.displayName || user.username || user.email || user.id}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{user.email || user.username || user.id}</div>
+                </td>
+                <td>{user.provider || 'credentials'}</td>
+                <td>
+                  <select
+                    value={user.role}
+                    onChange={(event) => handleUserUpdate(user.id, { role: event.target.value })}
+                    style={{ padding: '0.55rem 0.7rem', borderRadius: '6px', border: '1px solid var(--border)', background: '#fff', fontWeight: 700 }}
+                    aria-label={`Đổi vai trò ${user.displayName || user.id}`}
+                  >
+                    {['customer', 'seller', 'shipper', 'admin'].map(role => (
+                      <option key={role} value={role}>{getUserRoleLabel(role)}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>{getUserStatusBadge(user.status)}</td>
+                <td>
+                  {user.status === 'blocked' ? (
+                    <button className={styles.actionBtn} onClick={() => handleUserUpdate(user.id, { status: 'active' })}>
+                      Mở khóa
+                    </button>
+                  ) : (
+                    <button onClick={() => handleUserUpdate(user.id, { status: 'blocked' })} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.85rem' }}>
+                      Khóa
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {users.length === 0 && (
+              <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Chưa có tài khoản nào.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Khiếu Nại & Hoàn Tiền</h2>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Mã ĐH</th>
+              <th>Khách hàng</th>
+              <th>Vấn đề</th>
+              <th>Thanh toán</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {issueOrders.map(order => {
+              const issueText = order.shipperIssue || order.rejectionReason || order.paymentFailureReason || 'Cần kiểm tra thanh toán';
+
+              return (
+                <tr key={order.id}>
+                  <td>{order.id}</td>
+                  <td>{order.customer?.name || 'Khách ẩn'}</td>
+                  <td>
+                    <div style={{ fontWeight: 700 }}>{issueText}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      {order.shipperIssueAt ? `Báo sự cố: ${new Date(order.shipperIssueAt).toLocaleString('vi-VN')}` : order.rejectedAt ? `Từ chối: ${new Date(order.rejectedAt).toLocaleString('vi-VN')}` : 'Theo dõi thanh toán'}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 700 }}>{order.paymentMethod?.toUpperCase() || 'COD'}</div>
+                    <div style={{ color: order.paymentStatus === 'refunded' ? '#10b981' : 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      {order.paymentStatus || 'pending'}
+                    </div>
+                  </td>
+                  <td>
+                    {order.paymentStatus === 'refunded' ? (
+                      <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>Đã hoàn tiền</span>
+                    ) : (
+                      <button className={styles.actionBtn} onClick={() => handleRefundOrder(order.id)}>
+                        Đánh dấu hoàn tiền
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {issueOrders.length === 0 && (
+              <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Chưa có khiếu nại hoặc yêu cầu hoàn tiền.</td></tr>
             )}
           </tbody>
         </table>
