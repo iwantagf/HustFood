@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import styles from '../admin/admin.module.css';
 import Link from 'next/link';
@@ -647,7 +648,7 @@ export default function SellerPage() {
             <input type="file" accept="image/*" onChange={e => setProfileImageFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
             {merchantProfile.image && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.65rem' }}>
-                <img src={merchantProfile.image} alt={merchantProfile.shopName || 'Ảnh cửa hàng'} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />
+                <Image src={merchantProfile.image} alt={merchantProfile.shopName || 'Ảnh cửa hàng'} width={48} height={48} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} unoptimized />
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{profileImageFile ? profileImageFile.name : 'Ảnh hiện tại'}</span>
               </div>
             )}
@@ -821,7 +822,7 @@ export default function SellerPage() {
             <div style={{ display: 'grid', gap: '1rem' }}>
               {topProducts.map((item) => (
                 <div key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <img src={item.image} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '12px' }} />
+                  <Image src={item.image || '/images/burger.png'} alt={item.name} width={64} height={64} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '12px' }} unoptimized />
                   <div>
                     <div style={{ fontWeight: '700' }}>{item.name}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{item.sold} bán</div>
@@ -918,7 +919,7 @@ export default function SellerPage() {
               <div style={{ display: 'grid', gap: '0.85rem' }}>
                 {products.map((product) => (
                   <div key={product.id} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: '0.75rem', alignItems: 'start', padding: '0.75rem', border: '1px solid #eee', borderRadius: '10px', background: product.isHidden ? '#f9fafb' : '#fff' }}>
-                    <img src={product.image || '/images/burger.png'} alt={product.name} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <Image src={product.image || '/images/burger.png'} alt={product.name} width={56} height={56} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} unoptimized />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'start' }}>
                         <div style={{ fontWeight: '700' }}>{product.name}</div>

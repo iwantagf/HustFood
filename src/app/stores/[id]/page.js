@@ -163,7 +163,15 @@ export default async function StoreDetailPage({ params }) {
         <div className="container">
           <Link href="/#stores" className={styles.clearFilter}>Quay lại tìm kiếm</Link>
           <div className={styles.storeDetailGrid}>
-            <img src={profile.image || '/images/burger.png'} alt={profile.shopName} className={styles.storeDetailImage} />
+            <Image
+              src={profile.image || '/images/burger.png'}
+              alt={profile.shopName}
+              width={800}
+              height={600}
+              sizes="(max-width: 768px) 100vw, 420px"
+              className={styles.storeDetailImage}
+              unoptimized
+            />
             <div className={styles.storeDetailInfo}>
               <div className={styles.sectionSubtitle}>{profile.owner?.displayName || 'Người bán HustFood'}</div>
               <h1 className={styles.heroTitle}>{profile.shopName}</h1>

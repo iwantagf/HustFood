@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import styles from './admin.module.css';
 import { getOrderFinalTotal } from '@/lib/pricing';
@@ -320,7 +321,7 @@ export default function DashboardPage() {
               <tr key={profile.id}>
                 <td>
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    {profile.image ? <img src={profile.image} alt={profile.shopName} style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }} /> : null}
+                    {profile.image ? <Image src={profile.image} alt={profile.shopName} width={48} height={48} style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }} unoptimized /> : null}
                     <div>
                       <div style={{ fontWeight: '700' }}>{profile.shopName}</div>
                       <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{profile.address}</div>
@@ -371,7 +372,7 @@ export default function DashboardPage() {
                 <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proposal.desc}</td>
                 <td>{proposal.price}</td>
                 <td>
-                  {proposal.image ? <img src={proposal.image} alt={proposal.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} /> : 'Không có'}
+                  {proposal.image ? <Image src={proposal.image} alt={proposal.name} width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} unoptimized /> : 'Không có'}
                 </td>
                 <td>
                   <button onClick={() => handleProposal(proposal.id, 'accepted')} style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', marginRight: '0.5rem', fontWeight: 'bold' }}>Duyệt</button>
@@ -401,7 +402,7 @@ export default function DashboardPage() {
             {products.map(product => (
               <tr key={product.id}>
                 <td>
-                  {product.image ? <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} /> : 'Không có'}
+                  {product.image ? <Image src={product.image} alt={product.name} width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} unoptimized /> : 'Không có'}
                 </td>
                 <td style={{ fontWeight: '600' }}>{product.name}</td>
                 <td>{product.price}</td>

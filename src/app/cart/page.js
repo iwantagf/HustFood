@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import styles from './page.module.css';
 import Header from '@/components/Header';
 import { useCart } from '@/context/CartContext';
@@ -53,7 +54,14 @@ export default function CartPage() {
                   <h2 className={styles.groupTitle}>{group.merchantName}</h2>
                   {group.items.map(item => (
                     <div key={item.cartKey || item.id} className={styles.cartItem}>
-                      <img src={item.image} alt={item.name} className={styles.itemImage} />
+                      <Image
+                        src={item.image || '/images/burger.png'}
+                        alt={item.name}
+                        width={100}
+                        height={100}
+                        className={styles.itemImage}
+                        unoptimized
+                      />
                       <div className={styles.itemDetails}>
                         <h3 className={styles.itemName}>{item.name}</h3>
                         <p className={styles.itemPrice}>{item.price}</p>

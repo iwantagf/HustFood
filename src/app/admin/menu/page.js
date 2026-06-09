@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import styles from '../admin.module.css';
 
@@ -85,7 +86,7 @@ export default function MenuPage() {
               {products.map(p => (
                 <tr key={p.id}>
                   <td>
-                    <img src={p.image} alt={p.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <Image src={p.image || '/images/burger.png'} alt={p.name} width={60} height={60} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }} unoptimized />
                   </td>
                   <td>
                     <strong>{p.name}</strong>
