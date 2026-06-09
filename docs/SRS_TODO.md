@@ -12,7 +12,7 @@
 
 ### 1.2 Trạng thái code hiện tại
 
-- Branch đang làm: `feature/srs-fr09-order-tracking`.
+- Branch đang làm: `main`.
 - Các module đã có code chính:
   - Trang chủ, thực đơn, giỏ hàng, checkout, success.
   - Login/register demo qua database.
@@ -230,15 +230,11 @@
 
 #### 3.11.1 Đã làm
 
-- [ ] Chưa có module AI sentiment.
+- Không triển khai trong scope demo hiện tại theo quyết định ngày 09/06/2026.
 
 #### 3.11.2 Chưa làm
 
-- [ ] P0: Thêm sentiment mock theo rule để demo: positive/neutral/negative.
-- [ ] P1: Lưu sentiment vào DB theo review.
-- [ ] P1: Cảnh báo review tiêu cực 1 sao trên dashboard `Quản trị viên` và `Người bán`.
-- [ ] P2: Hàng đợi xử lý review.
-- [ ] P2: Tích hợp model NLP/AI thật.
+- Không còn mục cần làm cho FR-11 trong scope hiện tại.
 
 ### 3.12 FR-12: Dashboard thống kê tài chính
 
@@ -255,7 +251,6 @@
 - [ ] P1: Doanh thu theo từng cửa hàng.
 - [ ] P1: Thống kê đơn hủy/từ chối.
 - [ ] P1: Biểu đồ trực quan.
-- [ ] P1: Báo cáo tỷ lệ sentiment.
 - [ ] P2: Export CSV/PDF.
 
 ## 4. Checklist GUI theo vai trò
@@ -295,7 +290,6 @@
 
 #### 4.2.2 Chưa làm
 
-- [ ] P1: Dashboard sentiment.
 - [ ] P1: Biểu đồ doanh thu.
 
 ### 4.3 Người giao hàng
@@ -331,7 +325,6 @@
 - [ ] P0: Quản lý user/RBAC.
 - [ ] P1: Quản lý/khóa tài khoản.
 - [ ] P1: Duyệt/khóa cửa hàng.
-- [ ] P1: Dashboard review sentiment.
 - [ ] P2: Quản lý khiếu nại và hoàn tiền.
 
 ## 5. Checklist API và database
@@ -368,7 +361,6 @@
 
 - [x] P0: `Review`.
 - [ ] P1: `Transaction`/`Payment`.
-- [ ] P1: `SentimentAnalysis`.
 
 ## 6. Checklist phi chức năng
 
@@ -410,7 +402,7 @@
 
 ### 7.1 P0 nên làm trước
 
-1. Review + sentiment mock.
+1. Review/rating sau đơn.
 
 ### 7.2 P1 sau khi demo P0 ổn định
 
