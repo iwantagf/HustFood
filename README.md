@@ -320,7 +320,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ### 7.2 Người bán
 
-- `/seller`: seller dashboard, merchant profile, order status update, product proposal, revenue summary.
+- `/seller`: seller dashboard, merchant profile, order status update, product proposal, private menu management, revenue chart, CSV/PDF export.
 
 ### 7.3 Người giao hàng
 
@@ -328,7 +328,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ### 7.4 Quản trị viên
 
-- `/admin`: admin dashboard.
+- `/admin`: admin dashboard, financial reporting, merchant approval/locking, user/RBAC management, account locking, complaint/refund queue.
 - `/admin/orders`: order management.
 - `/admin/menu`: menu management.
 
@@ -584,6 +584,15 @@ Người giao hàng có các action riêng:
 }
 ```
 
+Quản trị viên có thể đánh dấu hoàn tiền cho đơn có khiếu nại hoặc lỗi thanh toán:
+
+```json
+{
+  "id": "#HF1234",
+  "action": "refund"
+}
+```
+
 Đơn COD phải được ghi nhận `collect_cod` trước khi chuyển `completed`. Màn hình `/shipper` dùng GPS trình duyệt để sắp xếp/lọc đơn gần điểm lấy hàng và lưu vị trí cuối của người giao hàng vào đơn.
 
 Từ chối đơn cần lý do:
@@ -600,7 +609,27 @@ Từ chối đơn cần lý do:
 
 Xóa đơn hàng theo `id`. `Người bán` chỉ được xóa đơn thuộc `merchantId` của mình.
 
-### 8.5 Merchant Profile APIs
+### 8.5 Admin User APIs
+
+#### `GET /api/admin/users`
+
+Quản trị viên lấy danh sách tài khoản để quản lý RBAC và trạng thái tài khoản.
+
+#### `PATCH /api/admin/users`
+
+Cập nhật role hoặc khóa/mở khóa tài khoản.
+
+Body:
+
+```json
+{
+  "id": "user_id",
+  "role": "seller",
+  "status": "active"
+}
+```
+
+### 8.6 Merchant Profile APIs
 
 #### `GET /api/merchant-profile`
 
@@ -642,7 +671,7 @@ Body:
 
 Lấy danh sách cửa hàng đang hoạt động để hiển thị cho khách hàng.
 
-### 8.6 Proposal APIs
+### 8.7 Proposal APIs
 
 #### `GET /api/proposals`
 
@@ -667,7 +696,7 @@ Body:
 
 Nếu `status = accepted`, hệ thống tạo món mới trong `Product` và giữ chủ sở hữu là người bán đã gửi đề xuất.
 
-### 8.7 Notification APIs
+### 8.8 Notification APIs
 
 #### `GET /api/notifications`
 
@@ -693,7 +722,7 @@ Body:
 }
 ```
 
-### 8.8 Cart APIs
+### 8.9 Cart APIs
 
 #### `GET /api/cart`
 
@@ -715,7 +744,7 @@ Body:
 
 Khách hàng xóa giỏ hàng đã lưu.
 
-### 8.9 Voucher APIs
+### 8.10 Voucher APIs
 
 #### `POST /api/vouchers/validate`
 
@@ -732,7 +761,7 @@ Body:
 
 Mã seed/demo có sẵn: `HUSTFOOD10`, `SV20`.
 
-### 8.10 Upload API
+### 8.11 Upload API
 
 #### `POST /api/upload`
 

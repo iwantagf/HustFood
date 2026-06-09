@@ -322,13 +322,14 @@
 - [x] Quản lý thực đơn.
 - [x] Duyệt đề xuất món.
 - [x] Báo cáo tài chính theo cửa hàng, biểu đồ và export.
+- [x] Quản lý user/RBAC.
+- [x] Quản lý/khóa tài khoản.
+- [x] Duyệt/khóa cửa hàng.
+- [x] Quản lý khiếu nại và đánh dấu hoàn tiền.
 
 #### 4.4.2 Chưa làm
 
-- [ ] P0: Quản lý user/RBAC.
-- [ ] P1: Quản lý/khóa tài khoản.
-- [ ] P1: Duyệt/khóa cửa hàng.
-- [ ] P2: Quản lý khiếu nại và hoàn tiền.
+- Không còn mục thiếu trong phạm vi admin demo hiện tại.
 
 ## 5. Checklist API và database
 

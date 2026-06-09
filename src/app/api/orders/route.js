@@ -268,6 +268,16 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
   const reason = String(rejectionReason || '').trim();
   const issueText = String(issue || '').trim();
 
+  if (action === 'refund') {
+    if (user.role !== 'admin') {
+      return { error: 'Chỉ Quản trị viên được đánh dấu hoàn tiền' };
+    }
+
+    update.paymentStatus = 'refunded';
+    update.paymentFailureReason = `Admin marked refunded at ${now.toISOString()}`;
+    return { update };
+  }
+
   if (action === 'update_location') {
     if (user.role !== 'shipper') {
       return { error: 'Chỉ người giao hàng được cập nhật vị trí' };
