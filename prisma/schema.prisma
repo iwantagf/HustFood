@@ -126,6 +126,27 @@ model Order {
   shipperLocationAt    DateTime?
   createdAt            DateTime  @default(now())
   reviews              Review[]
+  paymentTransactions  PaymentTransaction[]
+}
+
+model PaymentTransaction {
+  id            String   @id @default(cuid())
+  orderId       String
+  provider      String?
+  method        String   @default("cod") // cod, momo, card
+  transactionId String?
+  status        String   @default("pending") // pending, paid, failed, retry_required, refunded
+  amount        Int      @default(0)
+  checksum      String?
+  failureReason String?  @db.Text
+  type          String   @default("payment") // payment, refund
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([transactionId])
+  @@index([status])
 }
 
 model Review {

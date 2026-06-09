@@ -1,6 +1,6 @@
 export const PAYMENT_METHODS = ['cod', 'momo', 'card'];
 export const ONLINE_PAYMENT_METHODS = ['momo', 'card'];
-export const PAYMENT_STATUSES = ['pending', 'paid', 'failed', 'retry_required'];
+export const PAYMENT_STATUSES = ['pending', 'paid', 'failed', 'retry_required', 'refunded'];
 const MOCK_PAYMENT_SECRET = 'hustfood-mock-payment-secret';
 
 function stableHash(value) {

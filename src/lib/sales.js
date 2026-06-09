@@ -1,4 +1,4 @@
-const COMPLETED_STATUS = 'completed';
+import { COMPLETED_ORDER_STATUS } from '@/lib/statuses';
 
 function getOrderItems(order) {
   return Array.isArray(order?.items) ? order.items : [];
@@ -9,7 +9,7 @@ export function attachProductSalesStats(products = [], orders = []) {
   const soldCountByProductId = new Map(products.map((product) => [product.id, 0]));
 
   orders
-    .filter((order) => order?.status === COMPLETED_STATUS)
+    .filter((order) => order?.status === COMPLETED_ORDER_STATUS)
     .forEach((order) => {
       getOrderItems(order).forEach((item) => {
         const productId = item?.id;

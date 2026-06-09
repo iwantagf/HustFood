@@ -250,7 +250,11 @@ export default function OrderTrackingPage() {
 
       setReview(data.review);
       setReviewImages([]);
-      setReviewMessage('Đã gửi đánh giá. Cảm ơn bạn đã phản hồi.');
+      setReviewMessage(
+        data.review?.status === 'hidden'
+          ? 'Đánh giá đã gửi nhưng đang bị ẩn công khai vì có ngôn từ vi phạm.'
+          : 'Đã gửi đánh giá. Cảm ơn bạn đã phản hồi.'
+      );
     } catch (error) {
       setReviewMessage(error.message || 'Không gửi được đánh giá.');
     } finally {
@@ -384,6 +388,9 @@ export default function OrderTrackingPage() {
                 ) : review ? (
                   <div className={styles.reviewSubmitted}>
                     <strong>Đã gửi đánh giá</strong>
+                    {review.status === 'hidden' && (
+                      <p className={styles.reviewError}>Đánh giá này đang bị ẩn công khai vì có ngôn từ vi phạm.</p>
+                    )}
                     <div className={styles.reviewSummary}>
                       <span>Món ăn: {review.foodRating}/5 sao</span>
                       {review.shipperRating && <span>Người giao hàng: {review.shipperRating}/5 sao</span>}

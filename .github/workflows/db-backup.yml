@@ -1,0 +1,31 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DB_BACKUP_DIR: backups
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install MySQL dump client
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+      - name: Check database secret
+        run: test -n "$DATABASE_URL"
+      - name: Create backup
+        run: npm run backup:db
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hustfood-db-backup
+          path: backups/*.sql
+          retention-days: 7

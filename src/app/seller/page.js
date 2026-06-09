@@ -13,6 +13,7 @@ import {
   getRevenueSeries,
   printFinancialReport
 } from '@/lib/financialDashboard';
+import { IN_PROGRESS_ORDER_STATUS_VALUES } from '@/lib/statuses';
 
 const DEFAULT_MENU_FORM = {
   name: '',
@@ -27,8 +28,6 @@ const DEFAULT_MENU_FORM = {
   isAvailable: true,
   isHidden: false
 };
-
-const IN_PROGRESS_STATUSES = ['accepted', 'preparing', 'ready_for_pickup', 'processing', 'picked_up', 'delivering'];
 
 function playNewOrderSound() {
   if (typeof window === 'undefined') return;
@@ -243,7 +242,7 @@ export default function SellerPage() {
   const revenueSeries = getRevenueSeries(orders, reportPeriod);
   const maxSeriesValue = Math.max(...revenueSeries.map((item) => item.value), 1);
   const pendingCount = reportOrders.filter(order => order.status === 'pending').length;
-  const processingCount = reportOrders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
+  const processingCount = reportOrders.filter(order => IN_PROGRESS_ORDER_STATUS_VALUES.includes(order.status)).length;
 
   const productSales = reportOrders.reduce((acc, order) => {
     order.items?.forEach(item => {

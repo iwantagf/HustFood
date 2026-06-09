@@ -154,6 +154,7 @@ function createDemoStore() {
     vouchers: DEMO_VOUCHERS.map((voucher) => ({ ...voucher })),
     savedCarts: [],
     orders: [],
+    paymentTransactions: [],
     reviews: [],
     proposals: [],
     notifications: [],
@@ -172,6 +173,10 @@ export function getDemoStore() {
 
   if (!Array.isArray(globalThis.__hustfoodDemoStore.reviews)) {
     globalThis.__hustfoodDemoStore.reviews = [];
+  }
+
+  if (!Array.isArray(globalThis.__hustfoodDemoStore.paymentTransactions)) {
+    globalThis.__hustfoodDemoStore.paymentTransactions = [];
   }
 
   return globalThis.__hustfoodDemoStore;
