@@ -515,7 +515,7 @@ export default function SellerPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Người bán Dashboard</h1>
-          <Link href="/" style={{ textDecoration: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', color: '#333', fontWeight: '500', fontSize: '0.9rem', border: '1px solid #ddd' }}>
+          <Link href="/" className={styles.backLink} style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
             ← Quay lại trang chủ
           </Link>
         </div>

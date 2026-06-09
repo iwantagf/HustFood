@@ -35,7 +35,7 @@ export default function AdminLayout({ children }) {
           <Link href="/admin/menu" className={pathname === '/admin/menu' ? styles.activeLink : styles.navLink}>
             Quản lý Thực Đơn
           </Link>
-          <Link href="/" className={styles.navLink} style={{ marginTop: 'auto' }}>
+          <Link href="/" className={`${styles.navLink} ${styles.backLink}`} style={{ marginTop: 'auto' }}>
             ← Quay Lại Cửa Hàng
           </Link>
         </nav>

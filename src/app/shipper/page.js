@@ -216,7 +216,7 @@ export default function ShipperPage() {
             Nhận đơn đã sẵn sàng, cập nhật trạng thái lấy hàng và hoàn tất giao cho khách.
           </p>
         </div>
-        <Link href="/" className={styles.navLink} style={{ border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface)' }}>
+        <Link href="/" className={styles.backLink}>
           Quay lại cửa hàng
         </Link>
       </div>

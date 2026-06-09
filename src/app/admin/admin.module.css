@@ -56,6 +56,24 @@
   border-right: 4px solid var(--primary);
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #b91c1c;
+  background: transparent;
+  font-weight: 700;
+}
+
+.backLink:hover {
+  color: #991b1b;
+  background: transparent;
+  border-color: #fecaca;
+}
+
 .mainContent {
   flex: 1;
   display: flex;
