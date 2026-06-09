@@ -34,6 +34,15 @@ Biến bắt buộc:
 DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE?ssl-mode=REQUIRED"
 ```
 
+Biến cho Google OAuth:
+
+```env
+NEXTAUTH_URL="http://localhost:3000"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+AUTH_SECRET="random-long-secret"
+```
+
 Ghi chú:
 
 - Không commit `.env`.
@@ -126,7 +135,7 @@ Môi trường test tối thiểu:
   - `doanducmanh` / `1` / `Shipper`
   - `nguyendanhthai` / `1` / `Khách hàng`
 - Người dùng thường có thể tạo tài khoản tại `/login` bằng Gmail.
-- Social login hiện là mô phỏng qua Google/Facebook/Instagram, chưa phải OAuth thật.
+- Google dùng OAuth thật. Facebook/Instagram hiện chuyển tới trang chưa thiết lập.
 
 ### 3.3 Luồng test thủ công chính
 
@@ -316,7 +325,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 - `/success`: order success page.
 - `/orders`: danh sách đơn của khách hàng, cập nhật realtime bằng SSE.
 - `/orders/[id]`: chi tiết theo dõi đơn với progress, ETA và vị trí người giao hàng.
-- `/login`: credential login, Gmail registration, demo social login.
+- `/login`: credential login, Gmail registration, Google OAuth login.
 
 ### 7.2 Người bán
 
@@ -379,9 +388,30 @@ Body:
 }
 ```
 
+#### `GET /api/auth/google`
+
+Bắt đầu Google OAuth authorization code flow. API redirect người dùng sang Google và lưu state CSRF trong cookie httpOnly.
+
+#### `GET /api/auth/callback/google`
+
+Google callback. API đổi authorization code lấy access token, đọc profile Google, đăng nhập user đã tồn tại hoặc redirect sang `/login/setup` để chọn role lần đầu.
+
+#### `POST /api/auth/google/register`
+
+Hoàn tất onboarding Google OAuth lần đầu.
+
+Body:
+
+```json
+{
+  "username": "tester",
+  "role": "customer"
+}
+```
+
 #### `POST /api/auth/social`
 
-Đăng nhập social mô phỏng. Provider hỗ trợ: `google`, `facebook`, `instagram`.
+Endpoint social mô phỏng legacy. Google hiện đi qua OAuth thật tại `/api/auth/google`; Facebook/Instagram chưa được thiết lập.
 
 Body:
 
@@ -816,7 +846,7 @@ Lưu thông báo nội bộ cho dashboard.
 ### 10.1 Đã làm hoặc đã làm một phần
 
 - RBAC demo với 4 role.
-- Credential login, Gmail registration, demo social login.
+- Credential login, Gmail registration, Google OAuth login.
 - Password hashing bằng `scrypt`.
 - Customer product menu, cart, voucher, checkout.
 - Seller dashboard, merchant profile, order status update.
@@ -893,5 +923,4 @@ Trong PR nên ghi:
 ## 12. Vấn đề đã biết
 
 - `npx prisma db push` cần DB reachable. Nếu DNS/host Aiven không resolve, cần kiểm tra network, host, port và SSL.
-- Social login hiện là demo endpoint, chưa tích hợp OAuth thật.
-- Một số UI còn dùng `<img>` nên ESLint có thể cảnh báo về tối ưu ảnh Next.js.
+- Facebook/Instagram OAuth chưa được thiết lập.

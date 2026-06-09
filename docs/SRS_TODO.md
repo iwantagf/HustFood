@@ -58,10 +58,11 @@
 - [x] Đổi session từ `localStorage` sang cookie/JWT server-side theo đúng SRS.
 - [x] Khóa tài khoản và thông báo "liên hệ hỗ trợ" khi account bị block.
 - [x] Bảo vệ API theo role, không chỉ bảo vệ UI.
+- [x] OAuth thật cho Google bằng authorization code flow, callback CSRF state và onboarding role lần đầu.
 
 #### 3.1.2 Chưa làm
 
-- [ ] P2: OAuth thật cho Google/Facebook/Instagram thay vì social login mô phỏng.
+- [ ] P2: OAuth thật cho Facebook/Instagram.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
 
@@ -411,4 +412,4 @@
 ### 7.2 P1 sau khi demo P0 ổn định
 
 1. Dashboard biểu đồ và lọc thời gian.
-2. OAuth thật.
+2. OAuth thật cho Facebook/Instagram.
