@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { normalizeIdentifier } from '@/lib/auth/users';
 import { verifyPassword } from '@/lib/auth/password';
 import { sessionJson } from '@/lib/auth/session';
+import { adminCredentialsMatch, ensureConfiguredAdminUser } from '@/lib/auth/adminAccount';
 import { findDemoUserByCredentials, isDemoMode } from '@/lib/demo/store';
 
 export async function POST(request) {
@@ -22,6 +23,11 @@ export async function POST(request) {
       }
 
       return sessionJson(demoUser, { status: 200 });
+    }
+
+    if (adminCredentialsMatch(identifier, password)) {
+      const adminUser = await ensureConfiguredAdminUser(prisma, identifier);
+      return sessionJson(adminUser, { status: 200 });
     }
 
     const user = await prisma.user.findFirst({

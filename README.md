@@ -44,12 +44,20 @@ GOOGLE_CLIENT_SECRET="..."
 AUTH_SECRET="random-long-secret"
 ```
 
+Biến cho tài khoản quản trị viên khi `DEMO_MODE=false`:
+
+```env
+ADMIN_ACCOUNT="admin"
+ADMIN_PASSWORD="strong-password"
+```
+
 Ghi chú:
 
 - Không commit `.env`.
 - Với Aiven hoặc managed MySQL, thường cần giữ `ssl-mode=REQUIRED`.
 - Nếu đổi schema Prisma, cần chạy lại `npx prisma db push`.
 - Facebook/Instagram OAuth chưa nằm trong scope hiện tại; chỉ Google dùng OAuth thật.
+- Khi deploy production, tài khoản admin lấy từ `ADMIN_ACCOUNT` và `ADMIN_PASSWORD`. Lần đăng nhập admin đầu tiên sẽ tự tạo hoặc cập nhật user `admin` trong database.
 
 ## 2. Khởi động nhanh
 
@@ -77,7 +85,7 @@ Seed dữ liệu mẫu:
 npm run seed
 ```
 
-Nếu cần seed tài khoản quản trị viên, cấu hình `SEED_ADMIN_USERNAME` và `SEED_ADMIN_PASSWORD` trong `.env`.
+Nếu cần seed tài khoản quản trị viên, cấu hình `ADMIN_ACCOUNT` và `ADMIN_PASSWORD` trong `.env`. `SEED_ADMIN_USERNAME` và `SEED_ADMIN_PASSWORD` vẫn được hỗ trợ như biến cũ.
 
 ### 2.4 Chạy development server
 
@@ -131,6 +139,7 @@ Môi trường test tối thiểu:
 ### 3.2 Tài khoản demo
 
 - Tài khoản `Quản trị viên` demo lấy từ `DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env`.
+- Khi `DEMO_MODE=false`, tài khoản `Quản trị viên` lấy từ `ADMIN_ACCOUNT` và `ADMIN_PASSWORD`.
 - Các tài khoản test có sẵn trong `DEMO_MODE=true` và được seed bằng `npm run seed`:
   - `dongmanhhung` / `1` / `Người bán hàng`
   - `tadinhtam` / `1` / `Khách hàng`
@@ -144,7 +153,7 @@ Môi trường test tối thiểu:
 - `Khách hàng`: `/` -> thêm món -> `/cart` -> `/checkout` -> `/success`.
 - `Người bán`: `/login` -> đăng nhập/tạo tài khoản role `Người bán` -> `/seller`.
 - `Người giao hàng`: `/login` -> đăng nhập/tạo tài khoản role `Người giao hàng` -> `/shipper`.
-- `Quản trị viên`: `/login` -> đăng nhập bằng tài khoản demo trong `.env` -> `/admin`.
+- `Quản trị viên`: `/login` -> đăng nhập bằng `ADMIN_ACCOUNT` và `ADMIN_PASSWORD` trong `.env` hoặc Vercel env -> `/admin`.
 
 ## 4. Các script có sẵn
 
@@ -403,7 +412,7 @@ Body:
 ```json
 {
   "email": "tester@gmail.com",
-  "password": "1",
+  "password": "123456",
   "displayName": "Tester",
   "role": "customer"
 }

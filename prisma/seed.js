@@ -3,8 +3,8 @@ const { PrismaClient } = require('@prisma/client');
 const { randomBytes, scryptSync } = require('crypto');
 
 const prisma = new PrismaClient();
-const adminUsername = process.env.SEED_ADMIN_USERNAME;
-const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+const adminUsername = process.env.ADMIN_ACCOUNT || process.env.SEED_ADMIN_USERNAME;
+const adminPassword = process.env.ADMIN_PASSWORD || process.env.SEED_ADMIN_PASSWORD;
 const seedUsers = [
   { username: 'dongmanhhung', password: '1', role: 'seller', displayName: 'dongmanhhung' },
   { username: 'tadinhtam', password: '1', role: 'customer', displayName: 'tadinhtam' },
