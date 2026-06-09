@@ -38,7 +38,7 @@ export default function SuccessPage() {
         <p className={styles.successDesc}>
           {isPaymentRetry
             ? 'Thanh toán online chưa hoàn tất. Đơn hàng đã được lưu ở trạng thái chờ thanh toán lại để bạn có thể xử lý tiếp với bộ phận hỗ trợ.'
-            : 'Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng của bạn đã được tiếp nhận và đang được bếp chuẩn bị. Người giao hàng sẽ liên hệ với bạn trong thời gian sớm nhất. Chúc bạn có một bữa ăn ngon miệng!'}
+            : 'Cảm ơn bạn đã đặt hàng tại HustFood. Đơn hàng đã được gửi tới cửa hàng để xác nhận và chuẩn bị. Người giao hàng sẽ nhận đơn sau khi cửa hàng chuyển đơn sang trạng thái chờ giao hàng.'}
         </p>
         <div className={styles.actionRow}>
           {lastOrders[0] && (
