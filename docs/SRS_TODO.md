@@ -19,7 +19,7 @@
   - Phân quyền client-side theo role.
   - Dashboard `Người bán`, `Người giao hàng`, `Quản trị viên`.
   - API sản phẩm, đơn hàng, thông báo, đề xuất món, upload, hồ sơ cửa hàng, auth.
-  - Prisma schema cho `User`, `MerchantProfile`, `Product`, `MenuCategory`, `SavedCart`, `Voucher`, `Order`, `Proposal`, `Notification`.
+  - Prisma schema cho `User`, `MerchantProfile`, `Product`, `MenuCategory`, `SavedCart`, `Voucher`, `Order`, `PaymentTransaction`, `Review`, `Proposal`, `Notification`.
   - Schema đã được push lên Aiven MySQL và seed dữ liệu demo.
 
 ## 2. Chú thích trạng thái
@@ -60,9 +60,9 @@
 - [x] Bảo vệ API theo role, không chỉ bảo vệ UI.
 - [x] OAuth thật cho Google bằng authorization code flow, callback CSRF state và onboarding role lần đầu.
 
-#### 3.1.2 Chưa làm
+#### 3.1.2 Ngoài scope hiện tại
 
-- [ ] P2: OAuth thật cho Facebook/Instagram.
+- Facebook/Instagram OAuth không triển khai API/callback trong scope hiện tại theo quyết định mới; Google OAuth thật đã đủ cho FR-01 demo.
 
 ### 3.2 FR-02: Khởi tạo và thiết lập hồ sơ cửa hàng
 
@@ -153,6 +153,7 @@
 - [x] Checksum/signature verification cho kết quả thanh toán mock.
 - [x] Trạng thái `Chờ thanh toán lại` khi thanh toán fail.
 - [x] Tạo notification cho `Người bán` khi có đơn mới.
+- [x] Thêm `PaymentTransaction` để lưu lịch sử giao dịch khi tạo đơn, thu COD và hoàn tiền.
 
 #### 3.6.2 Chưa làm
 
@@ -222,10 +223,11 @@
 - [x] Bình luận text.
 - [x] Upload ảnh review.
 - [x] Hiển thị review trên cửa hàng; món hiển thị số lượt đã bán.
+- [x] Lọc từ ngữ thô tục và lưu review vi phạm với `status = hidden` để không hiển thị công khai.
 
 #### 3.10.2 Chưa làm
 
-- [ ] P1: Lọc từ ngữ thô tục và ẩn review vi phạm.
+- Không còn mục thiếu trong phạm vi FR-10 demo hiện tại.
 
 ### 3.11 FR-11: AI phân tích cảm xúc phản hồi
 
@@ -271,10 +273,11 @@
 - [x] Trang chi tiết cửa hàng.
 - [x] UI voucher và phí giao hàng.
 - [x] Trang theo dõi đơn.
+- [x] Trang đánh giá sau đơn hoàn thành.
 
 #### 4.1.2 Chưa làm
 
-- [ ] P0: Trang đánh giá sau đơn.
+- Không còn mục thiếu trong phạm vi customer demo hiện tại.
 
 ### 4.2 Người bán
 
@@ -347,6 +350,8 @@
 - [x] `SavedCart`.
 - [x] `Voucher`.
 - [x] `MenuCategory`.
+- [x] `Review`.
+- [x] `PaymentTransaction`.
 - [x] `Shop`/`MerchantProfile` liên kết với `User`.
 - [x] Tùy chọn món bằng `Product.options`.
 - [x] Thêm trường payment/delivery vào `Order`.
@@ -362,10 +367,10 @@
 - [x] Push schema lên Aiven MySQL.
 - [x] Seed dữ liệu demo trên Aiven MySQL.
 
-### 5.2 Chưa làm
+### 5.2 Hoàn thành bổ sung
 
 - [x] P0: `Review`.
-- [ ] P1: `Transaction`/`Payment`.
+- [x] P1: `Transaction`/`Payment`.
 
 ## 6. Checklist phi chức năng
 
@@ -389,27 +394,23 @@
 ### 6.3 Khả dụng và tin cậy
 
 - [x] Giỏ hàng lưu localStorage.
-- [~] UI responsive cơ bản.
-- [ ] P1: Sao lưu DB hằng ngày.
-- [ ] P1: Error state/loading state đầy đủ cho từng form.
-- [ ] P1: Test khi mất mạng/DB fail.
+- [x] UI responsive cơ bản cho các luồng chính.
+- [x] P1: Sao lưu DB hằng ngày bằng `scripts/backup-db.mjs` và workflow `Database Backup`.
+- [x] P1: Error state/loading state cho các form chính đã rà soát và ghi checklist trong `docs/FAILURE_TESTS.md`.
+- [x] P1: Test khi mất mạng/DB fail có checklist trong `docs/FAILURE_TESTS.md`.
 
 ### 6.4 Mở rộng và bảo trì
 
-- [~] API đang tách theo route/module.
-- [~] Prisma schema đã có các model cốt lõi.
-- [ ] P1: Tách service/helper cho order, payment, delivery, review.
-- [ ] P1: Thêm test case unit/integration.
-- [ ] P1: CI lint/build.
-- [ ] P2: Chuẩn hóa status enum thay vì string tự do.
+- [x] API đang tách theo route/module.
+- [x] Prisma schema đã có các model cốt lõi và `PaymentTransaction`.
+- [x] P1: Tách service/helper cho payment transaction, payment, review moderation, tracking/status.
+- [x] P1: Thêm test case unit cho payment, review moderation và status helper.
+- [x] P1: CI lint/test/build bằng GitHub Actions.
+- [x] P2: Chuẩn hóa status constants thay vì string tự do ở các luồng chính.
 
 ## 7. Thứ tự update đề nghị tiếp theo
 
-### 7.1 P0 nên làm trước
+### 7.1 Trong scope hiện tại
 
-1. Review/rating sau đơn.
-
-### 7.2 P1 sau khi demo P0 ổn định
-
-1. Dashboard biểu đồ và lọc thời gian.
-2. OAuth thật cho Facebook/Instagram.
+- Không còn mục chức năng chưa tick ngoài các mục 6.1/6.2 đã được yêu cầu bỏ qua.
+- Facebook/Instagram OAuth đã bỏ khỏi scope hiện tại, không triển khai API.

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { moderateReviewComment } from '@/lib/reviewModeration';
 import { getImageUploadError, removeUploadedImages, saveUploadedImage } from '@/lib/uploads';
 
 const MAX_REVIEW_IMAGES = 5;
@@ -234,6 +235,7 @@ export async function POST(request) {
 
     savedImages = await saveReviewImages(payload.imageFiles);
     const imageUrls = savedImages.map((image) => image.url);
+    const moderation = moderateReviewComment(commentResult.comment);
     const reviewData = {
       orderId: order.id,
       customerId: auth.user.id,
@@ -244,7 +246,7 @@ export async function POST(request) {
       shipperRating,
       comment: commentResult.comment || null,
       images: imageUrls.length ? imageUrls : null,
-      status: 'visible'
+      status: moderation.status
     };
 
     if (isDemoMode()) {
@@ -256,14 +258,20 @@ export async function POST(request) {
         updatedAt: new Date().toISOString()
       };
       store.reviews.unshift(review);
-      return json({ review: sanitizeReview(review) }, 201);
+      return json({
+        review: sanitizeReview(review),
+        moderation
+      }, 201);
     }
 
     const review = await prisma.review.create({
       data: reviewData
     });
 
-    return json({ review: sanitizeReview(review) }, 201);
+    return json({
+      review: sanitizeReview(review),
+      moderation
+    }, 201);
   } catch (error) {
     await removeUploadedImages(savedImages);
 

@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/backups/
 
 # next.js
 /.next/
@@ -24,6 +25,7 @@
 .DS_Store
 *.pem
 .clinerules
+/.codegraph/
 public/uploads/
 
 # debug

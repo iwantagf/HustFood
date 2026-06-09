@@ -4,9 +4,8 @@ import Link from 'next/link';
 import styles from '../admin/admin.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { getOrderFinalTotal } from '@/lib/pricing';
+import { ACTIVE_SHIPPER_ORDER_STATUS_VALUES, SHIPPER_READY_STATUS_VALUES } from '@/lib/statuses';
 
-const READY_STATUSES = ['ready_for_pickup', 'processing'];
-const ACTIVE_STATUSES = ['picked_up', 'delivering'];
 const DISTANCE_FILTERS = [
   { label: 'Tất cả', value: 'all' },
   { label: '3 km', value: '3' },
@@ -180,7 +179,7 @@ export default function ShipperPage() {
 
   const availableOrders = useMemo(() => (
     orders
-      .filter((order) => READY_STATUSES.includes(order.status) && (!order.shipperId || order.shipperId === user?.id))
+      .filter((order) => SHIPPER_READY_STATUS_VALUES.includes(order.status) && (!order.shipperId || order.shipperId === user?.id))
       .map((order) => ({
         ...order,
         distanceKm: calculateDistanceKm(currentLocation, getOrderPickupLocation(order))
@@ -193,7 +192,7 @@ export default function ShipperPage() {
   ), [orders, user?.id, currentLocation, distanceFilter]);
 
   const activeOrders = useMemo(() => (
-    orders.filter((order) => ACTIVE_STATUSES.includes(order.status) && order.shipperId === user?.id)
+    orders.filter((order) => ACTIVE_SHIPPER_ORDER_STATUS_VALUES.includes(order.status) && order.shipperId === user?.id)
   ), [orders, user?.id]);
 
   const completedOrders = useMemo(() => (

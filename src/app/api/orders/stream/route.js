@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { getDemoStore, isDemoMode } from '@/lib/demo/store';
-
-const READY_STATUSES = ['ready_for_pickup', 'processing'];
+import { SHIPPER_READY_STATUS_VALUES } from '@/lib/statuses';
 
 function canReadOrder(order, user) {
   if (user.role === 'admin') return true;
@@ -10,7 +9,7 @@ function canReadOrder(order, user) {
   if (user.role === 'seller') return order.merchantId === user.id;
   if (user.role === 'shipper') {
     return (
-      (READY_STATUSES.includes(order.status) && !order.shipperId)
+      (SHIPPER_READY_STATUS_VALUES.includes(order.status) && !order.shipperId)
       || order.shipperId === user.id
     );
   }
@@ -32,7 +31,7 @@ async function getReadableOrders({ user, id }) {
       : user.role === 'shipper'
         ? {
           OR: [
-            { status: { in: READY_STATUSES }, shipperId: null },
+            { status: { in: SHIPPER_READY_STATUS_VALUES }, shipperId: null },
             { shipperId: user.id }
           ]
         }

@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
-
-const ACTIVE_ORDER_STATUSES = ['pending', 'payment_retry', 'accepted', 'preparing', 'ready_for_pickup', 'processing', 'picked_up', 'delivering'];
+import { ACTIVE_ORDER_STATUS_VALUES } from '@/lib/statuses';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -58,7 +57,7 @@ function canManageProduct(user, product) {
 }
 
 function orderIncludesProduct(order, productId) {
-  if (!ACTIVE_ORDER_STATUSES.includes(order.status)) return false;
+  if (!ACTIVE_ORDER_STATUS_VALUES.includes(order.status)) return false;
 
   const items = Array.isArray(order.items) ? order.items : [];
   return items.some((item) => item?.id === productId);

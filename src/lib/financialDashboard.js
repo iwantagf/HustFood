@@ -1,4 +1,5 @@
 import { getOrderFinalTotal } from '@/lib/pricing';
+import { COMPLETED_ORDER_STATUS, REJECTED_ORDER_STATUS_VALUES } from '@/lib/statuses';
 
 export const REPORT_PERIODS = [
   { value: 'today', label: 'Hôm nay' },
@@ -7,8 +8,7 @@ export const REPORT_PERIODS = [
   { value: 'all', label: 'Tất cả' }
 ];
 
-const COMPLETED_STATUS = 'completed';
-const REJECTED_STATUSES = new Set(['rejected']);
+const REJECTED_STATUSES = new Set(REJECTED_ORDER_STATUS_VALUES);
 
 function startOfDay(date) {
   const nextDate = new Date(date);
@@ -73,7 +73,7 @@ export function filterOrdersByPeriod(orders = [], period = 'all') {
 }
 
 export function getFinancialSummary(orders = []) {
-  const completedOrders = orders.filter((order) => order.status === COMPLETED_STATUS);
+  const completedOrders = orders.filter((order) => order.status === COMPLETED_ORDER_STATUS);
   const rejectedOrders = orders.filter((order) => REJECTED_STATUSES.has(order.status));
   const revenue = completedOrders.reduce((total, order) => total + getOrderFinalTotal(order), 0);
 
@@ -91,7 +91,7 @@ export function getRevenueByMerchant(orders = [], profiles = []) {
   const revenueByMerchant = new Map();
 
   orders
-    .filter((order) => order.status === COMPLETED_STATUS)
+    .filter((order) => order.status === COMPLETED_ORDER_STATUS)
     .forEach((order) => {
       const merchantId = order.merchantId || 'unknown';
       const profile = profileByOwnerId.get(merchantId);
@@ -112,7 +112,7 @@ export function getRevenueByMerchant(orders = [], profiles = []) {
 
 export function getRevenueSeries(orders = [], period = 'all') {
   const filteredOrders = filterOrdersByPeriod(orders, period);
-  const completedOrders = filteredOrders.filter((order) => order.status === COMPLETED_STATUS);
+  const completedOrders = filteredOrders.filter((order) => order.status === COMPLETED_ORDER_STATUS);
   const now = new Date();
   const seriesMap = new Map();
 

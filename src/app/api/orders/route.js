@@ -4,11 +4,16 @@ import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 import { DEMO_DELIVERY_FEE, calculateItemsSubtotal, calculateVoucherDiscount } from '@/lib/pricing';
 import { normalizeVoucherCode, serializeVoucher, validateVoucher } from '@/lib/vouchers';
 import { getInitialPaymentState, isOnlinePayment, normalizePaymentMethod, verifyPaymentChecksum } from '@/lib/payments';
-
-const SELLER_STATUSES = ['accepted', 'preparing', 'ready_for_pickup', 'rejected', 'payment_retry'];
-const SHIPPER_STATUSES = ['picked_up', 'delivering', 'completed'];
-const LEGACY_SHIPPER_READY_STATUSES = ['processing'];
-const SHIPPER_READY_STATUSES = ['ready_for_pickup', ...LEGACY_SHIPPER_READY_STATUSES];
+import {
+  buildPaymentTransactionData,
+  buildRefundPaymentTransactionData
+} from '@/lib/services/paymentTransactions';
+import {
+  ORDER_STATUSES,
+  SELLER_ORDER_STATUS_VALUES,
+  SHIPPER_ORDER_STATUS_VALUES,
+  SHIPPER_READY_STATUS_VALUES
+} from '@/lib/statuses';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -207,6 +212,31 @@ function buildOrderRecord(orderData, extraData = {}) {
   };
 }
 
+function buildDemoPaymentTransaction(transactionData) {
+  return {
+    id: createDemoId('demo-payment-transaction'),
+    ...transactionData,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function recordDemoPaymentTransaction(store, order, overrides = {}) {
+  store.paymentTransactions.unshift(buildDemoPaymentTransaction(
+    buildPaymentTransactionData(order, overrides)
+  ));
+}
+
+async function recordPaymentTransaction(order, overrides = {}) {
+  await prisma.paymentTransaction.create({
+    data: buildPaymentTransactionData(order, overrides)
+  });
+}
+
+function shouldRecordPaymentAction(action) {
+  return action === 'collect_cod' || action === 'refund';
+}
+
 async function findVoucher(code) {
   const normalizedCode = normalizeVoucherCode(code);
   if (!normalizedCode) return null;
@@ -273,6 +303,10 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
       return { error: 'Chỉ Quản trị viên được đánh dấu hoàn tiền' };
     }
 
+    if (order.paymentStatus === 'refunded') {
+      return { error: 'Đơn hàng đã được đánh dấu hoàn tiền' };
+    }
+
     update.paymentStatus = 'refunded';
     update.paymentFailureReason = `Admin marked refunded at ${now.toISOString()}`;
     return { update };
@@ -313,7 +347,15 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
       return { error: 'Đơn này không phải thanh toán COD' };
     }
 
+    if (order.codCollectedAt) {
+      return { error: 'COD đã được ghi nhận cho đơn hàng này' };
+    }
+
     update.codCollectedAt = now;
+    update.paymentStatus = 'paid';
+    update.paymentProvider = order.paymentProvider || 'cod';
+    update.paymentTransactionId = order.paymentTransactionId || `COD-${order.id}-${now.getTime()}`;
+    update.paymentFailureReason = null;
     return { update };
   }
 
@@ -336,7 +378,7 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
   }
 
   if (action === 'accept') {
-    if (!SHIPPER_READY_STATUSES.includes(order.status)) {
+    if (!SHIPPER_READY_STATUS_VALUES.includes(order.status)) {
       return { error: 'Đơn hàng chưa sẵn sàng để nhận giao' };
     }
 
@@ -344,7 +386,7 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
       return { error: 'Đơn hàng đã được người giao hàng khác nhận' };
     }
 
-    update.status = 'picked_up';
+    update.status = ORDER_STATUSES.PICKED_UP;
     update.shipperId = user.id;
     update.shipperName = user.displayName || user.username || 'Người giao hàng';
     update.acceptedAt = now;
@@ -357,33 +399,33 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
   }
 
   if (user.role === 'seller' || user.role === 'admin') {
-    if (['failed', 'retry_required'].includes(order.paymentStatus) && status !== 'payment_retry') {
+    if (['failed', 'retry_required'].includes(order.paymentStatus) && status !== ORDER_STATUSES.PAYMENT_RETRY) {
       return { error: 'Đơn đang chờ thanh toán lại, chưa thể chuyển trạng thái xử lý' };
     }
 
-    if (!SELLER_STATUSES.includes(status) && !(user.role === 'admin' && status === 'completed')) {
+    if (!SELLER_ORDER_STATUS_VALUES.includes(status) && !(user.role === 'admin' && status === ORDER_STATUSES.COMPLETED)) {
       return { error: 'Trạng thái này không thuộc luồng xử lý của người bán' };
     }
 
     const allowedTransitions = {
-      pending: ['accepted', 'rejected'],
-      payment_retry: ['payment_retry'],
-      accepted: ['preparing', 'rejected'],
-      preparing: ['ready_for_pickup'],
-      ready_for_pickup: [],
-      processing: [],
-      picked_up: [],
-      delivering: [],
-      completed: [],
-      rejected: []
+      [ORDER_STATUSES.PENDING]: [ORDER_STATUSES.ACCEPTED, ORDER_STATUSES.REJECTED],
+      [ORDER_STATUSES.PAYMENT_RETRY]: [ORDER_STATUSES.PAYMENT_RETRY],
+      [ORDER_STATUSES.ACCEPTED]: [ORDER_STATUSES.PREPARING, ORDER_STATUSES.REJECTED],
+      [ORDER_STATUSES.PREPARING]: [ORDER_STATUSES.READY_FOR_PICKUP],
+      [ORDER_STATUSES.READY_FOR_PICKUP]: [],
+      [ORDER_STATUSES.LEGACY_PROCESSING]: [],
+      [ORDER_STATUSES.PICKED_UP]: [],
+      [ORDER_STATUSES.DELIVERING]: [],
+      [ORDER_STATUSES.COMPLETED]: [],
+      [ORDER_STATUSES.REJECTED]: []
     };
 
     if (user.role !== 'admin' && !(allowedTransitions[order.status] || []).includes(status)) {
       return { error: 'Không thể chuyển đơn từ trạng thái hiện tại sang trạng thái này' };
     }
 
-    if (status === 'rejected') {
-      if (!['pending', 'accepted'].includes(order.status) && user.role !== 'admin') {
+    if (status === ORDER_STATUSES.REJECTED) {
+      if (![ORDER_STATUSES.PENDING, ORDER_STATUSES.ACCEPTED].includes(order.status) && user.role !== 'admin') {
         return { error: 'Chỉ có thể từ chối đơn trước khi bắt đầu chuẩn bị' };
       }
 
@@ -395,11 +437,11 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
       update.rejectedAt = now;
     }
 
-    if (status === 'accepted' && !order.sellerAcceptedAt) {
+    if (status === ORDER_STATUSES.ACCEPTED && !order.sellerAcceptedAt) {
       update.sellerAcceptedAt = now;
     }
 
-    if (status === 'ready_for_pickup' && !order.readyForPickupAt) {
+    if (status === ORDER_STATUSES.READY_FOR_PICKUP && !order.readyForPickupAt) {
       update.readyForPickupAt = now;
     }
 
@@ -408,7 +450,7 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
   }
 
   if (user.role === 'shipper') {
-    if (!SHIPPER_STATUSES.includes(status)) {
+    if (!SHIPPER_ORDER_STATUS_VALUES.includes(status)) {
       return { error: 'Trạng thái này không thuộc luồng giao hàng' };
     }
 
@@ -420,11 +462,11 @@ function buildOrderUpdate({ order, status, action, rejectionReason, issue, locat
     update.shipperId = order.shipperId || user.id;
     update.shipperName = order.shipperName || user.displayName || user.username || 'Người giao hàng';
 
-    if (status === 'picked_up' && !order.pickedUpAt) {
+    if (status === ORDER_STATUSES.PICKED_UP && !order.pickedUpAt) {
       update.pickedUpAt = now;
     }
 
-    if (status === 'completed') {
+    if (status === ORDER_STATUSES.COMPLETED) {
       if (order.paymentMethod === 'cod' && !order.codCollectedAt) {
         return { error: 'Vui lòng ghi nhận đã thu COD trước khi hoàn thành đơn' };
       }
@@ -455,7 +497,7 @@ export async function GET(request) {
           ? store.orders.filter((order) => order.customerId === auth.user.id)
           : auth.user.role === 'shipper'
             ? store.orders.filter((order) => (
-              (SHIPPER_READY_STATUSES.includes(order.status) && !order.shipperId)
+              (SHIPPER_READY_STATUS_VALUES.includes(order.status) && !order.shipperId)
               || order.shipperId === auth.user.id
             ))
             : store.orders;
@@ -469,7 +511,7 @@ export async function GET(request) {
         : auth.user.role === 'shipper'
           ? {
             OR: [
-              { status: { in: SHIPPER_READY_STATUSES }, shipperId: null },
+              { status: { in: SHIPPER_READY_STATUS_VALUES }, shipperId: null },
               { shipperId: auth.user.id }
             ]
           }
@@ -560,6 +602,7 @@ export async function POST(request) {
         createdAt: new Date(Date.now() + index).toISOString()
       }));
       store.orders.unshift(...newOrders);
+      newOrders.forEach((order) => recordDemoPaymentTransaction(store, order));
       await markVoucherUsed(voucher);
       await notifySellerNewOrders(newOrders);
 
@@ -575,6 +618,7 @@ export async function POST(request) {
         })
       });
       newOrders.push(newOrder);
+      await recordPaymentTransaction(newOrder);
     }
     await markVoucherUsed(voucher);
     await notifySellerNewOrders(newOrders);
@@ -611,6 +655,15 @@ export async function PUT(request) {
       if (result.error) return json({ error: result.error }, 400);
 
       Object.assign(order, result.update);
+      if (shouldRecordPaymentAction(action)) {
+        if (action === 'refund') {
+          store.paymentTransactions.unshift(buildDemoPaymentTransaction(
+            buildRefundPaymentTransactionData(order, result.update.paymentFailureReason)
+          ));
+        } else {
+          recordDemoPaymentTransaction(store, order);
+        }
+      }
       return json(order);
     }
 
@@ -628,6 +681,16 @@ export async function PUT(request) {
       where: { id },
       data: result.update
     });
+
+    if (shouldRecordPaymentAction(action)) {
+      if (action === 'refund') {
+        await prisma.paymentTransaction.create({
+          data: buildRefundPaymentTransactionData(updatedOrder, result.update.paymentFailureReason)
+        });
+      } else {
+        await recordPaymentTransaction(updatedOrder);
+      }
+    }
 
     return json(updatedOrder);
   } catch (error) {
