@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { validateImageSource } from '@/lib/imageSources';
 import { ACTIVE_ORDER_STATUS_VALUES } from '@/lib/statuses';
 
 function json(data, status = 200) {
@@ -33,9 +34,14 @@ function normalizeOptions(options = {}) {
 function normalizeProductPayload(body) {
   const requiredFields = ['name', 'desc', 'price'];
   const missingField = requiredFields.find((field) => !String(body[field] || '').trim());
+  const imageResult = validateImageSource(body.image);
 
   if (missingField) {
     return { error: `Thiếu trường bắt buộc: ${missingField}` };
+  }
+
+  if (imageResult.error) {
+    return { error: imageResult.error };
   }
 
   return {
@@ -43,7 +49,7 @@ function normalizeProductPayload(body) {
       name: String(body.name).trim(),
       desc: String(body.desc).trim(),
       price: String(body.price).trim(),
-      image: String(body.image || '').trim() || '/images/burger.png',
+      image: imageResult.image,
       categoryId: String(body.categoryId || '').trim() || null,
       options: normalizeOptions(body.options),
       isAvailable: body.isAvailable !== false,

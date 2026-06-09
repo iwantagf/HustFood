@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { validateImageSource } from '@/lib/imageSources';
 
 const DEFAULT_OWNER_ROLE = 'seller';
 
@@ -31,9 +32,14 @@ function normalizeProfilePayload(body, currentStatus) {
 
   const normalizedPhone = String(body.phone).replace(/\s+/g, '');
   const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
+  const imageResult = validateImageSource(body.image);
 
   if (!phoneRegex.test(normalizedPhone)) {
     return { error: 'Số điện thoại Việt Nam không hợp lệ' };
+  }
+
+  if (imageResult.error) {
+    return { error: imageResult.error };
   }
 
   return {
@@ -45,7 +51,7 @@ function normalizeProfilePayload(body, currentStatus) {
       openTime: String(body.openTime).trim(),
       closeTime: String(body.closeTime).trim(),
       phone: normalizedPhone,
-      image: String(body.image || '').trim() || '/images/burger.png',
+      image: imageResult.image,
       status: ['active', 'paused'].includes(currentStatus)
         ? (body.status === 'paused' ? 'paused' : 'active')
         : currentStatus || 'pending_review'

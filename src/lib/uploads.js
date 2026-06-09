@@ -59,6 +59,20 @@ export async function saveUploadedImage(file) {
   };
 }
 
+export async function saveUploadedImageAsDataUrl(file) {
+  const error = getImageUploadError(file);
+  if (error) {
+    return { error };
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  return {
+    url: `data:${file.type};base64,${buffer.toString("base64")}`
+  };
+}
+
 export async function removeUploadedImages(images = []) {
   await Promise.all(images.map(async (image) => {
     if (!image?.path) return;

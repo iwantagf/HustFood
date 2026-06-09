@@ -46,19 +46,33 @@ export default function MenuPage() {
         const uploadResult = await uploadRes.json();
         if (uploadResult.success) {
           imageUrl = uploadResult.url;
+        } else {
+          alert(uploadResult.error || 'Không tải được ảnh món.');
+          setUploading(false);
+          return;
         }
       } catch (err) {
         console.error('Lỗi upload ảnh:', err);
+        alert('Có lỗi xảy ra khi upload ảnh.');
+        setUploading(false);
+        return;
       }
     }
 
     const newProduct = { ...formData, image: imageUrl };
 
-    await fetch('/api/products', {
+    const productRes = await fetch('/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newProduct)
     });
+
+    const productData = await productRes.json();
+    if (!productRes.ok) {
+      alert(productData.error || 'Không thêm được món mới.');
+      setUploading(false);
+      return;
+    }
     
     setFormData({ name: '', desc: '', price: '', image: '' });
     setFile(null);
