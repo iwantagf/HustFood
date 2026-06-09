@@ -3,6 +3,15 @@ import { useState, useEffect, useRef } from 'react';
 import styles from '../admin/admin.module.css';
 import Link from 'next/link';
 import { getOrderFinalTotal } from '@/lib/pricing';
+import {
+  REPORT_PERIODS,
+  buildOrdersCsv,
+  downloadTextFile,
+  filterOrdersByPeriod,
+  getFinancialSummary,
+  getRevenueSeries,
+  printFinancialReport
+} from '@/lib/financialDashboard';
 
 const DEFAULT_MENU_FORM = {
   name: '',
@@ -113,6 +122,7 @@ export default function SellerPage() {
   const [loading, setLoading] = useState(true);
   const [orderMessage, setOrderMessage] = useState('');
   const [newOrderAlert, setNewOrderAlert] = useState(null);
+  const [reportPeriod, setReportPeriod] = useState('month');
   const knownOrderIdsRef = useRef(new Set());
   const hasLoadedOrdersRef = useRef(false);
 
@@ -227,15 +237,14 @@ export default function SellerPage() {
     }
   };
 
-  const revenue = orders
-    .filter(order => order.status === 'completed')
-    .reduce((acc, order) => acc + getOrderFinalTotal(order), 0);
+  const reportOrders = filterOrdersByPeriod(orders, reportPeriod);
+  const reportSummary = getFinancialSummary(reportOrders);
+  const revenueSeries = getRevenueSeries(orders, reportPeriod);
+  const maxSeriesValue = Math.max(...revenueSeries.map((item) => item.value), 1);
+  const pendingCount = reportOrders.filter(order => order.status === 'pending').length;
+  const processingCount = reportOrders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
 
-  const pendingCount = orders.filter(order => order.status === 'pending').length;
-  const processingCount = orders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
-  const completedCount = orders.filter(order => order.status === 'completed').length;
-
-  const productSales = orders.reduce((acc, order) => {
+  const productSales = reportOrders.reduce((acc, order) => {
     order.items?.forEach(item => {
       if (!acc[item.id]) {
         acc[item.id] = { ...item, sold: 0 };
@@ -248,6 +257,22 @@ export default function SellerPage() {
   const topProducts = Object.values(productSales)
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 4);
+
+  const exportSellerCsv = () => {
+    downloadTextFile(`hustfood-seller-orders-${reportPeriod}.csv`, buildOrdersCsv(reportOrders));
+  };
+
+  const exportSellerPdf = () => {
+    printFinancialReport({
+      title: `Báo cáo tài chính ${merchantProfile.shopName || 'cửa hàng'} - ${REPORT_PERIODS.find((period) => period.value === reportPeriod)?.label || 'Tất cả'}`,
+      summary: reportSummary,
+      rows: [{
+        merchantName: merchantProfile.shopName || 'Cửa hàng',
+        orders: reportSummary.completedCount,
+        revenue: reportSummary.revenue
+      }]
+    });
+  };
 
   const handlePropose = async (e) => {
     e.preventDefault();
@@ -536,6 +561,29 @@ export default function SellerPage() {
         Trang dành cho người bán: cập nhật trạng thái đơn và theo dõi doanh thu.
       </p>
 
+      <div className={styles.reportHeader}>
+        <div>
+          <h2 className={styles.sectionTitle} style={{ fontSize: '1.35rem', marginBottom: '0.35rem' }}>Báo cáo tài chính</h2>
+          <p className={styles.reportSubtitle}>Lọc doanh thu, đơn hoàn thành và đơn từ chối theo kỳ báo cáo.</p>
+        </div>
+        <div className={styles.reportActions}>
+          <div className={styles.segmentedControl} aria-label="Bộ lọc thời gian">
+            {REPORT_PERIODS.map((period) => (
+              <button
+                key={period.value}
+                type="button"
+                className={reportPeriod === period.value ? styles.segmentActive : ''}
+                onClick={() => setReportPeriod(period.value)}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={styles.actionBtn} onClick={exportSellerCsv}>Export CSV</button>
+          <button type="button" className={styles.actionBtn} onClick={exportSellerPdf}>Export PDF</button>
+        </div>
+      </div>
+
       {newOrderAlert && (
         <div style={{ marginBottom: '1rem', padding: '1rem 1.1rem', borderRadius: '8px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
@@ -626,7 +674,7 @@ export default function SellerPage() {
           <div className={`${styles.statIcon} ${styles.iconRed}`}>₫</div>
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Doanh Thu Hoàn Thành</div>
-            <div className={styles.statValue}>{revenue.toLocaleString('vi-VN')}đ</div>
+            <div className={styles.statValue}>{reportSummary.revenue.toLocaleString('vi-VN')}đ</div>
           </div>
         </div>
         <div className={styles.statCard}>
@@ -647,8 +695,33 @@ export default function SellerPage() {
           <div className={`${styles.statIcon} ${styles.iconGreen}`}>✅</div>
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Đơn Hoàn Thành</div>
-            <div className={styles.statValue}>{completedCount}</div>
+            <div className={styles.statValue}>{reportSummary.completedCount}</div>
           </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconRed}`}>!</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Đơn Từ Chối/Hủy</div>
+            <div className={styles.statValue}>{reportSummary.rejectedCount}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.chartPanel} style={{ marginBottom: '2rem' }}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem' }}>Biểu đồ doanh thu</h2>
+          <span className={styles.statusBadge}>AOV {reportSummary.averageOrderValue.toLocaleString('vi-VN')}đ</span>
+        </div>
+        <div className={styles.barChart}>
+          {revenueSeries.map((item) => (
+            <div key={item.label} className={styles.barItem}>
+              <div className={styles.barTrack}>
+                <div className={styles.barFill} style={{ height: `${Math.max(item.value / maxSeriesValue * 100, item.value ? 8 : 0)}%` }} />
+              </div>
+              <div className={styles.barLabel}>{item.label}</div>
+              <div className={styles.barValue}>{item.value.toLocaleString('vi-VN')}đ</div>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -121,6 +121,56 @@
   color: var(--text-main);
 }
 
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.reportSubtitle {
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.reportActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.segmentedControl {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.segmentedControl button {
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.65rem 0.85rem;
+}
+
+.segmentedControl button:last-child {
+  border-right: 0;
+}
+
+.segmentedControl .segmentActive {
+  background: var(--primary);
+  color: white;
+}
+
 /* Dashboard Specifics */
 .statsGrid {
   display: grid;
@@ -156,6 +206,114 @@
 .statInfo { flex: 1; }
 .statLabel { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
 .statValue { font-size: 1.8rem; font-weight: 800; }
+
+.reportGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.chartPanel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  color: var(--text-main);
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.barChart {
+  min-height: 260px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(70px, 1fr);
+  gap: 0.75rem;
+  align-items: end;
+  overflow-x: auto;
+  padding-top: 0.5rem;
+}
+
+.barItem {
+  min-width: 70px;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+}
+
+.barTrack {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: var(--radius-sm);
+  background: var(--bg-color);
+  overflow: hidden;
+}
+
+.barFill {
+  width: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: height 0.25s ease;
+}
+
+.barLabel {
+  color: var(--text-main);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.barValue {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-align: center;
+  min-height: 2rem;
+}
+
+.reportList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.reportListItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+
+.reportListItem:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.reportListItem div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.reportListItem span,
+.emptyText {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
 
 /* Tables */
 .tableContainer {
@@ -221,4 +379,8 @@
   .sidebar { width: 100%; height: auto; position: static; }
   .nav { flex-direction: row; flex-wrap: wrap; padding: 1rem; }
   .menuLayout { flex-direction: column; }
+  .reportGrid { grid-template-columns: 1fr; }
+  .reportActions { justify-content: flex-start; }
+  .segmentedControl { width: 100%; }
+  .segmentedControl button { flex: 1; }
 }

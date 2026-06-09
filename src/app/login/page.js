@@ -72,7 +72,7 @@ export default function LoginPage() {
   const submitSocial = (provider) => {
     setIsSubmitting(true);
     if (provider === 'google') {
-      window.location.href = '/api/auth/google';
+      window.location.assign('/api/auth/google');
     } else {
       router.push('/not-setup');
     }

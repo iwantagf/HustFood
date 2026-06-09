@@ -2,12 +2,24 @@
 import { useState, useEffect } from 'react';
 import styles from './admin.module.css';
 import { getOrderFinalTotal } from '@/lib/pricing';
+import {
+  REPORT_PERIODS,
+  buildMerchantRevenueCsv,
+  buildOrdersCsv,
+  downloadTextFile,
+  filterOrdersByPeriod,
+  getFinancialSummary,
+  getRevenueByMerchant,
+  getRevenueSeries,
+  printFinancialReport
+} from '@/lib/financialDashboard';
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [products, setProducts] = useState([]);
   const [merchantProfiles, setMerchantProfiles] = useState([]);
+  const [reportPeriod, setReportPeriod] = useState('month');
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -44,12 +56,12 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const todayTotal = orders
-    .filter(o => o.status === 'completed')
-    .reduce((acc, curr) => acc + getOrderFinalTotal(curr), 0);
-  
-  const pendingCount = orders.filter(o => o.status === 'pending').length;
-  const completedCount = orders.filter(o => o.status === 'completed').length;
+  const reportOrders = filterOrdersByPeriod(orders, reportPeriod);
+  const reportSummary = getFinancialSummary(reportOrders);
+  const revenueByMerchant = getRevenueByMerchant(reportOrders, merchantProfiles);
+  const revenueSeries = getRevenueSeries(orders, reportPeriod);
+  const maxSeriesValue = Math.max(...revenueSeries.map((item) => item.value), 1);
+  const pendingCount = reportOrders.filter(o => o.status === 'pending').length;
   
   const getStatusBadge = (status) => {
     switch (status) {
@@ -143,18 +155,51 @@ export default function DashboardPage() {
   };
 
   const pendingProposals = proposals.filter(p => p.status === 'pending');
-  const pendingProfiles = merchantProfiles.filter(profile => profile.status === 'pending_review').length;
+
+  const exportAdminCsv = () => {
+    downloadTextFile(`hustfood-admin-orders-${reportPeriod}.csv`, buildOrdersCsv(reportOrders));
+    downloadTextFile(`hustfood-merchant-revenue-${reportPeriod}.csv`, buildMerchantRevenueCsv(revenueByMerchant));
+  };
+
+  const exportAdminPdf = () => {
+    printFinancialReport({
+      title: `Báo cáo tài chính HustFood - ${REPORT_PERIODS.find((period) => period.value === reportPeriod)?.label || 'Tất cả'}`,
+      summary: reportSummary,
+      rows: revenueByMerchant
+    });
+  };
 
   return (
     <>
-      <h1 className={styles.pageTitle}>Dashboard</h1>
+      <div className={styles.reportHeader}>
+        <div>
+          <h1 className={styles.pageTitle}>Dashboard</h1>
+          <p className={styles.reportSubtitle}>Theo dõi tài chính, đơn hoàn thành và đơn bị từ chối theo kỳ báo cáo.</p>
+        </div>
+        <div className={styles.reportActions}>
+          <div className={styles.segmentedControl} aria-label="Bộ lọc thời gian">
+            {REPORT_PERIODS.map((period) => (
+              <button
+                key={period.value}
+                type="button"
+                className={reportPeriod === period.value ? styles.segmentActive : ''}
+                onClick={() => setReportPeriod(period.value)}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={styles.actionBtn} onClick={exportAdminCsv}>Export CSV</button>
+          <button type="button" className={styles.actionBtn} onClick={exportAdminPdf}>Export PDF</button>
+        </div>
+      </div>
       
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={`${styles.statIcon} ${styles.iconRed}`}>$</div>
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Doanh Thu (Hoàn thành)</div>
-            <div className={styles.statValue}>{todayTotal.toLocaleString('vi-VN')}đ</div>
+            <div className={styles.statValue}>{reportSummary.revenue.toLocaleString('vi-VN')}đ</div>
           </div>
         </div>
         
@@ -170,17 +215,57 @@ export default function DashboardPage() {
           <div className={`${styles.statIcon} ${styles.iconGreen}`}>✅</div>
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Đã Giao Xong</div>
-            <div className={styles.statValue}>{completedCount} Đơn</div>
+            <div className={styles.statValue}>{reportSummary.completedCount} Đơn</div>
           </div>
         </div>
 
         <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.iconYellow}`}>🏪</div>
+          <div className={`${styles.statIcon} ${styles.iconRed}`}>!</div>
           <div className={styles.statInfo}>
-            <div className={styles.statLabel}>Cửa Hàng Chờ Duyệt</div>
-            <div className={styles.statValue}>{pendingProfiles}</div>
+            <div className={styles.statLabel}>Đơn Từ Chối/Hủy</div>
+            <div className={styles.statValue}>{reportSummary.rejectedCount} Đơn</div>
           </div>
         </div>
+      </div>
+
+      <div className={styles.reportGrid}>
+        <section className={styles.chartPanel}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Biểu đồ doanh thu</h2>
+            <span className={styles.statusBadge}>AOV {reportSummary.averageOrderValue.toLocaleString('vi-VN')}đ</span>
+          </div>
+          <div className={styles.barChart}>
+            {revenueSeries.map((item) => (
+              <div key={item.label} className={styles.barItem}>
+                <div className={styles.barTrack}>
+                  <div className={styles.barFill} style={{ height: `${Math.max(item.value / maxSeriesValue * 100, item.value ? 8 : 0)}%` }} />
+                </div>
+                <div className={styles.barLabel}>{item.label}</div>
+                <div className={styles.barValue}>{item.value.toLocaleString('vi-VN')}đ</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.chartPanel}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Doanh thu theo cửa hàng</h2>
+            <span className={styles.statusBadge}>{revenueByMerchant.length} cửa hàng</span>
+          </div>
+          <div className={styles.reportList}>
+            {revenueByMerchant.length === 0 ? (
+              <p className={styles.emptyText}>Chưa có doanh thu trong kỳ này.</p>
+            ) : revenueByMerchant.slice(0, 6).map((merchant) => (
+              <div key={merchant.merchantId} className={styles.reportListItem}>
+                <div>
+                  <strong>{merchant.merchantName}</strong>
+                  <span>{merchant.orders} đơn hoàn thành</span>
+                </div>
+                <strong>{merchant.revenue.toLocaleString('vi-VN')}đ</strong>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
       <h2 className={styles.pageTitle} style={{ fontSize: '1.5rem' }}>Đơn Hàng Mới Nhất</h2>

@@ -794,6 +794,7 @@ Lưu thông báo nội bộ cho dashboard.
 - Shipper dashboard nhận đơn và cập nhật trạng thái giao hàng.
 - Customer order tracking realtime bằng SSE, progress bar, ETA và vị trí shipper cuối cùng.
 - Admin dashboard, order/menu/proposal management.
+- Seller/Admin financial dashboard với filter hôm nay/tuần/tháng, biểu đồ, doanh thu theo cửa hàng và export CSV/PDF.
 - Prisma schema for current demo models.
 
 ### 10.2 Chưa làm
@@ -807,8 +808,7 @@ docs/SRS_TODO.md
 Các phần lớn còn thiếu:
 
 - Review/rating.
-- Sentiment analysis.
-- Dashboard báo cáo nâng cao và biểu đồ.
+- Sentiment analysis không nằm trong scope demo hiện tại.
 
 ## 11. Hướng dẫn đóng góp
 
