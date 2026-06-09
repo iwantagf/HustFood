@@ -1,8 +1,18 @@
 "use client";
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import styles from '../admin/admin.module.css';
 import Link from 'next/link';
 import { getOrderFinalTotal } from '@/lib/pricing';
+import {
+  REPORT_PERIODS,
+  buildOrdersCsv,
+  downloadTextFile,
+  filterOrdersByPeriod,
+  getFinancialSummary,
+  getRevenueSeries,
+  printFinancialReport
+} from '@/lib/financialDashboard';
 
 const DEFAULT_MENU_FORM = {
   name: '',
@@ -113,6 +123,7 @@ export default function SellerPage() {
   const [loading, setLoading] = useState(true);
   const [orderMessage, setOrderMessage] = useState('');
   const [newOrderAlert, setNewOrderAlert] = useState(null);
+  const [reportPeriod, setReportPeriod] = useState('month');
   const knownOrderIdsRef = useRef(new Set());
   const hasLoadedOrdersRef = useRef(false);
 
@@ -227,15 +238,14 @@ export default function SellerPage() {
     }
   };
 
-  const revenue = orders
-    .filter(order => order.status === 'completed')
-    .reduce((acc, order) => acc + getOrderFinalTotal(order), 0);
+  const reportOrders = filterOrdersByPeriod(orders, reportPeriod);
+  const reportSummary = getFinancialSummary(reportOrders);
+  const revenueSeries = getRevenueSeries(orders, reportPeriod);
+  const maxSeriesValue = Math.max(...revenueSeries.map((item) => item.value), 1);
+  const pendingCount = reportOrders.filter(order => order.status === 'pending').length;
+  const processingCount = reportOrders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
 
-  const pendingCount = orders.filter(order => order.status === 'pending').length;
-  const processingCount = orders.filter(order => IN_PROGRESS_STATUSES.includes(order.status)).length;
-  const completedCount = orders.filter(order => order.status === 'completed').length;
-
-  const productSales = orders.reduce((acc, order) => {
+  const productSales = reportOrders.reduce((acc, order) => {
     order.items?.forEach(item => {
       if (!acc[item.id]) {
         acc[item.id] = { ...item, sold: 0 };
@@ -248,6 +258,22 @@ export default function SellerPage() {
   const topProducts = Object.values(productSales)
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 4);
+
+  const exportSellerCsv = () => {
+    downloadTextFile(`hustfood-seller-orders-${reportPeriod}.csv`, buildOrdersCsv(reportOrders));
+  };
+
+  const exportSellerPdf = () => {
+    printFinancialReport({
+      title: `Báo cáo tài chính ${merchantProfile.shopName || 'cửa hàng'} - ${REPORT_PERIODS.find((period) => period.value === reportPeriod)?.label || 'Tất cả'}`,
+      summary: reportSummary,
+      rows: [{
+        merchantName: merchantProfile.shopName || 'Cửa hàng',
+        orders: reportSummary.completedCount,
+        revenue: reportSummary.revenue
+      }]
+    });
+  };
 
   const handlePropose = async (e) => {
     e.preventDefault();
@@ -490,7 +516,7 @@ export default function SellerPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Người bán Dashboard</h1>
-          <Link href="/" style={{ textDecoration: 'none', background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', color: '#333', fontWeight: '500', fontSize: '0.9rem', border: '1px solid #ddd' }}>
+          <Link href="/" className={styles.backLink} style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
             ← Quay lại trang chủ
           </Link>
         </div>
@@ -535,6 +561,29 @@ export default function SellerPage() {
       <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
         Trang dành cho người bán: cập nhật trạng thái đơn và theo dõi doanh thu.
       </p>
+
+      <div className={styles.reportHeader}>
+        <div>
+          <h2 className={styles.sectionTitle} style={{ fontSize: '1.35rem', marginBottom: '0.35rem' }}>Báo cáo tài chính</h2>
+          <p className={styles.reportSubtitle}>Lọc doanh thu, đơn hoàn thành và đơn từ chối theo kỳ báo cáo.</p>
+        </div>
+        <div className={styles.reportActions}>
+          <div className={styles.segmentedControl} aria-label="Bộ lọc thời gian">
+            {REPORT_PERIODS.map((period) => (
+              <button
+                key={period.value}
+                type="button"
+                className={reportPeriod === period.value ? styles.segmentActive : ''}
+                onClick={() => setReportPeriod(period.value)}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={styles.actionBtn} onClick={exportSellerCsv}>Export CSV</button>
+          <button type="button" className={styles.actionBtn} onClick={exportSellerPdf}>Export PDF</button>
+        </div>
+      </div>
 
       {newOrderAlert && (
         <div style={{ marginBottom: '1rem', padding: '1rem 1.1rem', borderRadius: '8px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -599,7 +648,7 @@ export default function SellerPage() {
             <input type="file" accept="image/*" onChange={e => setProfileImageFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
             {merchantProfile.image && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.65rem' }}>
-                <img src={merchantProfile.image} alt={merchantProfile.shopName || 'Ảnh cửa hàng'} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />
+                <Image src={merchantProfile.image} alt={merchantProfile.shopName || 'Ảnh cửa hàng'} width={48} height={48} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} unoptimized />
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{profileImageFile ? profileImageFile.name : 'Ảnh hiện tại'}</span>
               </div>
             )}
@@ -626,7 +675,7 @@ export default function SellerPage() {
           <div className={`${styles.statIcon} ${styles.iconRed}`}>₫</div>
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Doanh Thu Hoàn Thành</div>
-            <div className={styles.statValue}>{revenue.toLocaleString('vi-VN')}đ</div>
+            <div className={styles.statValue}>{reportSummary.revenue.toLocaleString('vi-VN')}đ</div>
           </div>
         </div>
         <div className={styles.statCard}>
@@ -647,8 +696,33 @@ export default function SellerPage() {
           <div className={`${styles.statIcon} ${styles.iconGreen}`}>✅</div>
           <div className={styles.statInfo}>
             <div className={styles.statLabel}>Đơn Hoàn Thành</div>
-            <div className={styles.statValue}>{completedCount}</div>
+            <div className={styles.statValue}>{reportSummary.completedCount}</div>
           </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles.iconRed}`}>!</div>
+          <div className={styles.statInfo}>
+            <div className={styles.statLabel}>Đơn Từ Chối/Hủy</div>
+            <div className={styles.statValue}>{reportSummary.rejectedCount}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.chartPanel} style={{ marginBottom: '2rem' }}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle} style={{ fontSize: '1.4rem' }}>Biểu đồ doanh thu</h2>
+          <span className={styles.statusBadge}>AOV {reportSummary.averageOrderValue.toLocaleString('vi-VN')}đ</span>
+        </div>
+        <div className={styles.barChart}>
+          {revenueSeries.map((item) => (
+            <div key={item.label} className={styles.barItem}>
+              <div className={styles.barTrack}>
+                <div className={styles.barFill} style={{ height: `${Math.max(item.value / maxSeriesValue * 100, item.value ? 8 : 0)}%` }} />
+              </div>
+              <div className={styles.barLabel}>{item.label}</div>
+              <div className={styles.barValue}>{item.value.toLocaleString('vi-VN')}đ</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -748,7 +822,7 @@ export default function SellerPage() {
             <div style={{ display: 'grid', gap: '1rem' }}>
               {topProducts.map((item) => (
                 <div key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <img src={item.image} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '12px' }} />
+                  <Image src={item.image || '/images/burger.png'} alt={item.name} width={64} height={64} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '12px' }} unoptimized />
                   <div>
                     <div style={{ fontWeight: '700' }}>{item.name}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{item.sold} bán</div>
@@ -845,7 +919,7 @@ export default function SellerPage() {
               <div style={{ display: 'grid', gap: '0.85rem' }}>
                 {products.map((product) => (
                   <div key={product.id} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: '0.75rem', alignItems: 'start', padding: '0.75rem', border: '1px solid #eee', borderRadius: '10px', background: product.isHidden ? '#f9fafb' : '#fff' }}>
-                    <img src={product.image || '/images/burger.png'} alt={product.name} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <Image src={product.image || '/images/burger.png'} alt={product.name} width={56} height={56} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} unoptimized />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'start' }}>
                         <div style={{ fontWeight: '700' }}>{product.name}</div>

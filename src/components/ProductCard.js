@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import { useState } from 'react';
 import styles from '@/app/page.module.css';
 import { useCart } from '@/context/CartContext';
@@ -34,7 +35,14 @@ export default function ProductCard({ product }) {
   return (
     <div className={styles.productCard}>
       <div className={styles.productImageWrapper}>
-        <img src={product.image} alt={product.name} className={styles.productImage} />
+        <Image
+          src={product.image || '/images/burger.png'}
+          alt={product.name}
+          fill
+          sizes="(max-width: 768px) 100vw, 25vw"
+          className={styles.productImage}
+          unoptimized
+        />
       </div>
       <h3 className={styles.productName}>{product.name}</h3>
       {soldCount > 0 && (

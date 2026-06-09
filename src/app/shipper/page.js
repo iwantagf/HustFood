@@ -216,7 +216,7 @@ export default function ShipperPage() {
             Nhận đơn đã sẵn sàng, cập nhật trạng thái lấy hàng và hoàn tất giao cho khách.
           </p>
         </div>
-        <Link href="/" className={styles.navLink} style={{ border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface)' }}>
+        <Link href="/" className={styles.backLink}>
           Quay lại cửa hàng
         </Link>
       </div>
@@ -309,7 +309,7 @@ export default function ShipperPage() {
             {loading ? (
               <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Đang tải dữ liệu...</td></tr>
             ) : availableOrders.length === 0 ? (
-              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Chưa có đơn chờ giao phù hợp.</td></tr>
+              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Chưa có đơn chờ giao phù hợp. Đơn mới đặt chỉ hiển thị ở đây sau khi cửa hàng bấm Chờ giao hàng.</td></tr>
             ) : (
               availableOrders.map((order) => (
                 <tr key={order.id}>

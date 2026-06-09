@@ -1,4 +1,5 @@
 import styles from "./page.module.css";
+import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
@@ -165,7 +166,14 @@ export default async function Home({ searchParams }) {
         
         <div className={`${styles.heroImageContainer} animate-fade-in`}>
           <div className={styles.heroImageBlob}></div>
-          <img src="/images/burger.png" alt="Delicious Burger" className={styles.heroImage} />
+          <Image
+            src="/images/burger.png"
+            alt="Delicious Burger"
+            width={600}
+            height={600}
+            className={styles.heroImage}
+            priority
+          />
         </div>
       </section>
 
@@ -227,7 +235,15 @@ export default async function Home({ searchParams }) {
 
               return (
               <Link key={profile.id} href={`/stores/${profile.id}`} className={styles.storeCard}>
-                <img src={profile.image || '/images/burger.png'} alt={profile.shopName} className={styles.storeImage} />
+                <Image
+                  src={profile.image || '/images/burger.png'}
+                  alt={profile.shopName}
+                  width={420}
+                  height={180}
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className={styles.storeImage}
+                  unoptimized
+                />
                 <div className={styles.storeInfo}>
                   <div className={styles.storeOwner}>{profile.owner?.displayName || 'Người bán HustFood'}</div>
                   <h3 className={styles.storeName}>{profile.shopName}</h3>

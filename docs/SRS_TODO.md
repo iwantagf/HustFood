@@ -244,14 +244,15 @@
 - [x] `Người bán` có đếm đơn cho, đang giao, hoàn thành.
 - [x] `Người bán` có top sản phẩm bán chạy.
 - [x] `Quản trị viên` có dashboard tổng quan đơn, sản phẩm, đề xuất món.
+- [x] Bộ lọc thời gian: hôm nay, tuần này, tháng này, tất cả.
+- [x] Doanh thu theo từng cửa hàng cho `Quản trị viên`.
+- [x] Thống kê đơn hủy/từ chối.
+- [x] Biểu đồ trực quan.
+- [x] Export CSV/PDF.
 
 #### 3.12.2 Chưa làm
 
-- [ ] P1: Bộ lọc thời gian: hôm nay, tuần này, tháng này.
-- [ ] P1: Doanh thu theo từng cửa hàng.
-- [ ] P1: Thống kê đơn hủy/từ chối.
-- [ ] P1: Biểu đồ trực quan.
-- [ ] P2: Export CSV/PDF.
+- Không còn mục thiếu trong phạm vi FR-12 demo hiện tại.
 
 ## 4. Checklist GUI theo vai trò
 
@@ -287,10 +288,11 @@
 - [x] Đề xuất món mới.
 - [x] Quản lý menu riêng của cửa hàng.
 - [x] Thống kê doanh thu cơ bản.
+- [x] Báo cáo tài chính có filter thời gian, biểu đồ, CSV/PDF.
 
 #### 4.2.2 Chưa làm
 
-- [ ] P1: Biểu đồ doanh thu.
+- Không còn mục thiếu trong phạm vi seller demo hiện tại.
 
 ### 4.3 Người giao hàng
 
@@ -319,6 +321,7 @@
 - [x] Quản lý đơn.
 - [x] Quản lý thực đơn.
 - [x] Duyệt đề xuất món.
+- [x] Báo cáo tài chính theo cửa hàng, biểu đồ và export.
 
 #### 4.4.2 Chưa làm
 
