@@ -4,6 +4,7 @@ import { useState } from 'react';
 import styles from '@/app/page.module.css';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { DEFAULT_PRODUCT_IMAGE, normalizeImageSource } from '@/lib/imageSources';
 
 import { useRouter } from 'next/navigation';
 
@@ -13,6 +14,7 @@ export default function ProductCard({ product }) {
   const router = useRouter();
   const canOrder = !role || role === 'customer';
   const soldCount = Number(product.soldCount || 0);
+  const [imageSrc, setImageSrc] = useState(() => normalizeImageSource(product.image));
   const [selection, setSelection] = useState({
     size: product.options?.sizes?.[0] || '',
     topping: product.options?.toppings?.[0] || '',
@@ -36,12 +38,13 @@ export default function ProductCard({ product }) {
     <div className={styles.productCard}>
       <div className={styles.productImageWrapper}>
         <Image
-          src={product.image || '/images/burger.png'}
+          src={imageSrc}
           alt={product.name}
           fill
           sizes="(max-width: 768px) 100vw, 25vw"
           className={styles.productImage}
           unoptimized
+          onError={() => setImageSrc(DEFAULT_PRODUCT_IMAGE)}
         />
       </div>
       <h3 className={styles.productName}>{product.name}</h3>

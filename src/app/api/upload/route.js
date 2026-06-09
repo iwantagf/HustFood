@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from '@/lib/auth/session';
-import { getImageUploadError, saveUploadedImage } from '@/lib/uploads';
+import { getImageUploadError, saveUploadedImageAsDataUrl } from '@/lib/uploads';
 
 export async function POST(req) {
   const auth = await requireRole(req, ['seller', 'admin']);
@@ -15,7 +15,7 @@ export async function POST(req) {
   }
 
   try {
-    const uploadedImage = await saveUploadedImage(file);
+    const uploadedImage = await saveUploadedImageAsDataUrl(file);
     return NextResponse.json({ success: true, url: uploadedImage.url });
   } catch (error) {
     console.error("Error saving file:", error);

@@ -16,7 +16,7 @@ model Product {
   name        String
   desc        String        @db.Text
   price       String
-  image       String
+  image       String        @db.MediumText
   options     Json?
   isAvailable Boolean       @default(true)
   isHidden    Boolean       @default(false)
@@ -79,7 +79,7 @@ model MerchantProfile {
   openTime    String
   closeTime   String
   phone       String
-  image       String
+  image       String   @db.MediumText
   rating      Float    @default(4.5)
   reviewCount Int      @default(0)
   status      String   @default("pending_review") // active, paused, pending_review, blocked
@@ -198,7 +198,7 @@ model Proposal {
   name      String
   desc      String   @db.Text
   price     String
-  image     String
+  image     String   @db.MediumText
   status    String   @default("pending") // pending, accepted, rejected
   createdAt DateTime @default(now())
 }
