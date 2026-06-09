@@ -46,13 +46,10 @@
 }
 
 .activeLink {
-  padding: 1rem 2rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
   font-weight: 700;
   color: #b91c1c;
-  background: transparent;
+  background: transparent !important;
+  border-right: 0;
 }
 
 .backLink {

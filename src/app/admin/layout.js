@@ -26,13 +26,13 @@ export default function AdminLayout({ children }) {
       <aside className={styles.sidebar}>
         <div className={styles.logo}>HustFood Quản trị viên</div>
         <nav className={styles.nav}>
-          <Link href="/admin" className={pathname === '/admin' ? styles.activeLink : styles.navLink}>
+          <Link href="/admin" className={`${styles.navLink} ${pathname === '/admin' ? styles.activeLink : ''}`}>
             Dashboard
           </Link>
-          <Link href="/admin/orders" className={pathname === '/admin/orders' ? styles.activeLink : styles.navLink}>
+          <Link href="/admin/orders" className={`${styles.navLink} ${pathname === '/admin/orders' ? styles.activeLink : ''}`}>
             Quản lý Đơn Hàng
           </Link>
-          <Link href="/admin/menu" className={pathname === '/admin/menu' ? styles.activeLink : styles.navLink}>
+          <Link href="/admin/menu" className={`${styles.navLink} ${pathname === '/admin/menu' ? styles.activeLink : ''}`}>
             Quản lý Thực Đơn
           </Link>
           <Link href="/" className={`${styles.navLink} ${styles.backLink}`} style={{ marginTop: 'auto' }}>
