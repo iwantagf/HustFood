@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
 import { validateImageSource } from '@/lib/imageSources';
+import { formatVndPrice } from '@/lib/pricing';
 import { ACTIVE_ORDER_STATUS_VALUES } from '@/lib/statuses';
 
 function json(data, status = 200) {
@@ -48,7 +49,7 @@ function normalizeProductPayload(body) {
     data: {
       name: String(body.name).trim(),
       desc: String(body.desc).trim(),
-      price: String(body.price).trim(),
+      price: formatVndPrice(body.price),
       image: imageResult.image,
       categoryId: String(body.categoryId || '').trim() || null,
       options: normalizeOptions(body.options),

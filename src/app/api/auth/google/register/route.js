@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isDemoMode, addDemoUser } from '@/lib/demo/store';
-import { createSessionToken, verifyTempSessionToken, SESSION_COOKIE } from '@/lib/auth/session';
+import { setSessionCookie, TEMP_SESSION_COOKIE, verifyTempSessionToken } from '@/lib/auth/session';
 import { sanitizeUser } from '@/lib/auth/users';
 
 export async function POST(request) {
   try {
-    const tempToken = request.cookies.get('hustfood_oauth_temp')?.value;
+    const tempToken = request.cookies.get(TEMP_SESSION_COOKIE)?.value;
     
     if (!tempToken) {
       return NextResponse.json({ error: 'Phiên đăng ký đã hết hạn. Vui lòng thử đăng nhập lại bằng Google.' }, { status: 401 });
@@ -65,17 +65,9 @@ export async function POST(request) {
       redirectUrl: role === 'customer' ? '/' : `/${role}` 
     });
 
-    response.cookies.set({
-      name: SESSION_COOKIE,
-      value: createSessionToken(user),
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    });
+    setSessionCookie(response, user);
 
-    response.cookies.delete('hustfood_oauth_temp');
+    response.cookies.delete(TEMP_SESSION_COOKIE);
 
     return response;
   } catch (error) {

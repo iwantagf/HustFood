@@ -1,69 +1,34 @@
-import { createHmac, timingSafeEqual } from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sanitizeUser } from '@/lib/auth/users';
 import { isDemoMode } from '@/lib/demo/store';
+import { createSignedJwt, verifySignedJwt } from '@/lib/auth/jwt';
 
 export const SESSION_COOKIE = 'hustfood_session';
-const SESSION_MAX_AGE = 60 * 60 * 24;
-const SESSION_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'hustfood-dev-session-secret';
-
-function base64UrlEncode(value) {
-  return Buffer.from(JSON.stringify(value)).toString('base64url');
-}
-
-function base64UrlDecode(value) {
-  return JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
-}
-
-function sign(value) {
-  return createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
-}
+export const TEMP_SESSION_COOKIE = 'hustfood_oauth_temp';
+export const SESSION_MAX_AGE = 60 * 60 * 24;
+export const TEMP_SESSION_MAX_AGE = 15 * 60;
 
 export function createSessionToken(user) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64UrlEncode({ alg: 'HS256', typ: 'JWT' });
-  const payload = base64UrlEncode({
+  return createSignedJwt({
     sub: user.id,
     email: user.email || null,
     username: user.username || null,
     displayName: user.displayName,
     role: user.role,
     status: user.status || 'active',
-    provider: user.provider || 'credentials',
-    iat: now,
-    exp: now + SESSION_MAX_AGE
+    provider: user.provider || 'credentials'
+  }, {
+    expiresInSeconds: SESSION_MAX_AGE,
+    tokenType: 'session'
   });
-  const unsignedToken = `${header}.${payload}`;
-
-  return `${unsignedToken}.${sign(unsignedToken)}`;
 }
 
 export function verifySessionToken(token) {
-  if (!token || typeof token !== 'string') return null;
+  const session = verifySignedJwt(token, { tokenType: 'session' });
+  if (!session?.sub) return null;
 
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-
-  const [header, payload, signature] = parts;
-  const expectedSignature = sign(`${header}.${payload}`);
-  const actual = Buffer.from(signature);
-  const expected = Buffer.from(expectedSignature);
-
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    return null;
-  }
-
-  try {
-    const decodedPayload = base64UrlDecode(payload);
-    if (!decodedPayload.sub || decodedPayload.exp < Math.floor(Date.now() / 1000)) {
-      return null;
-    }
-
-    return decodedPayload;
-  } catch (error) {
-    return null;
-  }
+  return session;
 }
 
 export function setSessionCookie(response, user) {
@@ -141,39 +106,14 @@ export async function requireRole(request, allowedRoles) {
 }
 
 export function createTempSessionToken(payload) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64UrlEncode({ alg: 'HS256', typ: 'JWT' });
-  const jwtPayload = base64UrlEncode({
+  return createSignedJwt({
     ...payload,
-    iat: now,
-    exp: now + 15 * 60 // 15 minutes expiration
+  }, {
+    expiresInSeconds: TEMP_SESSION_MAX_AGE,
+    tokenType: 'oauth_temp'
   });
-  const unsignedToken = `${header}.${jwtPayload}`;
-  return `${unsignedToken}.${sign(unsignedToken)}`;
 }
 
 export function verifyTempSessionToken(token) {
-  if (!token || typeof token !== 'string') return null;
-
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-
-  const [header, payload, signature] = parts;
-  const expectedSignature = sign(`${header}.${payload}`);
-  const actual = Buffer.from(signature);
-  const expected = Buffer.from(expectedSignature);
-
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    return null;
-  }
-
-  try {
-    const decodedPayload = base64UrlDecode(payload);
-    if (decodedPayload.exp < Math.floor(Date.now() / 1000)) {
-      return null;
-    }
-    return decodedPayload;
-  } catch (error) {
-    return null;
-  }
+  return verifySignedJwt(token, { tokenType: 'oauth_temp' });
 }

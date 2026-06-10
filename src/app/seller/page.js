@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import styles from '../admin/admin.module.css';
 import Link from 'next/link';
-import { getOrderFinalTotal } from '@/lib/pricing';
+import { formatVndPrice, getOrderFinalTotal } from '@/lib/pricing';
 import {
   REPORT_PERIODS,
   buildOrdersCsv,
@@ -107,7 +107,7 @@ export default function SellerPage() {
     closeTime: '22:00',
     phone: '',
     image: '',
-    status: 'active'
+    status: 'pending_review'
   });
   const [showNotifications, setShowNotifications] = useState(false);
   const [proposal, setProposal] = useState({ name: '', desc: '', price: '', image: '' });
@@ -125,6 +125,8 @@ export default function SellerPage() {
   const [reportPeriod, setReportPeriod] = useState('month');
   const knownOrderIdsRef = useRef(new Set());
   const hasLoadedOrdersRef = useRef(false);
+  const profileDirtyRef = useRef(false);
+  const isSavingProfileRef = useRef(false);
 
   const fetchData = async () => {
     try {
@@ -160,7 +162,9 @@ export default function SellerPage() {
       setOrders(nextOrders);
       setProducts(Array.isArray(productsData) ? productsData : []);
       setNotifications(Array.isArray(notifData) ? notifData : []);
-      setMerchantProfile(profileData);
+      if (!profileDirtyRef.current && !isSavingProfileRef.current) {
+        setMerchantProfile(profileData);
+      }
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error('Không tải được dữ liệu seller:', error);
@@ -294,6 +298,7 @@ export default function SellerPage() {
   };
 
   const handleProfileChange = (field, value) => {
+    profileDirtyRef.current = true;
     setMerchantProfile(prev => ({ ...prev, [field]: value }));
   };
 
@@ -309,6 +314,7 @@ export default function SellerPage() {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+    isSavingProfileRef.current = true;
     setIsSavingProfile(true);
 
     try {
@@ -346,12 +352,14 @@ export default function SellerPage() {
       }
 
       setMerchantProfile(data);
+      profileDirtyRef.current = false;
       setProfileImageFile(null);
       alert('Đã lưu hồ sơ cửa hàng.');
     } catch (error) {
       console.error('Không lưu được hồ sơ cửa hàng:', error);
       alert('Có lỗi xảy ra khi lưu hồ sơ cửa hàng.');
     } finally {
+      isSavingProfileRef.current = false;
       setIsSavingProfile(false);
     }
   };
@@ -645,7 +653,7 @@ export default function SellerPage() {
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Ảnh đại diện</label>
-            <input type="file" accept="image/*" onChange={e => setProfileImageFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
+            <input type="file" accept="image/*" onChange={e => { profileDirtyRef.current = true; setProfileImageFile(e.target.files?.[0] || null); }} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px dashed var(--primary)', background: 'var(--primary-light)' }} />
             {merchantProfile.image && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.65rem' }}>
                 <Image src={merchantProfile.image} alt={merchantProfile.shopName || 'Ảnh cửa hàng'} width={48} height={48} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} unoptimized />
@@ -932,7 +940,7 @@ export default function SellerPage() {
                           {product.isAvailable === false ? 'Hết hàng' : 'Còn hàng'}
                         </span>
                       </div>
-                      <div style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>{product.price}</div>
+                      <div style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>{formatVndPrice(product.price)}</div>
                       <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{product.category?.name || 'Chưa phân loại'}{product.isHidden ? ' · Đang ẩn' : ''}</div>
                       <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.desc}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>

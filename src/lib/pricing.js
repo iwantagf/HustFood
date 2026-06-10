@@ -7,6 +7,16 @@ export function parsePriceToNumber(value) {
   return Number.isFinite(price) ? price : 0;
 }
 
+export function formatVndPrice(value) {
+  const rawValue = String(value ?? '').trim();
+  if (!rawValue) return '';
+
+  const price = parsePriceToNumber(rawValue);
+  if (price === 0 && !/\d/.test(rawValue)) return rawValue;
+
+  return `${price.toLocaleString('vi-VN')}đ`;
+}
+
 export function calculateItemsSubtotal(items = []) {
   if (!Array.isArray(items)) return 0;
 

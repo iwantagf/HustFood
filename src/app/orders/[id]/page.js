@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { useAuth } from '@/context/AuthContext';
-import { getOrderFinalTotal } from '@/lib/pricing';
+import { formatVndPrice, getOrderFinalTotal } from '@/lib/pricing';
 import {
   ORDER_TRACKING_STEPS,
   getEtaText,
@@ -374,7 +374,7 @@ export default function OrderTrackingPage() {
                 {items.map((item) => (
                   <div key={item.cartKey || item.id} className={styles.detailRow}>
                     <span>{item.quantity}x {item.name}</span>
-                    <strong>{item.price}</strong>
+                    <strong>{formatVndPrice(item.price)}</strong>
                   </div>
                 ))}
               </div>

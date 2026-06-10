@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isDemoMode, findDemoUserByProviderId } from '@/lib/demo/store';
-import { createSessionToken, createTempSessionToken, SESSION_COOKIE } from '@/lib/auth/session';
+import {
+  createTempSessionToken,
+  setSessionCookie,
+  TEMP_SESSION_COOKIE,
+  TEMP_SESSION_MAX_AGE
+} from '@/lib/auth/session';
 
 export async function GET(request) {
   const url = new URL(request.url);
@@ -84,15 +89,7 @@ export async function GET(request) {
     if (user) {
       // User exists, log them in and redirect to home
       response = NextResponse.redirect(new URL('/', request.url));
-      response.cookies.set({
-        name: SESSION_COOKIE,
-        value: createSessionToken(user),
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
-      });
+      setSessionCookie(response, user);
     } else {
       // User is new, setup temp token and redirect to registration setup
       response = NextResponse.redirect(new URL('/login/setup', request.url));
@@ -103,13 +100,13 @@ export async function GET(request) {
       });
       
       response.cookies.set({
-        name: 'hustfood_oauth_temp',
+        name: TEMP_SESSION_COOKIE,
         value: tempToken,
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 15 * 60 // 15 minutes
+        maxAge: TEMP_SESSION_MAX_AGE
       });
     }
 

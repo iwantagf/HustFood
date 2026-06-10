@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import { useState } from 'react';
+import { formatVndPrice } from '@/lib/pricing';
 
 export default function CartPage() {
   const {
@@ -64,7 +65,7 @@ export default function CartPage() {
                       />
                       <div className={styles.itemDetails}>
                         <h3 className={styles.itemName}>{item.name}</h3>
-                        <p className={styles.itemPrice}>{item.price}</p>
+                        <p className={styles.itemPrice}>{formatVndPrice(item.price)}</p>
                         <div className={styles.itemOptions}>
                           {item.selectedOptions?.size && <span>{item.selectedOptions.size}</span>}
                           {item.selectedOptions?.topping && <span>{item.selectedOptions.topping}</span>}
