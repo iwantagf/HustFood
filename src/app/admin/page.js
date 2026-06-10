@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [products, setProducts] = useState([]);
   const [merchantProfiles, setMerchantProfiles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [loadError, setLoadError] = useState('');
   const [reportPeriod, setReportPeriod] = useState('month');
   const [loading, setLoading] = useState(true);
 
@@ -40,13 +41,29 @@ export default function DashboardPage() {
         profilesRes.json(),
         usersRes.json()
       ]);
-      setOrders(ordersData);
-      setProposals(proposalsData);
-      setProducts(productsData);
+
+      const failedResponse = [
+        [ordersRes, ordersData],
+        [proposalsRes, proposalsData],
+        [productsRes, productsData],
+        [profilesRes, profilesData],
+        [usersRes, usersData]
+      ].find(([res]) => !res.ok);
+
+      setLoadError(failedResponse?.[1]?.error || '');
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setProposals(Array.isArray(proposalsData) ? proposalsData : []);
+      setProducts(Array.isArray(productsData) ? productsData : []);
       setMerchantProfiles(Array.isArray(profilesData) ? profilesData : []);
       setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (e) {
       console.error(e);
+      setLoadError('Không tải được dữ liệu quản trị.');
+      setOrders([]);
+      setProposals([]);
+      setProducts([]);
+      setMerchantProfiles([]);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -245,6 +262,11 @@ export default function DashboardPage() {
         <div>
           <h1 className={styles.pageTitle}>Dashboard</h1>
           <p className={styles.reportSubtitle}>Theo dõi tài chính, đơn hoàn thành và đơn bị từ chối theo kỳ báo cáo.</p>
+          {loadError && (
+            <p style={{ marginTop: '0.5rem', color: '#b91c1c', fontWeight: 700 }}>
+              {loadError}
+            </p>
+          )}
         </div>
         <div className={styles.reportActions}>
           <div className={styles.segmentedControl} aria-label="Bộ lọc thời gian">
