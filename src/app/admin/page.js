@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import styles from './admin.module.css';
-import { getOrderFinalTotal } from '@/lib/pricing';
+import { formatVndPrice, getOrderFinalTotal } from '@/lib/pricing';
 import {
   REPORT_PERIODS,
   buildMerchantRevenueCsv,
@@ -543,7 +543,7 @@ export default function DashboardPage() {
               <tr key={proposal.id}>
                 <td style={{ fontWeight: '600' }}>{proposal.name}</td>
                 <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proposal.desc}</td>
-                <td>{proposal.price}</td>
+                <td>{formatVndPrice(proposal.price)}</td>
                 <td>
                   {proposal.image ? <Image src={proposal.image} alt={proposal.name} width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} unoptimized /> : 'Không có'}
                 </td>
@@ -578,7 +578,7 @@ export default function DashboardPage() {
                   {product.image ? <Image src={product.image} alt={product.name} width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} unoptimized /> : 'Không có'}
                 </td>
                 <td style={{ fontWeight: '600' }}>{product.name}</td>
-                <td>{product.price}</td>
+                <td>{formatVndPrice(product.price)}</td>
                 <td>
                   <button onClick={() => handleDeleteProduct(product.id)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Xóa</button>
                 </td>

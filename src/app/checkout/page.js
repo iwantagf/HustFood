@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createMockPayment } from '@/lib/payments';
+import { formatVndPrice } from '@/lib/pricing';
 
 export default function CheckoutPage() {
   const { cart, cartGroups, voucher, discount, totalItems, totalPrice, deliveryFee, finalTotal, isMounted } = useCart();
@@ -184,7 +185,7 @@ export default function CheckoutPage() {
                       )}
                       {item.itemNote && <small>Ghi chú: {item.itemNote}</small>}
                     </span>
-                    <span>{item.price}</span>
+                    <span>{formatVndPrice(item.price)}</span>
                   </div>
                 ))}
               </div>

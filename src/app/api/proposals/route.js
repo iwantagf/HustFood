@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { createDemoId, getDemoStore, isDemoMode } from '@/lib/demo/store';
+import { formatVndPrice } from '@/lib/pricing';
 
 export async function GET(request) {
   try {
@@ -33,6 +34,7 @@ export async function POST(request) {
     if (auth.response) return auth.response;
 
     const body = await request.json();
+    const price = formatVndPrice(body.price);
 
     if (isDemoMode()) {
       const store = getDemoStore();
@@ -41,7 +43,7 @@ export async function POST(request) {
         ownerId: auth.user.id,
         name: body.name,
         desc: body.desc,
-        price: body.price,
+        price,
         image: body.image || '/images/burger.png',
         status: 'pending',
         createdAt: new Date().toISOString()
@@ -59,7 +61,7 @@ export async function POST(request) {
         ownerId: auth.user.id,
         name: body.name,
         desc: body.desc,
-        price: body.price,
+        price,
         image: body.image || '/images/burger.png',
         status: 'pending'
       }

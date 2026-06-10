@@ -16,8 +16,8 @@ function buildDefaultProfile(user) {
     closeTime: '22:00',
     phone: '0987654321',
     image: '/images/burger.png',
-    rating: 4.6,
-    reviewCount: 128,
+    rating: 0,
+    reviewCount: 0,
     status: 'pending_review'
   };
 }
@@ -193,6 +193,8 @@ export async function PUT(request) {
       create: {
         ...data,
         ownerId: auth.user.id,
+        rating: 0,
+        reviewCount: 0,
         status: 'pending_review'
       }
     });

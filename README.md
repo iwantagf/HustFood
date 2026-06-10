@@ -41,7 +41,7 @@ Biến cho Google OAuth:
 NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
-AUTH_SECRET="random-long-secret"
+AUTH_SECRET="random-long-secret-at-least-32-characters"
 ```
 
 Biến cho tài khoản quản trị viên khi `DEMO_MODE=false`:
@@ -57,6 +57,7 @@ Ghi chú:
 - Với Aiven hoặc managed MySQL, thường cần giữ `ssl-mode=REQUIRED`.
 - Nếu đổi schema Prisma, cần chạy lại `npx prisma db push`.
 - Facebook/Instagram OAuth chưa nằm trong scope hiện tại; chỉ Google dùng OAuth thật.
+- `AUTH_SECRET` dùng để ký JWT session; production bắt buộc có secret mạnh tối thiểu 32 ký tự.
 - Khi deploy production, tài khoản admin lấy từ `ADMIN_ACCOUNT` và `ADMIN_PASSWORD`. Lần đăng nhập admin đầu tiên sẽ tự tạo hoặc cập nhật user `admin` trong database.
 
 ## 2. Khởi động nhanh

@@ -5,6 +5,7 @@ import styles from '@/app/page.module.css';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { DEFAULT_PRODUCT_IMAGE, normalizeImageSource } from '@/lib/imageSources';
+import { formatVndPrice } from '@/lib/pricing';
 
 import { useRouter } from 'next/navigation';
 
@@ -77,7 +78,7 @@ export default function ProductCard({ product }) {
         </div>
       )}
       <div className={styles.productFooter}>
-        <span className={styles.productPrice}>{product.price}</span>
+        <span className={styles.productPrice}>{formatVndPrice(product.price)}</span>
         {canOrder && (
           <button className={styles.addBtn} onClick={handleAdd}>+</button>
         )}

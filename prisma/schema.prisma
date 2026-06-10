@@ -80,7 +80,7 @@ model MerchantProfile {
   closeTime   String
   phone       String
   image       String   @db.MediumText
-  rating      Float    @default(4.5)
+  rating      Float    @default(0)
   reviewCount Int      @default(0)
   status      String   @default("pending_review") // active, paused, pending_review, blocked
   createdAt   DateTime @default(now())

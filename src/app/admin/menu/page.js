@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import styles from '../admin.module.css';
+import { formatVndPrice } from '@/lib/pricing';
 
 export default function MenuPage() {
   const [products, setProducts] = useState([]);
@@ -106,7 +107,7 @@ export default function MenuPage() {
                     <strong>{p.name}</strong>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{p.desc}</p>
                   </td>
-                  <td style={{ fontWeight: '600', color: 'var(--primary)' }}>{p.price}</td>
+                  <td style={{ fontWeight: '600', color: 'var(--primary)' }}>{formatVndPrice(p.price)}</td>
                   <td>
                     <button onClick={() => handleDelete(p.id)} className={styles.actionBtn} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
                       Xóa
