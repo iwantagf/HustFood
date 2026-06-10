@@ -19,12 +19,14 @@ export default function LoginPage() {
   const [credentials, setCredentials] = useState({ identifier: '', password: '' });
   const [registerForm, setRegisterForm] = useState({
     email: '',
+    username: '',
     displayName: '',
     password: '',
     role: 'customer'
   });
   const [mode, setMode] = useState('login');
   const [message, setMessage] = useState('');
+  const [registerCheck, setRegisterCheck] = useState({ errors: {} });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -43,10 +45,59 @@ export default function LoginPage() {
     return () => window.removeEventListener('pageshow', handlePageShow);
   }, []);
 
+  useEffect(() => {
+    if (mode !== 'register') return undefined;
+
+    const email = registerForm.email.trim();
+    const username = registerForm.username.trim();
+
+    if (!email && !username) return undefined;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams();
+        if (email) params.set('email', email);
+        if (username) params.set('username', username);
+
+        const res = await fetch(`/api/auth/register?${params.toString()}`, {
+          signal: controller.signal
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          setRegisterCheck(data);
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          setRegisterCheck({ errors: {} });
+        }
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [mode, registerForm.email, registerForm.username]);
+
   const completeLogin = (user) => {
     const isAcceptedUser = login(user);
     if (isAcceptedUser) {
       router.replace(next || roleRedirects[user.role] || '/');
+    }
+  };
+
+  const updateRegisterField = (field, value) => {
+    setRegisterForm(prev => ({ ...prev, [field]: value }));
+    if (field === 'email' || field === 'username') {
+      setRegisterCheck(prev => ({
+        ...prev,
+        errors: {
+          ...(prev.errors || {}),
+          [field]: ''
+        }
+      }));
     }
   };
 
@@ -143,15 +194,21 @@ export default function LoginPage() {
           <form onSubmit={submitRegister} style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Gmail</label>
-              <input required type="email" value={registerForm.email} onChange={e => setRegisterForm(prev => ({ ...prev, email: e.target.value }))} placeholder="ten@gmail.com" style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              <input required type="email" value={registerForm.email} onChange={e => updateRegisterField('email', e.target.value)} placeholder="ten@gmail.com" style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              {registerCheck.errors?.email && <small style={{ display: 'block', marginTop: '0.35rem', color: '#b91c1c', fontWeight: 700 }}>{registerCheck.errors.email}</small>}
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Username</label>
+              <input required type="text" value={registerForm.username} onChange={e => updateRegisterField('username', e.target.value)} placeholder="nguyenvana" style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              {registerCheck.errors?.username && <small style={{ display: 'block', marginTop: '0.35rem', color: '#b91c1c', fontWeight: 700 }}>{registerCheck.errors.username}</small>}
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Tên hiển thị</label>
-              <input required type="text" value={registerForm.displayName} onChange={e => setRegisterForm(prev => ({ ...prev, displayName: e.target.value }))} style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              <input required type="text" value={registerForm.displayName} onChange={e => updateRegisterField('displayName', e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Vai trò</label>
-              <select value={registerForm.role} onChange={e => setRegisterForm(prev => ({ ...prev, role: e.target.value }))} style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
+              <select value={registerForm.role} onChange={e => updateRegisterField('role', e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
                 {['customer', 'seller', 'shipper'].map((item) => (
                   <option key={item} value={item}>{roleLabels[item]}</option>
                 ))}
@@ -159,7 +216,7 @@ export default function LoginPage() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Mật khẩu</label>
-              <input required minLength={6} type="password" value={registerForm.password} onChange={e => setRegisterForm(prev => ({ ...prev, password: e.target.value }))} style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+              <input required minLength={6} type="password" value={registerForm.password} onChange={e => updateRegisterField('password', e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid #ccc' }} />
             </div>
             <button type="submit" disabled={isSubmitting} style={{ padding: '0.9rem 1rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}>
               {isSubmitting ? 'Đang xử lý...' : 'Tạo tài khoản'}

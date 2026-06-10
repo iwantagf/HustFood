@@ -253,3 +253,16 @@ export function findDemoUserByProviderId(providerAccountId) {
   const user = store.users.find((u) => u.providerAccountId === providerAccountId);
   return sanitizeDemoUser(user);
 }
+
+export function findDemoUserByEmailOrUsername({ email, username }) {
+  const store = getDemoStore();
+  const normalizedEmail = email?.toLowerCase();
+  const normalizedUsername = username?.toLowerCase();
+
+  const user = store.users.find((item) => (
+    (normalizedEmail && item.email?.toLowerCase() === normalizedEmail)
+    || (normalizedUsername && item.username?.toLowerCase() === normalizedUsername)
+  ));
+
+  return sanitizeDemoUser(user);
+}

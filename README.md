@@ -290,7 +290,7 @@ Tạo tài khoản Gmail:
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"tester@gmail.com","password":"<password>","displayName":"Tester","role":"customer"}'
+  -d '{"email":"tester@gmail.com","username":"tester","password":"<password>","displayName":"Tester","role":"customer"}'
 ```
 
 ## 6. Cấu trúc repository
@@ -405,18 +405,23 @@ Response:
 
 #### `POST /api/auth/register`
 
-Tạo tài khoản bằng Gmail. Cho phép role `customer`, `seller`, `shipper`.
+Tạo tài khoản bằng Gmail. Cho phép role `customer`, `seller`, `shipper`; không cho tự đăng ký `admin`. API kiểm tra trùng Gmail và username trước khi tạo tài khoản.
 
 Body:
 
 ```json
 {
   "email": "tester@gmail.com",
+  "username": "tester",
   "password": "123456",
   "displayName": "Tester",
   "role": "customer"
 }
 ```
+
+#### `GET /api/auth/register?email=<gmail>&username=<username>`
+
+Kiểm tra nhanh Gmail/username có hợp lệ và còn trống hay không để hiển thị lỗi trên form đăng ký.
 
 #### `GET /api/auth/google`
 
@@ -697,7 +702,7 @@ Người bán lấy hồ sơ cửa hàng của chính mình. Quản trị viên 
 
 #### `PUT /api/merchant-profile`
 
-Cập nhật hồ sơ cửa hàng của người bán đang đăng nhập.
+Cập nhật hồ sơ cửa hàng của người bán đang đăng nhập. Nếu cửa hàng đang `pending_review` hoặc `blocked`, người bán vẫn cập nhật được thông tin hồ sơ nhưng không tự đổi trạng thái sang `active`; trạng thái duyệt do Quản trị viên xử lý.
 
 Body:
 

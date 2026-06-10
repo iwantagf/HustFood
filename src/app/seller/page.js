@@ -243,6 +243,7 @@ export default function SellerPage() {
   const maxSeriesValue = Math.max(...revenueSeries.map((item) => item.value), 1);
   const pendingCount = reportOrders.filter(order => order.status === 'pending').length;
   const processingCount = reportOrders.filter(order => IN_PROGRESS_ORDER_STATUS_VALUES.includes(order.status)).length;
+  const canChangeProfileStatus = ['active', 'paused'].includes(merchantProfile.status);
 
   const productSales = reportOrders.reduce((acc, order) => {
     order.items?.forEach(item => {
@@ -654,12 +655,17 @@ export default function SellerPage() {
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Trạng thái</label>
-            <select value={merchantProfile.status || 'active'} onChange={e => handleProfileChange('status', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: '#fff' }}>
+            <select disabled={!canChangeProfileStatus} value={merchantProfile.status || 'pending_review'} onChange={e => handleProfileChange('status', e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: canChangeProfileStatus ? '#fff' : '#f3f4f6', color: canChangeProfileStatus ? 'var(--text)' : 'var(--text-muted)' }}>
               <option value="pending_review" disabled>Chờ Quản trị viên duyệt</option>
               <option value="active">Đang hoạt động</option>
               <option value="paused">Tạm dừng nhận đơn</option>
               <option value="blocked" disabled>Đã bị khóa</option>
             </select>
+            {!canChangeProfileStatus && (
+              <small style={{ display: 'block', marginTop: '0.4rem', color: 'var(--text-muted)' }}>
+                Bạn vẫn lưu được thông tin cửa hàng, trạng thái sẽ do Quản trị viên duyệt.
+              </small>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'end' }}>
             <button type="submit" disabled={isSavingProfile} className={styles.actionBtn} style={{ width: '100%', padding: '0.75rem', opacity: isSavingProfile ? 0.7 : 1 }}>

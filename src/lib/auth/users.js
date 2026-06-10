@@ -27,6 +27,21 @@ export function normalizeIdentifier(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+export function normalizeUsername(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function getUsernameError(value) {
+  const username = normalizeUsername(value);
+
+  if (!username) return 'Vui lòng nhập username';
+  if (username.length < 3) return 'Username phải có ít nhất 3 ký tự';
+  if (username.length > 32) return 'Username không được vượt quá 32 ký tự';
+  if (!/^[a-z0-9_]+$/.test(username)) return 'Username chỉ được dùng chữ thường, số và dấu gạch dưới';
+
+  return '';
+}
+
 export function isGmailAddress(value) {
   return /^[^\s@]+@gmail\.com$/i.test(String(value || '').trim());
 }
