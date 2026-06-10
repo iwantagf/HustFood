@@ -154,6 +154,7 @@ export default async function StoreDetailPage({ params }) {
     ? reviewStats.averageFoodRating
     : Number(profile.rating || 0);
   const displayReviewCount = reviewStats.count || Number(profile.reviewCount || 0);
+  const hasReviewScore = displayReviewCount > 0 && displayRating > 0;
 
   return (
     <main className={styles.main}>
@@ -179,8 +180,14 @@ export default async function StoreDetailPage({ params }) {
               <div className={styles.storeDetailMeta}>
                 <span>{profile.openTime} - {profile.closeTime}</span>
                 <span>{profile.phone}</span>
-                <span>{displayRating.toFixed(1)} sao</span>
-                <span>{displayReviewCount.toLocaleString('vi-VN')} đánh giá</span>
+                {hasReviewScore ? (
+                  <>
+                    <span>{displayRating.toFixed(1)} sao</span>
+                    <span>{displayReviewCount.toLocaleString('vi-VN')} đánh giá</span>
+                  </>
+                ) : (
+                  <span>Chưa có đánh giá</span>
+                )}
                 {distance !== null && <span>{distance.toFixed(1)} km</span>}
               </div>
             </div>

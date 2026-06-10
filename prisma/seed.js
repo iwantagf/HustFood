@@ -94,8 +94,8 @@ async function main() {
         closeTime: '22:00',
         phone: '0987654321',
         image: '/images/burger.png',
-        rating: 4.7,
-        reviewCount: 186,
+        rating: 0,
+        reviewCount: 0,
         status: 'active'
       },
       create: {
@@ -108,8 +108,8 @@ async function main() {
         closeTime: '22:00',
         phone: '0987654321',
         image: '/images/burger.png',
-        rating: 4.7,
-        reviewCount: 186,
+        rating: 0,
+        reviewCount: 0,
         status: 'active'
       }
     });

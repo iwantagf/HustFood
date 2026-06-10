@@ -232,6 +232,7 @@ export default async function Home({ searchParams }) {
               const reviewStats = profile.reviewStats;
               const rating = reviewStats?.count ? reviewStats.averageFoodRating : Number(profile.rating || 0);
               const reviewCount = reviewStats?.count || Number(profile.reviewCount || 0);
+              const hasReviewScore = reviewCount > 0 && rating > 0;
 
               return (
               <Link key={profile.id} href={`/stores/${profile.id}`} className={styles.storeCard}>
@@ -250,8 +251,14 @@ export default async function Home({ searchParams }) {
                   <p className={styles.storeAddress}>{profile.address}</p>
                   <div className={styles.storeMeta}>
                     <span>{profile.openTime} - {profile.closeTime}</span>
-                    <span>{rating.toFixed(1)} sao</span>
-                    {reviewCount > 0 && <span>{reviewCount.toLocaleString('vi-VN')} đánh giá</span>}
+                    {hasReviewScore ? (
+                      <>
+                        <span>{rating.toFixed(1)} sao</span>
+                        <span>{reviewCount.toLocaleString('vi-VN')} đánh giá</span>
+                      </>
+                    ) : (
+                      <span>Chưa có đánh giá</span>
+                    )}
                     {distance !== null && <span>{distance.toFixed(1)} km</span>}
                   </div>
                 </div>
