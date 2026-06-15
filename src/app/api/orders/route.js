@@ -484,6 +484,28 @@ function sellerOwnsOrder(order, user) {
   return user.role !== 'seller' || order.merchantId === user.id;
 }
 
+function getOrderCreatedAt(order) {
+  const timestamp = new Date(order?.createdAt || 0).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function sortOrdersByCreatedAt(orders) {
+  return [...orders].sort((a, b) => getOrderCreatedAt(b) - getOrderCreatedAt(a));
+}
+
+async function findOrdersSafely(where) {
+  try {
+    return await prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
+  } catch (error) {
+    console.error('Order query with createdAt sort failed, retrying without database sort:', error);
+    const orders = await prisma.order.findMany({ where });
+    return sortOrdersByCreatedAt(orders);
+  }
+}
+
 export async function GET(request) {
   try {
     const auth = await requireRole(request, ['customer', 'seller', 'shipper', 'admin']);
@@ -501,7 +523,7 @@ export async function GET(request) {
               || order.shipperId === auth.user.id
             ))
             : store.orders;
-      return json(orders);
+      return json(sortOrdersByCreatedAt(orders));
     }
 
     const where = auth.user.role === 'seller'
@@ -517,13 +539,11 @@ export async function GET(request) {
           }
           : undefined;
 
-    const orders = await prisma.order.findMany({
-      where,
-      orderBy: { createdAt: 'desc' }
-    });
+    const orders = await findOrdersSafely(where);
     return json(orders);
   } catch (error) {
-    return json({ error: 'Failed to fetch orders' }, 500);
+    console.error('Failed to fetch orders:', error);
+    return json({ error: 'Không tải được danh sách đơn hàng' }, 500);
   }
 }
 
