@@ -5,15 +5,26 @@ import { getOrderFinalTotal } from '@/lib/pricing';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
+  const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
     try {
       const res = await fetch('/api/orders');
       const data = await res.json();
-      setOrders(data);
+
+      if (!res.ok) {
+        setLoadError(data.error || 'Không tải được danh sách đơn hàng.');
+        setOrders([]);
+        return;
+      }
+
+      setLoadError('');
+      setOrders(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
+      setLoadError('Không tải được danh sách đơn hàng.');
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -30,15 +41,26 @@ export default function OrdersPage() {
   }, []);
 
   const updateStatus = async (id, newStatus) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    const previousOrders = orders;
+    setOrders(previousOrders.map(o => o.id === id ? { ...o, status: newStatus } : o));
     try {
-      await fetch('/api/orders', {
+      const res = await fetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: newStatus })
       });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setOrders(previousOrders);
+        alert(data.error || 'Không cập nhật được trạng thái đơn hàng.');
+        return;
+      }
+
+      setOrders(prev => prev.map(order => order.id === id ? data : order));
     } catch (e) {
       console.error(e);
+      setOrders(previousOrders);
       fetchOrders();
     }
   };
@@ -62,6 +84,11 @@ export default function OrdersPage() {
   return (
     <>
       <h1 className={styles.pageTitle}>Quản lý Đơn Hàng {loading && <span style={{fontSize: '1rem', color: 'gray'}}>(Đang tải...)</span>}</h1>
+      {loadError && (
+        <div style={{ marginBottom: '1rem', padding: '0.9rem 1rem', borderRadius: '8px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontWeight: 700 }}>
+          {loadError}
+        </div>
+      )}
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>

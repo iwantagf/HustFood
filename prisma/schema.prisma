@@ -127,6 +127,12 @@ model Order {
   createdAt            DateTime  @default(now())
   reviews              Review[]
   paymentTransactions  PaymentTransaction[]
+
+  @@index([createdAt])
+  @@index([merchantId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([shipperId, createdAt])
+  @@index([status, shipperId, createdAt])
 }
 
 model PaymentTransaction {
